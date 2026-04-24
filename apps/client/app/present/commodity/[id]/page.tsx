@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type CommodityDetailPageProps = {
   params: Promise<{ id: string }>;
 };
@@ -13,6 +15,15 @@ export default async function CommodityDetailPage({
         <p className="badge">Dynamic Route</p>
         <h2>商品详情页</h2>
         <p>当前访问的商品 ID 为 {id}。后续这里会接入详情查询、异常处理和页面级错误边界。</p>
+      </div>
+
+      <div className="inline-actions">
+        <Link className="button" href="/present/commodity/list">
+          返回商品列表
+        </Link>
+        <Link className="button button--secondary" href="/present/commodity/create">
+          去创建商品
+        </Link>
       </div>
 
       <div className="card-grid">

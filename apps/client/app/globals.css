@@ -241,6 +241,15 @@ textarea {
   font-size: 14px;
 }
 
+.table-link {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+
 .login-wrap {
   display: grid;
   place-items: center;

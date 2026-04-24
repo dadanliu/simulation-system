@@ -1,7 +1,13 @@
+"use client";
+
 import Link from "next/link";
-import { routes } from "../lib/routes";
+import { usePathname } from "next/navigation";
+import { getActiveRoute, routes } from "../lib/routes";
 
 export function SideNav() {
+  const pathname = usePathname();
+  const activeRoute = getActiveRoute(pathname);
+
   return (
     <aside className="side-nav">
       <p className="side-nav__brand">Next BFF</p>
@@ -9,7 +15,7 @@ export function SideNav() {
         {routes.map((route) => (
           <Link
             key={route.href}
-            className={`side-nav__item${route.current ? " side-nav__item--active" : ""}`}
+            className={`side-nav__item${activeRoute?.href === route.href ? " side-nav__item--active" : ""}`}
             href={route.href}
           >
             {route.label}

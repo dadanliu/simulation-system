@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function CommodityCreatePage() {
   return (
     <section className="panel stack">
@@ -27,6 +29,9 @@ export default function CommodityCreatePage() {
           <button className="button button--secondary" type="reset">
             重置
           </button>
+          <Link className="button button--secondary" href="/present/commodity/list">
+            返回列表
+          </Link>
         </div>
       </form>
     </section>
