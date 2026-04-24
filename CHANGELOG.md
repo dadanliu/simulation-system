@@ -66,3 +66,38 @@
 ### 验证结果
 
 - `pnpm build` 已通过
+
+### 登录与会话
+
+已完成以下能力：
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- 登录成功后写入会话 cookie
+- 登出后清除会话 cookie
+- `get-current-user`
+- `require-login`
+
+当前实现位置：
+
+- `apps/bff/src/routes/auth.js`
+- `apps/bff/src/auth/get-current-user.js`
+- `apps/bff/src/auth/require-login.js`
+- `apps/bff/src/auth/session-cookie.js`
+- `apps/bff/src/session-store.js`
+
+当前会话设计：
+
+- BFF 使用内存 `Map` 保存 session
+- 登录成功后写入 `next_bff_session` cookie
+- `/api/auth/me` 会基于 cookie 读取当前用户
+- `/api/auth/logout` 会删除 session 并清空 cookie
+
+本地验证结果：
+
+- 未登录访问 `/api/auth/me` 返回 `401 Unauthorized`
+- 使用 `admin / admin123` 登录成功，响应包含 `Set-Cookie`
+- 带 cookie 访问 `/api/auth/me` 可返回当前用户
+- 登出后响应包含清 cookie 的 `Set-Cookie`
+- 登出后再次访问 `/api/auth/me` 返回 `401 Unauthorized`
