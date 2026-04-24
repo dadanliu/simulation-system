@@ -58,6 +58,8 @@ flowchart TD
   D --> E[Set-Cookie next_bff_session]
 ```
 
+登录、登出、获取当前用户、cookie 与 session 的完整图文说明见 [docs/03-login-session.md](./docs/03-login-session.md)。
+
 ## 原则
 
 - 目录按层划分，不按共享包划分

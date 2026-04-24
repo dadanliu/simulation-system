@@ -250,6 +250,15 @@ textarea {
   text-decoration: underline;
 }
 
+.form-error {
+  padding: 12px 14px;
+  border: 1px solid rgba(190, 18, 60, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 241, 242, 0.82);
+  color: #be123c;
+  font-weight: 600;
+}
+
 .login-wrap {
   display: grid;
   place-items: center;

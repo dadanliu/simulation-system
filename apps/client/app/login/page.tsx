@@ -1,32 +1,87 @@
-import Link from "next/link";
+"use client";
+
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("admin123");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          username,
+          password
+        })
+      });
+
+      if (!response.ok) {
+        const message = response.status === 401 ? "用户名或密码错误" : "登录失败，请稍后重试";
+        setError(message);
+        return;
+      }
+
+      router.push("/present/commodity/list");
+      router.refresh();
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <main className="login-wrap">
-      <section className="login-card stack">
+      <form className="login-card stack" onSubmit={handleSubmit}>
         <div>
-          <p className="badge">App Router Ready</p>
+          <p className="badge">BFF Cookie Session</p>
           <h1>后台登录</h1>
-          <p>这是项目初始化后的登录页骨架，后续会在这里接入 cookie 会话和 BFF 登录接口。</p>
+          <p>登录成功后，BFF 会通过 `Set-Cookie` 写入 `next_bff_session`。</p>
         </div>
 
         <div className="form-grid">
           <label className="field">
             <span>用户名</span>
-            <input placeholder="admin" />
+            <input
+              autoComplete="username"
+              name="username"
+              onChange={(event) => setUsername(event.target.value)}
+              placeholder="admin"
+              value={username}
+            />
           </label>
           <label className="field">
             <span>密码</span>
-            <input placeholder="••••••••" type="password" />
+            <input
+              autoComplete="current-password"
+              name="password"
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="admin123"
+              type="password"
+              value={password}
+            />
           </label>
         </div>
 
+        {error ? <p className="form-error">{error}</p> : null}
+
         <div className="inline-actions">
-          <Link className="button" href="/present/commodity/list">
-            进入演示后台
-          </Link>
+          <button className="button" disabled={isSubmitting} type="submit">
+            {isSubmitting ? "登录中..." : "登录并写入 cookie"}
+          </button>
         </div>
-      </section>
+      </form>
     </main>
   );
 }

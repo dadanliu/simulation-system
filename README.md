@@ -109,6 +109,10 @@ pnpm lint:server
 - `get-current-user`
 - `require-login`
 
+登录与会话的图文说明见 [docs/03-login-session.md](./docs/03-login-session.md)。
+
+Auth 接口 curl 调试说明见 [docs/mock-auth.md](./docs/mock-auth.md)。
+
 ## Server 当前能力
 
 `apps/server` 当前已基于 NestJS 提供 mock backend 基础骨架：
