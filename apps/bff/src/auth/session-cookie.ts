@@ -1,23 +1,26 @@
-import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "../config.js";
+import type { Request } from "express";
+
+export const SESSION_COOKIE_NAME = "next_bff_session";
+export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
 
 export function parseCookies(cookieHeader = "") {
   return cookieHeader
     .split(";")
     .map((item) => item.trim())
     .filter(Boolean)
-    .reduce((result, item) => {
+    .reduce<Record<string, string>>((result, item) => {
       const [key, ...rest] = item.split("=");
       result[key] = decodeURIComponent(rest.join("="));
       return result;
     }, {});
 }
 
-export function getSessionIdFromRequest(request) {
+export function getSessionIdFromRequest(request: Request) {
   const cookies = parseCookies(request.headers.cookie);
   return cookies[SESSION_COOKIE_NAME] ?? null;
 }
 
-export function createSessionCookie(sessionId) {
+export function createSessionCookie(sessionId: string) {
   return [
     `${SESSION_COOKIE_NAME}=${encodeURIComponent(sessionId)}`,
     "Path=/",

@@ -246,3 +246,27 @@ apps/client
 ```text
 一个由 Next.js App Router 按目录约定驱动的前端应用。
 ```
+
+## 和 bff / server 的关系
+
+当前项目不是只有前端。
+
+完整三层是：
+
+- `apps/client`：Next.js 前端
+- `apps/bff`：NestJS BFF
+- `apps/server`：NestJS mock backend
+
+前端层的职责是：
+
+- 渲染页面
+- 处理浏览器交互
+- 调用 BFF
+
+它不直接承担：
+
+- 登录会话存储
+- 后端聚合
+- mock backend 能力
+
+这些都已经切到 `apps/bff` 和 `apps/server`。

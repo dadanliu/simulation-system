@@ -101,3 +101,34 @@
 - 带 cookie 访问 `/api/auth/me` 可返回当前用户
 - 登出后响应包含清 cookie 的 `Set-Cookie`
 - 登出后再次访问 `/api/auth/me` 返回 `401 Unauthorized`
+
+### BFF / Server 改为 NestJS
+
+已将 `apps/bff` 和 `apps/server` 从简单脚本或占位文件切换为 NestJS 项目结构。
+
+`apps/bff` 当前结构：
+
+- `src/main.ts`
+- `src/app.module.ts`
+- `src/app.controller.ts`
+- `src/auth/auth.module.ts`
+- `src/auth/auth.controller.ts`
+- `src/auth/auth.service.ts`
+- `src/auth/get-current-user.ts`
+- `src/auth/require-login.ts`
+- `src/auth/session-store.service.ts`
+
+`apps/server` 当前结构：
+
+- `src/main.ts`
+- `src/app.module.ts`
+- `src/app.controller.ts`
+- `src/mock-backend/mock-backend.module.ts`
+- `src/mock-backend/mock-backend.controller.ts`
+- `src/mock-backend/mock-backend.service.ts`
+
+文档已同步更新：
+
+- `README.md`
+- `ARCHITECTURE.md`
+- `apps/client/README.md`
