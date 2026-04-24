@@ -46,10 +46,10 @@
 
 ## 4. Middleware
 
-- [ ] 新增 `apps/client/middleware.ts`
-- [ ] 未登录访问 `/present/**` 时跳转 `/login`
-- [ ] 未登录访问客户端受保护接口时跳转或拦截
-- [ ] 登录后允许访问受保护页面
+- [x] 新增 `apps/client/middleware.ts`
+- [x] 未登录访问 `/present/**` 时跳转 `/login`
+- [x] 未登录访问客户端受保护接口时跳转或拦截
+- [x] 登录后允许访问受保护页面
 
 ---
 
