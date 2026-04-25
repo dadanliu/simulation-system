@@ -101,6 +101,12 @@ textarea {
   backdrop-filter: blur(10px);
 }
 
+.top-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .top-bar__title {
   margin: 0;
   font-size: 24px;
@@ -110,6 +116,28 @@ textarea {
   margin: 6px 0 0;
   color: var(--text-muted);
   font-size: 14px;
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.user-chip__name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.user-chip__meta {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .badge {
@@ -387,5 +415,16 @@ textarea {
     align-items: flex-start;
     flex-direction: column;
     padding: 16px;
+  }
+
+  .top-bar__actions {
+    width: 100%;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .user-chip {
+    justify-content: space-between;
+    width: 100%;
   }
 }

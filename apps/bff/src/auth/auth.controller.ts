@@ -31,7 +31,6 @@ export class AuthController {
     response.setHeader("Set-Cookie", clearSessionCookie());
 
     return {
-      success: true,
       message: "logout success"
     };
   }

@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import type {
   Commodity,
   CommodityListData,
@@ -21,8 +22,20 @@ async function getCookieHeader() {
   return cookieStore.toString();
 }
 
-async function readApiResponse<T>(response: Response) {
+function redirectToLogin(nextPath: string) {
+  const loginSearchParams = new URLSearchParams({
+    next: nextPath
+  });
+
+  redirect(`/login?${loginSearchParams.toString()}`);
+}
+
+async function readApiResponse<T>(response: Response, nextPathOnUnauthorized: string) {
   const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;
+
+  if (response.status === 401) {
+    redirectToLogin(nextPathOnUnauthorized);
+  }
 
   if (!response.ok || !payload?.success || payload.data === undefined) {
     throw new Error(payload?.message ?? `Request failed with status ${response.status}`);
@@ -37,13 +50,14 @@ export async function getCommodityListPageData(
   const filters = readCommodityListFilters(searchParams);
   const cookie = await getCookieHeader();
   const query = buildCommodityListSearchParams(filters);
+  const nextPath = query.toString() ? `/present/commodity/list?${query.toString()}` : "/present/commodity/list";
   const response = await fetch(`http://127.0.0.1:3000/api/commodity/list?${query.toString()}`, {
     cache: "no-store",
     headers: {
       cookie
     }
   });
-  const data = await readApiResponse<CommodityListData>(response);
+  const data = await readApiResponse<CommodityListData>(response, nextPath);
 
   return {
     ...data,
@@ -61,5 +75,5 @@ export async function getCommodityDetail(id: string) {
     }
   });
 
-  return readApiResponse<Commodity>(response);
+  return readApiResponse<Commodity>(response, `/present/commodity/${encodeURIComponent(id)}`);
 }
