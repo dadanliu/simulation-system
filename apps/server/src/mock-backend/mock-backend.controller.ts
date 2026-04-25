@@ -39,6 +39,7 @@ export class MockBackendController {
 
   @Get("commodity/:id")
   getCommodity(@Param("id") id: string) {
+    // mock backend 只负责返回统一 errno 结构，是否转成 HTTP 异常由 BFF 决定。
     return this.commodityService.getCommodityById(id);
   }
 
