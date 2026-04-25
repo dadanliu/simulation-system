@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import type { Request } from "express";
 import { RequireLoginService } from "../auth/require-login";
 import { ApiClientService } from "../bff/api-client.service";
-import type { Commodity, CommodityListData, CommodityListQuery } from "./commodity.types";
+import type { Commodity, CommodityListData, CommodityListQuery, CreateCommodityBody } from "./commodity.types";
 
 @Injectable()
 export class CommodityService {
@@ -36,6 +36,17 @@ export class CommodityService {
     // id 来自动态路由，编码后再拼接到后端路径，避免特殊字符破坏 URL。
     return this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
       // 详情接口同样由 BFF 统一注入登录用户上下文。
+      userId: user.id
+    });
+  }
+
+  createCommodity(request: Request, body: CreateCommodityBody) {
+    const user = this.requireLoginService.execute(request);
+
+    return this.apiClientService.request<Commodity>(request, "/api/commodity/create", {
+      body,
+      method: "POST",
+      // 创建接口同样带上当前登录用户，后端后续可用于审计和归属。
       userId: user.id
     });
   }

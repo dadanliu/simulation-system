@@ -2,11 +2,20 @@ import { Injectable } from "@nestjs/common";
 import { mockBusinessError, mockSuccess } from "./mock-response";
 
 export type MockCommodity = {
+  description: string;
   id: string;
   name: string;
   price: number;
   status: "on_sale" | "pending" | "offline";
   stock: number;
+};
+
+export type CreateCommodityBody = {
+  description?: string;
+  name?: string;
+  price?: number | string;
+  status?: MockCommodity["status"];
+  stock?: number | string;
 };
 
 export type ListCommoditiesQuery = {
@@ -18,6 +27,7 @@ export type ListCommoditiesQuery = {
 
 const mockCommodities: MockCommodity[] = [
   {
+    description: "适合桌面和户外场景的便携蓝牙音箱。",
     id: "10001",
     name: "北极光蓝牙音箱",
     price: 299,
@@ -25,6 +35,7 @@ const mockCommodities: MockCommodity[] = [
     stock: 284
   },
   {
+    description: "茶轴手感，支持多设备切换。",
     id: "10002",
     name: "风暴机械键盘",
     price: 699,
@@ -32,6 +43,7 @@ const mockCommodities: MockCommodity[] = [
     stock: 42
   },
   {
+    description: "铝合金材质，适合显示器增高收纳。",
     id: "10003",
     name: "雾白显示器支架",
     price: 199,
@@ -80,6 +92,48 @@ export class CommodityService {
     return mockSuccess(commodity);
   }
 
+  createCommodity(body: CreateCommodityBody = {}) {
+    const name = body.name?.trim();
+    const description = body.description?.trim() ?? "";
+    const price = Number(body.price);
+    const stock = Number(body.stock);
+    const status = body.status;
+
+    // mock backend 做业务校验，BFF 只负责转发和错误语义转换。
+    if (!name) {
+      return mockBusinessError(20002, "commodity name is required");
+    }
+
+    if (!Number.isFinite(price) || price <= 0) {
+      return mockBusinessError(20003, "commodity price must be greater than 0");
+    }
+
+    if (!Number.isInteger(stock) || stock < 0) {
+      return mockBusinessError(20004, "commodity stock must be a non-negative integer");
+    }
+
+    if (!status || !this.isCommodityStatus(status)) {
+      return mockBusinessError(20005, "commodity status is invalid");
+    }
+
+    if (mockCommodities.some((commodity) => commodity.name === name)) {
+      return mockBusinessError(20006, "commodity name already exists");
+    }
+
+    const commodity: MockCommodity = {
+      description,
+      id: this.nextCommodityId(),
+      name,
+      price,
+      status,
+      stock
+    };
+
+    mockCommodities.unshift(commodity);
+
+    return mockSuccess(commodity);
+  }
+
   private toPositiveInteger(value: string | undefined, fallback: number) {
     const parsedValue = Number(value);
 
@@ -89,5 +143,14 @@ export class CommodityService {
     }
 
     return parsedValue;
+  }
+
+  private isCommodityStatus(value: string): value is MockCommodity["status"] {
+    return value === "on_sale" || value === "pending" || value === "offline";
+  }
+
+  private nextCommodityId() {
+    const maxId = mockCommodities.reduce((max, commodity) => Math.max(max, Number(commodity.id)), 10000);
+    return String(maxId + 1);
   }
 }

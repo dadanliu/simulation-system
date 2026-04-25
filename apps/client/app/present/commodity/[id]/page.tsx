@@ -4,6 +4,7 @@ import Link from "next/link";
 type CommodityStatus = "on_sale" | "pending" | "offline";
 
 type Commodity = {
+  description: string;
   id: string;
   name: string;
   price: number;
@@ -94,6 +95,7 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
         <p>
           当前商品处于「{statusLabel[commodity.status]}」状态，库存数量为 {commodity.stock}。
         </p>
+        {commodity.description ? <p>{commodity.description}</p> : null}
       </article>
     </section>
   );

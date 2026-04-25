@@ -205,12 +205,21 @@ textarea {
 }
 
 .field input,
+.field select,
 .field textarea {
   width: 100%;
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #fff;
+}
+
+.button:disabled,
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .field textarea {

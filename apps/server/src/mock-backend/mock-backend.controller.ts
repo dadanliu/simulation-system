@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
-import { CommodityService, type ListCommoditiesQuery } from "./commodity.service";
+import { CommodityService, type CreateCommodityBody, type ListCommoditiesQuery } from "./commodity.service";
 import { MockBackendService } from "./mock-backend.service";
 import { UploadService } from "./upload.service";
 import { UsersService } from "./users.service";
@@ -41,6 +41,11 @@ export class MockBackendController {
   getCommodity(@Param("id") id: string) {
     // mock backend 只负责返回统一 errno 结构，是否转成 HTTP 异常由 BFF 决定。
     return this.commodityService.getCommodityById(id);
+  }
+
+  @Post("commodity/create")
+  createCommodity(@Body() body: CreateCommodityBody) {
+    return this.commodityService.createCommodity(body);
   }
 
   @Post("upload/token")
