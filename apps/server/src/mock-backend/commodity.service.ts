@@ -9,6 +9,13 @@ export type MockCommodity = {
   stock: number;
 };
 
+export type ListCommoditiesQuery = {
+  keyword?: string;
+  page?: string;
+  pageSize?: string;
+  status?: MockCommodity["status"];
+};
+
 const mockCommodities: MockCommodity[] = [
   {
     id: "10001",
@@ -35,13 +42,30 @@ const mockCommodities: MockCommodity[] = [
 
 @Injectable()
 export class CommodityService {
-  listCommodities() {
+  listCommodities(query: ListCommoditiesQuery = {}) {
+    const page = this.toPositiveInteger(query.page, 1);
+    const pageSize = this.toPositiveInteger(query.pageSize, 10);
+    const keyword = query.keyword?.trim().toLowerCase();
+
+    // mock 数据筛选保持确定性，方便验证 BFF 和 client 行为。
+    const filteredCommodities = mockCommodities.filter((commodity) => {
+      const matchesKeyword = keyword
+        ? commodity.name.toLowerCase().includes(keyword) || commodity.id.includes(keyword)
+        : true;
+      const matchesStatus = query.status ? commodity.status === query.status : true;
+
+      return matchesKeyword && matchesStatus;
+    });
+
+    const start = (page - 1) * pageSize;
+    const list = filteredCommodities.slice(start, start + pageSize);
+
     return mockSuccess({
-      list: mockCommodities,
+      list,
       pagination: {
-        page: 1,
-        pageSize: 10,
-        total: mockCommodities.length
+        page,
+        pageSize,
+        total: filteredCommodities.length
       }
     });
   }
@@ -54,5 +78,16 @@ export class CommodityService {
     }
 
     return mockSuccess(commodity);
+  }
+
+  private toPositiveInteger(value: string | undefined, fallback: number) {
+    const parsedValue = Number(value);
+
+    // 非法分页参数直接降级为默认值，不作为业务错误处理。
+    if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
+      return fallback;
+    }
+
+    return parsedValue;
   }
 }

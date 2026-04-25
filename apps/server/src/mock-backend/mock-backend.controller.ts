@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
-import { CommodityService } from "./commodity.service";
+import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { CommodityService, type ListCommoditiesQuery } from "./commodity.service";
 import { MockBackendService } from "./mock-backend.service";
 import { UploadService } from "./upload.service";
 import { UsersService } from "./users.service";
@@ -33,8 +33,8 @@ export class MockBackendController {
   }
 
   @Get("commodity/list")
-  getCommodities() {
-    return this.commodityService.listCommodities();
+  getCommodities(@Query() query: ListCommoditiesQuery) {
+    return this.commodityService.listCommodities(query);
   }
 
   @Get("commodity/:id")

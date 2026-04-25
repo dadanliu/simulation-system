@@ -254,6 +254,57 @@ textarea {
   font-weight: 600;
 }
 
+.filter-bar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 220px) auto auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  color: var(--text-muted);
+}
+
+.button--disabled {
+  pointer-events: none;
+  opacity: 0.48;
+}
+
+.empty-state {
+  padding: 28px;
+  border: 1px dashed var(--line);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.66);
+  color: var(--text-muted);
+}
+
+.skeleton-list {
+  display: grid;
+  gap: 14px;
+}
+
+.skeleton-list div {
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(229, 235, 244, 0.7), rgba(248, 250, 252, 0.92), rgba(229, 235, 244, 0.7));
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
 .login-wrap {
   display: grid;
   place-items: center;
