@@ -81,12 +81,12 @@
 - [x] 建立 `apps/server/src/mock-backend/mock-backend.module.ts`
 - [x] 建立 `apps/server/src/mock-backend/mock-backend.controller.ts`
 - [x] 建立 `apps/server/src/mock-backend/mock-backend.service.ts`
-- [ ] 建立 `apps/server/src/mock-backend/users.service.ts`
-- [ ] 建立 `apps/server/src/mock-backend/commodity.service.ts`
-- [ ] 建立 `apps/server/src/mock-backend/upload.service.ts`
-- [ ] 统一返回 `errno / errmsg / data`
-- [ ] 支持成功响应
-- [ ] 支持业务失败响应
+- [x] 建立 `apps/server/src/mock-backend/users.service.ts`
+- [x] 建立 `apps/server/src/mock-backend/commodity.service.ts`
+- [x] 建立 `apps/server/src/mock-backend/upload.service.ts`
+- [x] 统一返回 `errno / errmsg / data`
+- [x] 支持成功响应
+- [x] 支持业务失败响应
 
 ---
 
