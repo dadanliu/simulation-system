@@ -1,11 +1,16 @@
-import { Body, Controller, Get, Param, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
 import { CommodityService, type CreateCommodityBody, type ListCommoditiesQuery } from "./commodity.service";
 import { MockBackendService } from "./mock-backend.service";
-import { UploadService } from "./upload.service";
+import { UploadService, type UploadedMemoryFile } from "./upload.service";
 import { UsersService } from "./users.service";
 
 type CreateUploadTokenBody = {
   filename?: string;
+};
+
+type UploadFileBody = {
+  scene?: string;
 };
 
 @Controller("api")
@@ -51,5 +56,11 @@ export class MockBackendController {
   @Post("upload/token")
   createUploadToken(@Body() body: CreateUploadTokenBody) {
     return this.uploadService.createUploadToken(body.filename);
+  }
+
+  @Post("upload")
+  @UseInterceptors(FileInterceptor("file"))
+  uploadFile(@UploadedFile() file: UploadedMemoryFile | undefined, @Body() body: UploadFileBody) {
+    return this.uploadService.uploadFile(file, body.scene);
   }
 }

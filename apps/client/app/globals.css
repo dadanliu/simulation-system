@@ -263,6 +263,31 @@ textarea {
   font-weight: 600;
 }
 
+.form-hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.upload-result {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border: 1px solid rgba(6, 118, 71, 0.22);
+  border-radius: 16px;
+  background: #ecfdf3;
+  color: var(--success);
+}
+
+.upload-result p {
+  margin: 0;
+  word-break: break-all;
+}
+
+.upload-result__title {
+  font-weight: 700;
+}
+
 .filter-bar {
   display: grid;
   grid-template-columns: minmax(180px, 1fr) minmax(150px, 220px) auto auto;
@@ -350,5 +375,17 @@ textarea {
   .side-nav {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 640px) {
+  .main-panel {
+    padding: 16px;
+  }
+
+  .top-bar {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px;
   }
 }

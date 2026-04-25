@@ -5,6 +5,7 @@ import { ResponseHandlerService } from "./response-handler.service";
 
 type RequestOptions = {
   body?: unknown;
+  formData?: FormData;
   headers?: Record<string, string>;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   traceId?: string;
@@ -33,7 +34,9 @@ export class ApiClientService {
         ...options.headers,
         ...(options.body === undefined ? {} : { "Content-Type": "application/json" })
       },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body)
+      body:
+        options.formData ??
+        (options.body === undefined ? undefined : JSON.stringify(options.body))
     });
 
     return this.responseHandlerService.handleFetchResponse<T>(response);
