@@ -62,14 +62,14 @@
 - [x] 建立 `apps/bff/src/auth/auth.controller.ts`
 - [x] 建立 `apps/bff/src/auth/auth.service.ts`
 - [x] 建立 `apps/bff/src/auth/session-store.service.ts`
-- [ ] 建立 `apps/bff/src/bff/api-client.service.ts`
-- [ ] 建立 `apps/bff/src/bff/request-headers.service.ts`
-- [ ] 建立 `apps/bff/src/bff/response-handler.service.ts`
-- [ ] 建立 `apps/bff/src/bff/errors.ts`
-- [ ] BFF 统一注入 `userId`
-- [ ] BFF 统一注入 `traceId`
-- [ ] BFF 统一解包后端响应
-- [ ] BFF 统一转换业务错误和系统错误
+- [x] 建立 `apps/bff/src/bff/api-client.service.ts`
+- [x] 建立 `apps/bff/src/bff/request-headers.service.ts`
+- [x] 建立 `apps/bff/src/bff/response-handler.service.ts`
+- [x] 建立 `apps/bff/src/bff/errors.ts`
+- [x] BFF 统一注入 `userId`
+- [x] BFF 统一注入 `traceId`
+- [x] BFF 统一解包后端响应
+- [x] BFF 统一转换业务错误和系统错误
 
 ---
 
