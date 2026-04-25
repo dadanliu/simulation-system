@@ -1,18 +1,14 @@
 import { Injectable } from "@nestjs/common";
 import type { Request } from "express";
-import { RequireLoginService } from "../auth/require-login";
 import { ApiClientService } from "../bff/api-client.service";
+import type { AuthUser } from "../auth/mock-users";
 import type { Commodity, CommodityListData, CommodityListQuery, CreateCommodityBody } from "./commodity.types";
 
 @Injectable()
 export class CommodityService {
-  constructor(
-    private readonly apiClientService: ApiClientService,
-    private readonly requireLoginService: RequireLoginService
-  ) {}
+  constructor(private readonly apiClientService: ApiClientService) {}
 
-  listCommodities(request: Request, query: CommodityListQuery) {
-    const user = this.requireLoginService.execute(request);
+  listCommodities(request: Request, user: AuthUser, query: CommodityListQuery) {
     const searchParams = new URLSearchParams();
 
     // 只转发明确传入的查询参数，默认值交给 mock backend 处理。
@@ -30,9 +26,7 @@ export class CommodityService {
     });
   }
 
-  getCommodity(request: Request, id: string) {
-    const user = this.requireLoginService.execute(request);
-
+  getCommodity(request: Request, user: AuthUser, id: string) {
     // id 来自动态路由，编码后再拼接到后端路径，避免特殊字符破坏 URL。
     return this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
       // 详情接口同样由 BFF 统一注入登录用户上下文。
@@ -40,9 +34,7 @@ export class CommodityService {
     });
   }
 
-  createCommodity(request: Request, body: CreateCommodityBody) {
-    const user = this.requireLoginService.execute(request);
-
+  createCommodity(request: Request, user: AuthUser, body: CreateCommodityBody) {
     return this.apiClientService.request<Commodity>(request, "/api/commodity/create", {
       body,
       method: "POST",

@@ -1,16 +1,15 @@
-import { Body, Controller, Get, Post, Req, Res } from "@nestjs/common";
+import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { AuthService } from "./auth.service";
+import { AuthGuard } from "./auth.guard";
+import { CurrentUser } from "./current-user.decorator";
 import { LoginDto } from "./dto/login.dto";
+import type { AuthUser } from "./mock-users";
 import { clearSessionCookie, createSessionCookie } from "./session-cookie";
-import { RequireLoginService } from "./require-login";
 
 @Controller("api/auth")
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly requireLoginService: RequireLoginService
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post("login")
   login(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
@@ -38,9 +37,8 @@ export class AuthController {
   }
 
   @Get("me")
-  me(@Req() request: Request) {
-    const user = this.requireLoginService.execute(request);
-
+  @UseGuards(AuthGuard)
+  me(@CurrentUser() user: AuthUser) {
     return {
       success: true,
       data: {

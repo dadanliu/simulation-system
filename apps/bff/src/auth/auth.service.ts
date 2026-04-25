@@ -3,14 +3,10 @@ import type { Request } from "express";
 import { findUserByCredentials } from "./mock-users";
 import { getSessionIdFromRequest } from "./session-cookie";
 import { SessionStoreService } from "./session-store.service";
-import { GetCurrentUserService } from "./get-current-user";
 
 @Injectable()
 export class AuthService {
-  constructor(
-    private readonly sessionStoreService: SessionStoreService,
-    private readonly getCurrentUserService: GetCurrentUserService
-  ) {}
+  constructor(private readonly sessionStoreService: SessionStoreService) {}
 
   login(username: string, password: string) {
     const user = findUserByCredentials(username, password);
@@ -30,9 +26,5 @@ export class AuthService {
   logout(request: Request) {
     const sessionId = getSessionIdFromRequest(request);
     this.sessionStoreService.deleteSession(sessionId);
-  }
-
-  getCurrentUser(request: Request) {
-    return this.getCurrentUserService.execute(request);
   }
 }

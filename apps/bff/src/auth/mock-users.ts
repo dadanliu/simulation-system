@@ -1,8 +1,7 @@
 export type AuthUser = {
   id: string;
   username: string;
-  name: string;
-  role: string;
+  roles: string[];
 };
 
 type MockUserRecord = AuthUser & {
@@ -14,15 +13,13 @@ const mockUsers: MockUserRecord[] = [
     id: "u_admin_001",
     username: "admin",
     password: "admin123",
-    name: "Admin User",
-    role: "admin"
+    roles: ["admin"]
   },
   {
     id: "u_operator_001",
     username: "operator",
     password: "operator123",
-    name: "Operator User",
-    role: "operator"
+    roles: ["operator"]
   }
 ];
 

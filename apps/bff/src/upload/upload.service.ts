@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import type { Request } from "express";
-import { RequireLoginService } from "../auth/require-login";
+import type { AuthUser } from "../auth/mock-users";
 import { ApiClientService } from "../bff/api-client.service";
 import { BffBusinessException } from "../bff/errors";
 
@@ -22,14 +22,9 @@ export type UploadResult = {
 
 @Injectable()
 export class UploadService {
-  constructor(
-    private readonly apiClientService: ApiClientService,
-    private readonly requireLoginService: RequireLoginService
-  ) {}
+  constructor(private readonly apiClientService: ApiClientService) {}
 
-  async uploadFile(request: Request, file?: UploadedMemoryFile, scene?: string) {
-    const user = this.requireLoginService.execute(request);
-
+  async uploadFile(request: Request, user: AuthUser, file?: UploadedMemoryFile, scene?: string) {
     if (!file) {
       throw new BffBusinessException("请选择文件后再上传");
     }
