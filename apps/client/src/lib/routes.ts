@@ -41,7 +41,9 @@ export function getActiveRoute(pathname: string) {
   return routes.find((route) =>
     route.matchPrefixes.some((prefix) =>
       prefix === "/present/commodity/"
-        ? pathname.startsWith(prefix) && pathname !== "/present/commodity/create" && pathname !== "/present/commodity/list"
+        ? pathname.startsWith(prefix) &&
+          pathname !== "/present/commodity/create" &&
+          pathname !== "/present/commodity/list"
         : pathname === prefix || pathname.startsWith(`${prefix}/`)
     )
   );

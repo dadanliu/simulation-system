@@ -36,7 +36,9 @@ export class ResponseHandlerService {
     return "success" in payload && payload.success === true;
   }
 
-  private isBusinessErrorEnvelope<T>(payload: BackendEnvelope<T>): payload is Extract<BackendEnvelope<T>, { success: false }> {
+  private isBusinessErrorEnvelope<T>(
+    payload: BackendEnvelope<T>
+  ): payload is Extract<BackendEnvelope<T>, { success: false }> {
     return "success" in payload && payload.success === false;
   }
 
@@ -44,7 +46,9 @@ export class ResponseHandlerService {
     return "errno" in payload && payload.errno === 0;
   }
 
-  private isErrnoBusinessErrorEnvelope<T>(payload: BackendEnvelope<T>): payload is Extract<BackendEnvelope<T>, { errno: number }> {
+  private isErrnoBusinessErrorEnvelope<T>(
+    payload: BackendEnvelope<T>
+  ): payload is Extract<BackendEnvelope<T>, { errno: number }> {
     return "errno" in payload && payload.errno !== 0;
   }
 }

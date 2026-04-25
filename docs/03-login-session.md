@@ -202,11 +202,11 @@ next_bff_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0
 
 ## 3.6 三个接口的行为
 
-| 接口 | 已登录状态要求 | 主要动作 | 成功响应 | 失败响应 |
-| --- | --- | --- | --- | --- |
-| `POST /api/auth/login` | 不要求 | 校验账号密码，创建 session，写 cookie | `200` + `user` | `400` 参数缺失，`401` 凭证错误 |
-| `POST /api/auth/logout` | 不强制 | 删除 session，清 cookie | `200` + `logout success` | 当前实现不因未登录失败 |
-| `GET /api/auth/me` | 要求 | 读取 cookie，查 session，返回 user | `200` + `user` | `401` 未登录或 session 过期 |
+| 接口                    | 已登录状态要求 | 主要动作                              | 成功响应                 | 失败响应                       |
+| ----------------------- | -------------- | ------------------------------------- | ------------------------ | ------------------------------ |
+| `POST /api/auth/login`  | 不要求         | 校验账号密码，创建 session，写 cookie | `200` + `user`           | `400` 参数缺失，`401` 凭证错误 |
+| `POST /api/auth/logout` | 不强制         | 删除 session，清 cookie               | `200` + `logout success` | 当前实现不因未登录失败         |
+| `GET /api/auth/me`      | 要求           | 读取 cookie，查 session，返回 user    | `200` + `user`           | `401` 未登录或 session 过期    |
 
 ## 3.7 设计取舍
 

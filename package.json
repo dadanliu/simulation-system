@@ -18,10 +18,23 @@
     "start:bff": "pnpm --filter @next-bff/bff start",
     "start:server": "pnpm --filter @next-bff/server start",
     "start:all": "pnpm -r --parallel --if-present run start",
-    "lint": "pnpm --filter @next-bff/client lint",
-    "lint:client": "pnpm --filter @next-bff/client lint",
-    "lint:bff": "pnpm --filter @next-bff/bff run lint --if-present",
-    "lint:server": "pnpm --filter @next-bff/server run lint --if-present",
-    "lint:all": "pnpm -r --if-present run lint"
+    "lint": "pnpm lint:all",
+    "lint:client": "eslint apps/client --max-warnings=0",
+    "lint:bff": "eslint apps/bff --max-warnings=0",
+    "lint:server": "eslint apps/server --max-warnings=0",
+    "lint:all": "eslint . --max-warnings=0",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "format:client": "prettier apps/client --write",
+    "format:bff": "prettier apps/bff --write",
+    "format:server": "prettier apps/server --write"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "16.2.4",
+    "globals": "^16.4.0",
+    "prettier": "^3.6.2",
+    "typescript-eslint": "^8.59.0"
   }
 }

@@ -4,9 +4,7 @@ type CommodityDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function CommodityDetailPage({
-  params
-}: CommodityDetailPageProps) {
+export default async function CommodityDetailPage({ params }: CommodityDetailPageProps) {
   const { id } = await params;
 
   return (

@@ -23,7 +23,10 @@ export type BackendEnvelope<T> =
     };
 
 export class BffBusinessException extends HttpException {
-  constructor(message: string, readonly code?: string | number) {
+  constructor(
+    message: string,
+    readonly code?: string | number
+  ) {
     super(
       {
         success: false,

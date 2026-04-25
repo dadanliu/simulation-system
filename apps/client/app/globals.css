@@ -24,12 +24,7 @@ body {
     radial-gradient(circle at top left, rgba(0, 87, 255, 0.12), transparent 35%),
     linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
   color: var(--text);
-  font-family:
-    "IBM Plex Sans",
-    "PingFang SC",
-    "Hiragino Sans GB",
-    "Microsoft YaHei",
-    sans-serif;
+  font-family: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
 
 a {

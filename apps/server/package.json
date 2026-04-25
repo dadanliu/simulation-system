@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
-    "start": "node dist/main.js"
+    "start": "node dist/main.js",
+    "lint": "pnpm --dir ../.. exec eslint apps/server --max-warnings=0",
+    "format": "pnpm --dir ../.. exec prettier apps/server --write",
+    "format:check": "pnpm --dir ../.. exec prettier apps/server --check"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.6",

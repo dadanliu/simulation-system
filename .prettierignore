@@ -1,0 +1,5 @@
+node_modules
+dist
+apps/*/dist
+apps/client/.next
+pnpm-lock.yaml

@@ -31,11 +31,5 @@ export function createSessionCookie(sessionId: string) {
 }
 
 export function clearSessionCookie() {
-  return [
-    `${SESSION_COOKIE_NAME}=`,
-    "Path=/",
-    "HttpOnly",
-    "SameSite=Lax",
-    "Max-Age=0"
-  ].join("; ");
+  return [`${SESSION_COOKIE_NAME}=`, "Path=/", "HttpOnly", "SameSite=Lax", "Max-Age=0"].join("; ");
 }

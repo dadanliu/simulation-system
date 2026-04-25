@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "pnpm --dir ../.. exec eslint apps/client --max-warnings=0",
+    "format": "pnpm --dir ../.. exec prettier apps/client --write",
+    "format:check": "pnpm --dir ../.. exec prettier apps/client --check"
   },
   "dependencies": {
     "next": "16.2.4",
@@ -17,8 +19,6 @@
     "@types/node": "25.6.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "eslint": "^9.0.0",
-    "eslint-config-next": "16.2.4",
     "typescript": "^5.9.0"
   }
 }
