@@ -8,6 +8,8 @@
     "dev:bff": "pnpm --filter @next-bff/bff dev",
     "dev:server": "pnpm --filter @next-bff/server dev",
     "dev:all": "node scripts/dev-all.js",
+    "stop:all": "node scripts/stop-all.js",
+    "restart:all": "node scripts/restart-all.js",
     "build": "pnpm --filter @next-bff/client build",
     "build:client": "pnpm --filter @next-bff/client build",
     "build:bff": "pnpm --filter @next-bff/bff build",
