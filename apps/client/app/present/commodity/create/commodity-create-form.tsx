@@ -3,18 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { FormEvent } from "react";
-
-type CommodityStatus = "on_sale" | "pending" | "offline";
-
-type Commodity = {
-  id: string;
-};
-
-type CreateCommodityResponse = {
-  data?: Commodity;
-  message?: string;
-  success: boolean;
-};
+import { createCommodity } from "@/src/features/commodity/client";
+import type { CommodityStatus } from "@/src/features/commodity/types";
 
 type FormState = {
   description: string;
@@ -74,31 +64,18 @@ export function CommodityCreateForm() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/commodity/create", {
-        body: JSON.stringify({
-          description: form.description.trim(),
-          name: form.name.trim(),
-          price: Number(form.price),
-          status: form.status,
-          stock: Number(form.stock)
-        }),
-        headers: {
-          "Content-Type": "application/json"
-        },
-        method: "POST"
+      const created = await createCommodity({
+        description: form.description.trim(),
+        name: form.name.trim(),
+        price: Number(form.price),
+        status: form.status,
+        stock: Number(form.stock)
       });
 
-      const payload = (await response.json()) as CreateCommodityResponse;
-
-      if (!response.ok || !payload.success || !payload.data) {
-        setErrorMessage(payload.message ?? "创建商品失败");
-        return;
-      }
-
       // 创建成功后跳转详情页，便于立即确认新商品数据。
-      router.push(`/present/commodity/${payload.data.id}`);
-    } catch {
-      setErrorMessage("网络异常，请稍后重试");
+      router.push(`/present/commodity/${created.id}`);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "网络异常，请稍后重试");
     } finally {
       setIsSubmitting(false);
     }

@@ -1,21 +1,6 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
-
-type CommodityStatus = "on_sale" | "pending" | "offline";
-
-type Commodity = {
-  description: string;
-  id: string;
-  name: string;
-  price: number;
-  status: CommodityStatus;
-  stock: number;
-};
-
-type CommodityDetailResponse = {
-  success: boolean;
-  data: Commodity;
-};
+import { getCommodityDetail } from "@/src/features/commodity/server";
+import type { CommodityStatus } from "@/src/features/commodity/types";
 
 type CommodityDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -29,26 +14,6 @@ const statusLabel: Record<CommodityStatus, string> = {
 
 export const dynamic = "force-dynamic";
 
-async function getCommodityDetail(id: string) {
-  const cookieStore = await cookies();
-
-  // 详情页从 client 入口请求，由 rewrite 转发到 BFF，再由 BFF 转发到 mock backend。
-  const response = await fetch(`http://127.0.0.1:3000/api/commodity/${encodeURIComponent(id)}`, {
-    cache: "no-store",
-    headers: {
-      cookie: cookieStore.toString()
-    }
-  });
-
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-    throw new Error(payload?.message ?? `商品详情加载失败：${response.status}`);
-  }
-
-  const payload = (await response.json()) as CommodityDetailResponse;
-  return payload.data;
-}
-
 export default async function CommodityDetailPage({ params }: CommodityDetailPageProps) {
   const { id } = await params;
   const commodity = await getCommodityDetail(id);
@@ -58,7 +23,7 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
       <div>
         <p className="badge">Dynamic Route</p>
         <h2>商品详情页</h2>
-        <p>详情数据由 BFF `/api/commodity/:id` 获取，无效 ID 会进入当前路由的错误边界。</p>
+        <p>详情页通过商品数据访问层读取领域数据，无效 ID 会进入当前路由的错误边界。</p>
       </div>
 
       <div className="inline-actions">

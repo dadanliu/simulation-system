@@ -9,7 +9,7 @@ export default function CommodityCreatePage() {
         <div>
           <p className="badge">Client Form</p>
           <h2>创建商品</h2>
-          <p>表单提交到 BFF `/api/commodity/create`，成功后跳转到新商品详情页。</p>
+          <p>创建流程由 Client Component 负责提交与跳转，页面层只负责组合表单与说明。</p>
         </div>
 
         <CommodityCreateForm />
