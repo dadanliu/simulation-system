@@ -20,7 +20,7 @@ async function bootstrap() {
     })
   );
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new SuccessResponseInterceptor());
+  app.useGlobalInterceptors(app.get(SuccessResponseInterceptor));
   await app.listen(process.env.PORT ?? 3001);
 }
 

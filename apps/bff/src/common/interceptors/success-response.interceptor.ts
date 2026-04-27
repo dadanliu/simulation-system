@@ -1,39 +1,41 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import { map, type Observable } from "rxjs";
+import { SKIP_RESPONSE_ENVELOPE_KEY, SUCCESS_RESPONSE_MESSAGE_KEY } from "./response-envelope.decorator";
 
-type SuccessEnvelope =
-  | {
-      success: true;
-      data: unknown;
-    }
-  | {
-      success: true;
-      message: string;
-    };
-
-function isSuccessEnvelope(value: unknown): value is SuccessEnvelope {
-  return typeof value === "object" && value !== null && "success" in value && value.success === true;
-}
+type SuccessEnvelope = {
+  success: true;
+  data: unknown;
+  message: string;
+  traceId: string;
+};
 
 @Injectable()
 export class SuccessResponseInterceptor implements NestInterceptor {
-  intercept(_context: ExecutionContext, next: CallHandler): Observable<SuccessEnvelope> {
+  constructor(private readonly reflector: Reflector) {}
+
+  intercept(context: ExecutionContext, next: CallHandler): Observable<SuccessEnvelope | unknown> {
+    const shouldSkip = this.reflector.getAllAndOverride<boolean>(SKIP_RESPONSE_ENVELOPE_KEY, [
+      context.getHandler(),
+      context.getClass()
+    ]);
+
+    if (shouldSkip) {
+      return next.handle();
+    }
+
+    const request = context.switchToHttp().getRequest<{ traceId?: string }>();
+    const message =
+      this.reflector.getAllAndOverride<string>(SUCCESS_RESPONSE_MESSAGE_KEY, [context.getHandler(), context.getClass()]) ??
+      "ok";
+
     return next.handle().pipe(
       map((value) => {
-        if (isSuccessEnvelope(value)) {
-          return value;
-        }
-
-        if (typeof value === "object" && value !== null && "message" in value && typeof value.message === "string") {
-          return {
-            success: true,
-            message: value.message
-          };
-        }
-
         return {
           success: true,
-          data: value
+          data: value ?? null,
+          message,
+          traceId: request.traceId ?? ""
         };
       })
     );

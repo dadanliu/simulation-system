@@ -5,6 +5,7 @@ import { AuthGuard } from "./auth.guard";
 import { CurrentUser } from "./current-user.decorator";
 import { LoginDto } from "./dto/login.dto";
 import type { AuthUser } from "../user/user.types";
+import { SuccessResponseMessage } from "../common/interceptors/response-envelope.decorator";
 import { clearSessionCookie, createSessionCookie } from "./session-cookie";
 
 @Controller("api/auth")
@@ -18,31 +19,24 @@ export class AuthController {
     response.setHeader("Set-Cookie", createSessionCookie(result.sessionId));
 
     return {
-      success: true,
-      data: {
-        user: result.user
-      }
+      user: result.user
     };
   }
 
   @Post("logout")
+  @SuccessResponseMessage("logout success")
   logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     this.authService.logout(request);
     response.setHeader("Set-Cookie", clearSessionCookie());
 
-    return {
-      message: "logout success"
-    };
+    return null;
   }
 
   @Get("me")
   @UseGuards(AuthGuard)
   me(@CurrentUser() user: AuthUser) {
     return {
-      success: true,
-      data: {
-        user
-      }
+      user
     };
   }
 }

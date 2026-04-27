@@ -23,34 +23,19 @@ export class CommodityController {
     @CurrentUser() user: AuthUser,
     @Query() query: QueryCommodityListDto
   ) {
-    const data = await this.commodityService.listCommodities(request, user, query);
-
-    return {
-      success: true,
-      data
-    };
+    return this.commodityService.listCommodities(request, user, query);
   }
 
   @Get("audit-logs")
   @RequirePermissions("commodity:delete")
   listAuditLogs() {
-    const data = this.commodityService.listAuditLogs();
-
-    return {
-      success: true,
-      data
-    };
+    return this.commodityService.listAuditLogs();
   }
 
   @Get(":id")
   @RequirePermissions("commodity:read")
   async getCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {
-    const data = await this.commodityService.getCommodity(request, user, id);
-
-    return {
-      success: true,
-      data
-    };
+    return this.commodityService.getCommodity(request, user, id);
   }
 
   @Post("create")
@@ -60,23 +45,13 @@ export class CommodityController {
     @CurrentUser() user: AuthUser,
     @Body() body: CreateCommodityDto
   ) {
-    const data = await this.commodityService.createCommodity(request, user, body);
-
-    return {
-      success: true,
-      data
-    };
+    return this.commodityService.createCommodity(request, user, body);
   }
 
   @Delete(":id")
   @RequirePermissions("commodity:delete")
   async deleteCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {
-    const data = await this.commodityService.deleteCommodity(request, user, id);
-
-    return {
-      success: true,
-      data
-    };
+    return this.commodityService.deleteCommodity(request, user, id);
   }
 
   @Patch(":id/status")
@@ -87,11 +62,6 @@ export class CommodityController {
     @Param("id", CommodityIdPipe) id: string,
     @Body() body: UpdateCommodityStatusDto
   ) {
-    const data = await this.commodityService.updateCommodityStatus(request, user, id, body);
-
-    return {
-      success: true,
-      data
-    };
+    return this.commodityService.updateCommodityStatus(request, user, id, body);
   }
 }

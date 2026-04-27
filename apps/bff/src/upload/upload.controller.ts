@@ -27,11 +27,6 @@ export class UploadController {
     @UploadedFile(ParseProductImageFilePipe) file: UploadedMemoryFile,
     @Body() body: UploadFileBody
   ) {
-    const data = await this.uploadService.uploadFile(request, user, file, body.scene);
-
-    return {
-      success: true,
-      data
-    };
+    return this.uploadService.uploadFile(request, user, file, body.scene);
   }
 }
