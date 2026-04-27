@@ -2,6 +2,8 @@ import { Injectable } from "@nestjs/common";
 import { mockBusinessError, mockSuccess } from "./mock-response";
 
 export type MockCommodity = {
+  createdAt: string;
+  createdBy: string;
   description: string;
   id: string;
   name: string;
@@ -11,6 +13,7 @@ export type MockCommodity = {
 };
 
 export type CreateCommodityBody = {
+  createdBy?: string;
   description?: string;
   name?: string;
   price?: number | string;
@@ -19,14 +22,24 @@ export type CreateCommodityBody = {
 };
 
 export type ListCommoditiesQuery = {
+  createdAtFrom?: string;
+  createdAtTo?: string;
   keyword?: string;
-  page?: string;
-  pageSize?: string;
+  limit?: string;
+  offset?: string;
+  priceMax?: string;
+  priceMin?: string;
+  sortDirection?: "asc" | "desc";
+  sortField?: "createdAt" | "name" | "price" | "status" | "stock";
   status?: MockCommodity["status"];
+  stockMax?: string;
+  stockMin?: string;
 };
 
 const mockCommodities: MockCommodity[] = [
   {
+    createdAt: "2026-04-01T10:00:00.000Z",
+    createdBy: "system",
     description: "适合桌面和户外场景的便携蓝牙音箱。",
     id: "10001",
     name: "北极光蓝牙音箱",
@@ -35,6 +48,8 @@ const mockCommodities: MockCommodity[] = [
     stock: 284
   },
   {
+    createdAt: "2026-04-03T10:00:00.000Z",
+    createdBy: "system",
     description: "茶轴手感，支持多设备切换。",
     id: "10002",
     name: "风暴机械键盘",
@@ -43,6 +58,8 @@ const mockCommodities: MockCommodity[] = [
     stock: 42
   },
   {
+    createdAt: "2026-04-05T10:00:00.000Z",
+    createdBy: "system",
     description: "铝合金材质，适合显示器增高收纳。",
     id: "10003",
     name: "雾白显示器支架",
@@ -55,9 +72,15 @@ const mockCommodities: MockCommodity[] = [
 @Injectable()
 export class CommodityService {
   listCommodities(query: ListCommoditiesQuery = {}) {
-    const page = this.toPositiveInteger(query.page, 1);
-    const pageSize = this.toPositiveInteger(query.pageSize, 10);
+    const offset = this.toNonNegativeInteger(query.offset, 0);
+    const limit = this.toPositiveInteger(query.limit, 10);
     const keyword = query.keyword?.trim().toLowerCase();
+    const priceMin = this.toOptionalNumber(query.priceMin);
+    const priceMax = this.toOptionalNumber(query.priceMax);
+    const stockMin = this.toOptionalNumber(query.stockMin);
+    const stockMax = this.toOptionalNumber(query.stockMax);
+    const createdAtFrom = query.createdAtFrom ? Date.parse(query.createdAtFrom) : undefined;
+    const createdAtTo = query.createdAtTo ? Date.parse(query.createdAtTo) : undefined;
 
     // mock 数据筛选保持确定性，方便验证 BFF 和 client 行为。
     const filteredCommodities = mockCommodities.filter((commodity) => {
@@ -65,18 +88,38 @@ export class CommodityService {
         ? commodity.name.toLowerCase().includes(keyword) || commodity.id.includes(keyword)
         : true;
       const matchesStatus = query.status ? commodity.status === query.status : true;
+      const matchesMinPrice = priceMin === undefined ? true : commodity.price >= priceMin;
+      const matchesMaxPrice = priceMax === undefined ? true : commodity.price <= priceMax;
+      const matchesMinStock = stockMin === undefined ? true : commodity.stock >= stockMin;
+      const matchesMaxStock = stockMax === undefined ? true : commodity.stock <= stockMax;
+      const commodityCreatedAt = Date.parse(commodity.createdAt);
+      const matchesCreatedFrom = createdAtFrom === undefined ? true : commodityCreatedAt >= createdAtFrom;
+      const matchesCreatedTo = createdAtTo === undefined ? true : commodityCreatedAt <= createdAtTo;
 
-      return matchesKeyword && matchesStatus;
+      return (
+        matchesKeyword &&
+        matchesStatus &&
+        matchesMinPrice &&
+        matchesMaxPrice &&
+        matchesMinStock &&
+        matchesMaxStock &&
+        matchesCreatedFrom &&
+        matchesCreatedTo
+      );
     });
 
-    const start = (page - 1) * pageSize;
-    const list = filteredCommodities.slice(start, start + pageSize);
+    const sortedCommodities = this.sortCommodities(
+      filteredCommodities,
+      query.sortField ?? "createdAt",
+      query.sortDirection ?? "desc"
+    );
+    const list = sortedCommodities.slice(offset, offset + limit);
 
     return mockSuccess({
       list,
       pagination: {
-        page,
-        pageSize,
+        page: Math.floor(offset / limit) + 1,
+        pageSize: limit,
         total: filteredCommodities.length
       }
     });
@@ -95,6 +138,7 @@ export class CommodityService {
   createCommodity(body: CreateCommodityBody = {}) {
     const name = body.name?.trim();
     const description = body.description?.trim() ?? "";
+    const createdBy = body.createdBy?.trim() ?? "";
     const price = Number(body.price);
     const stock = Number(body.stock);
     const status = body.status;
@@ -116,11 +160,17 @@ export class CommodityService {
       return mockBusinessError(20005, "commodity status is invalid");
     }
 
+    if (!createdBy) {
+      return mockBusinessError(20007, "createdBy is required");
+    }
+
     if (mockCommodities.some((commodity) => commodity.name === name)) {
       return mockBusinessError(20006, "commodity name already exists");
     }
 
     const commodity: MockCommodity = {
+      createdAt: new Date().toISOString(),
+      createdBy,
       description,
       id: this.nextCommodityId(),
       name,
@@ -154,6 +204,48 @@ export class CommodityService {
     }
 
     return parsedValue;
+  }
+
+  private toNonNegativeInteger(value: string | undefined, fallback: number) {
+    const parsedValue = Number(value);
+
+    if (!Number.isInteger(parsedValue) || parsedValue < 0) {
+      return fallback;
+    }
+
+    return parsedValue;
+  }
+
+  private toOptionalNumber(value: string | undefined) {
+    if (value === undefined || value.trim() === "") {
+      return undefined;
+    }
+
+    const parsedValue = Number(value);
+    return Number.isFinite(parsedValue) ? parsedValue : undefined;
+  }
+
+  private sortCommodities(
+    commodities: MockCommodity[],
+    sortField: NonNullable<ListCommoditiesQuery["sortField"]>,
+    sortDirection: NonNullable<ListCommoditiesQuery["sortDirection"]>
+  ) {
+    const direction = sortDirection === "asc" ? 1 : -1;
+
+    return [...commodities].sort((left, right) => {
+      const leftValue = left[sortField];
+      const rightValue = right[sortField];
+
+      if (leftValue < rightValue) {
+        return -1 * direction;
+      }
+
+      if (leftValue > rightValue) {
+        return 1 * direction;
+      }
+
+      return 0;
+    });
   }
 
   private isCommodityStatus(value: string): value is MockCommodity["status"] {

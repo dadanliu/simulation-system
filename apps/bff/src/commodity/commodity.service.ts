@@ -2,8 +2,10 @@ import { Injectable } from "@nestjs/common";
 import type { Request } from "express";
 import { ApiClientService } from "../bff/api-client.service";
 import type { AuthUser } from "../user/user.types";
-import type { Commodity, CommodityListData, CommodityListQuery, CreateCommodityBody } from "./commodity.types";
+import type { Commodity, CommodityListData } from "./commodity.types";
 import { AuditLogService } from "./audit-log.service";
+import type { CreateCommodityDto } from "./dto/create-commodity.dto";
+import type { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
 
 @Injectable()
 export class CommodityService {
@@ -12,13 +14,29 @@ export class CommodityService {
     private readonly auditLogService: AuditLogService
   ) {}
 
-  listCommodities(request: Request, user: AuthUser, query: CommodityListQuery) {
+  listCommodities(request: Request, user: AuthUser, query: QueryCommodityListDto) {
     const searchParams = new URLSearchParams();
 
-    // 只转发明确传入的查询参数，默认值交给 mock backend 处理。
-    for (const [key, value] of Object.entries(query)) {
-      if (typeof value === "string" && value.trim()) {
-        searchParams.set(key, value.trim());
+    // BFF 对外暴露 minPrice / maxPrice / page / pageSize 等前端友好的字段；
+    // 转发给 backend 时适配成 priceMin / priceMax / offset / limit 等内部查询协议。
+    const backendQuery = {
+      createdAtFrom: query.createdFrom,
+      createdAtTo: query.createdTo,
+      keyword: query.keyword?.trim(),
+      limit: query.pageSize,
+      offset: (query.page - 1) * query.pageSize,
+      priceMax: query.maxPrice,
+      priceMin: query.minPrice,
+      sortDirection: query.sortOrder,
+      sortField: query.sortBy,
+      status: query.status,
+      stockMax: query.maxStock,
+      stockMin: query.minStock
+    };
+
+    for (const [key, value] of Object.entries(backendQuery)) {
+      if (value !== undefined && value !== "") {
+        searchParams.set(key, String(value));
       }
     }
 
@@ -38,9 +56,12 @@ export class CommodityService {
     });
   }
 
-  createCommodity(request: Request, user: AuthUser, body: CreateCommodityBody) {
+  createCommodity(request: Request, user: AuthUser, body: CreateCommodityDto) {
     return this.apiClientService.request<Commodity>(request, "/api/commodity/create", {
-      body,
+      body: {
+        ...body,
+        createdBy: user.id
+      },
       method: "POST",
       // 创建接口同样带上当前登录用户，后端后续可用于审计和归属。
       userId: user.id

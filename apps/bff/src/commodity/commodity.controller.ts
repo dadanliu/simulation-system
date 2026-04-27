@@ -6,7 +6,8 @@ import { RequirePermissions } from "../permission/permissions.decorator";
 import { PermissionsGuard } from "../permission/permissions.guard";
 import type { AuthUser } from "../user/user.types";
 import { CommodityService } from "./commodity.service";
-import type { CommodityListQuery, CreateCommodityBody } from "./commodity.types";
+import { CreateCommodityDto } from "./dto/create-commodity.dto";
+import { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
 
 @Controller("api/commodity")
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -18,7 +19,7 @@ export class CommodityController {
   async listCommodities(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,
-    @Query() query: CommodityListQuery
+    @Query() query: QueryCommodityListDto
   ) {
     const data = await this.commodityService.listCommodities(request, user, query);
 
@@ -44,7 +45,7 @@ export class CommodityController {
   async createCommodity(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,
-    @Body() body: CreateCommodityBody
+    @Body() body: CreateCommodityDto
   ) {
     const data = await this.commodityService.createCommodity(request, user, body);
 

@@ -1,6 +1,8 @@
 export type CommodityStatus = "on_sale" | "pending" | "offline";
 
 export type Commodity = {
+  createdAt: string;
+  createdBy: string;
   description: string;
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export type Commodity = {
 };
 
 export type CreateCommodityBody = {
+  createdBy?: string;
   description?: string;
   name?: string;
   price?: number | string;
@@ -18,9 +21,17 @@ export type CreateCommodityBody = {
 };
 
 export type CommodityListQuery = {
+  createdFrom?: string;
+  createdTo?: string;
   keyword?: string;
+  maxPrice?: number;
+  maxStock?: number;
+  minPrice?: number;
+  minStock?: number;
   page?: string;
   pageSize?: string;
+  sortBy?: "createdAt" | "name" | "price" | "status" | "stock";
+  sortOrder?: "asc" | "desc";
   status?: CommodityStatus;
 };
 
