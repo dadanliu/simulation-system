@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { AuthenticatedRequest } from "../auth/auth-request";
-import { RoleService } from "../role/role.service";
+import { PermissionService } from "./permission.service";
 import { REQUIRED_PERMISSIONS_KEY } from "./permissions.decorator";
 import type { PermissionCode } from "./permission.types";
 
@@ -10,8 +10,8 @@ export class PermissionsGuard implements CanActivate {
   constructor(
     // Reflector 用来读取 @RequirePermissions(...) 写到 controller / handler 上的元数据。
     private readonly reflector: Reflector,
-    // RoleService 用来把用户身上的 roles 展开成真正的权限点列表。
-    private readonly roleService: RoleService
+    // PermissionService 负责真正的权限判断：把用户角色展开成权限点，再和接口要求比较。
+    private readonly permissionService: PermissionService
   ) {}
 
   canActivate(context: ExecutionContext) {
@@ -43,13 +43,9 @@ export class PermissionsGuard implements CanActivate {
     }
 
     // 用户身上只有角色 code，例如 ["operator"]。
-    // 真正能做什么，需要通过 RoleService 展开成权限点：
-    // ["commodity:read", "commodity:create", "commodity:update"]。
-    const userPermissions = this.roleService.getPermissionCodesByRoleCodes(user.roles);
-
-    // every 表示“接口要求的每一个权限，用户都必须拥有”。
-    // 例如接口要求 ["commodity:create"]，用户权限里必须包含 commodity:create。
-    const hasPermission = requiredPermissions.every((permission) => userPermissions.includes(permission));
+    // Guard 不直接展开角色权限，而是交给 PermissionService 判断。
+    // 这样 Guard 只负责“拦截流程”，权限规则集中放在 PermissionService。
+    const hasPermission = this.permissionService.hasAllPermissionsByRoleCodes(user.roles, requiredPermissions);
 
     // 已登录但缺少权限时返回 403。
     // 401 是“你是谁我不知道”，403 是“我知道你是谁，但你不能做这件事”。

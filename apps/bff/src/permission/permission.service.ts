@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import { RoleService } from "../role/role.service";
 import { mockPermissions } from "./mock-permissions";
 import type { Permission, PermissionCode } from "./permission.types";
 
 @Injectable()
 export class PermissionService {
   private readonly permissions = mockPermissions;
+
+  constructor(private readonly roleService: RoleService) {}
 
   listPermissions() {
     return this.permissions;
@@ -42,5 +45,10 @@ export class PermissionService {
     }
 
     return codes as PermissionCode[];
+  }
+
+  hasAllPermissionsByRoleCodes(roleCodes: string[], requiredPermissions: PermissionCode[]) {
+    const userPermissions = this.roleService.getPermissionCodesByRoleCodes(roleCodes);
+    return requiredPermissions.every((permission) => userPermissions.includes(permission));
   }
 }
