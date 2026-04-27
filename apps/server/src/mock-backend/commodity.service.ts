@@ -229,19 +229,27 @@ export class CommodityService {
       return mockBusinessError(20009, "status change reason is required");
     }
 
-    if (body.status !== "on_sale") {
+    if (body.status !== "on_sale" && body.status !== "offline") {
       return mockBusinessError(20010, "target status is invalid");
     }
 
-    if (commodity.status !== "pending") {
-      return mockBusinessError(20011, "only pending commodity can be approved");
+    if (commodity.status === "pending" && body.status !== "on_sale") {
+      return mockBusinessError(20011, "pending commodity can only be approved to on_sale");
+    }
+
+    if (commodity.status === "on_sale" && body.status !== "offline") {
+      return mockBusinessError(20012, "on_sale commodity can only be taken offline");
+    }
+
+    if (commodity.status === "offline") {
+      return mockBusinessError(20013, "offline commodity cannot change status directly");
     }
 
     const before: MockCommodity = {
       ...commodity
     };
 
-    commodity.status = "on_sale";
+    commodity.status = body.status;
     commodity.updatedAt = new Date().toISOString();
 
     return mockSuccess({
