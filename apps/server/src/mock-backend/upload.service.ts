@@ -1,5 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { mockBusinessError, mockSuccess } from "./mock-response";
+import { STORAGE_SERVICE } from "./storage/storage.tokens";
+import type { StorageService } from "./storage/storage.types";
 
 export type UploadedMemoryFile = {
   buffer: Buffer;
@@ -13,6 +15,8 @@ const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
 @Injectable()
 export class UploadService {
+  constructor(@Inject(STORAGE_SERVICE) private readonly storageService: StorageService) {}
+
   createUploadToken(filename?: string) {
     if (!filename?.trim()) {
       return mockBusinessError(30001, "filename is required");
@@ -39,16 +43,15 @@ export class UploadService {
       return mockBusinessError(30004, "file size exceeds 2MB limit");
     }
 
-    const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const uploadId = `mock_file_${Date.now()}`;
+    const storedFile = this.storageService.save(file, scene?.trim() || "commodity");
 
     return mockSuccess({
-      fileName: file.originalname,
-      fileSize: file.size,
-      fileType: file.mimetype,
-      scene: scene?.trim() || "commodity",
-      uploadId,
-      url: `https://mock-cdn.local/uploads/${uploadId}-${sanitizedFilename}`
+      fileName: storedFile.fileName,
+      fileSize: storedFile.size,
+      fileType: storedFile.mimeType,
+      scene: storedFile.scene,
+      uploadId: storedFile.fileId,
+      url: storedFile.url
     });
   }
 }
