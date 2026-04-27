@@ -134,6 +134,17 @@ export class CommodityService {
     return mockSuccess(commodity);
   }
 
+  deleteCommodity(id: string) {
+    const commodityIndex = mockCommodities.findIndex((commodity) => commodity.id === id);
+
+    if (commodityIndex < 0) {
+      return mockBusinessError(20001, "commodity not found");
+    }
+
+    const [commodity] = mockCommodities.splice(commodityIndex, 1);
+    return mockSuccess(commodity);
+  }
+
   private toPositiveInteger(value: string | undefined, fallback: number) {
     const parsedValue = Number(value);
 

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
@@ -47,6 +47,17 @@ export class CommodityController {
     @Body() body: CreateCommodityBody
   ) {
     const data = await this.commodityService.createCommodity(request, user, body);
+
+    return {
+      success: true,
+      data
+    };
+  }
+
+  @Delete(":id")
+  @RequirePermissions("commodity:delete")
+  async deleteCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id") id: string) {
+    const data = await this.commodityService.deleteCommodity(request, user, id);
 
     return {
       success: true,

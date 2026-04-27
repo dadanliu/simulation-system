@@ -3,10 +3,14 @@ import type { Request } from "express";
 import { ApiClientService } from "../bff/api-client.service";
 import type { AuthUser } from "../user/user.types";
 import type { Commodity, CommodityListData, CommodityListQuery, CreateCommodityBody } from "./commodity.types";
+import { AuditLogService } from "./audit-log.service";
 
 @Injectable()
 export class CommodityService {
-  constructor(private readonly apiClientService: ApiClientService) {}
+  constructor(
+    private readonly apiClientService: ApiClientService,
+    private readonly auditLogService: AuditLogService
+  ) {}
 
   listCommodities(request: Request, user: AuthUser, query: CommodityListQuery) {
     const searchParams = new URLSearchParams();
@@ -41,5 +45,19 @@ export class CommodityService {
       // 创建接口同样带上当前登录用户，后端后续可用于审计和归属。
       userId: user.id
     });
+  }
+
+  async deleteCommodity(request: Request, user: AuthUser, id: string) {
+    const data = await this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      userId: user.id
+    });
+
+    const auditLog = this.auditLogService.recordCommodityDelete(user.id, id);
+
+    return {
+      auditLog,
+      commodity: data
+    };
   }
 }

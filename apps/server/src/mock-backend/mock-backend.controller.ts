@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CommodityService, type CreateCommodityBody, type ListCommoditiesQuery } from "./commodity.service";
 import { MockBackendService } from "./mock-backend.service";
@@ -51,6 +51,11 @@ export class MockBackendController {
   @Post("commodity/create")
   createCommodity(@Body() body: CreateCommodityBody) {
     return this.commodityService.createCommodity(body);
+  }
+
+  @Delete("commodity/:id")
+  deleteCommodity(@Param("id") id: string) {
+    return this.commodityService.deleteCommodity(id);
   }
 
   @Post("upload/token")
