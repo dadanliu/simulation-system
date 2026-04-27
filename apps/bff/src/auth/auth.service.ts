@@ -1,15 +1,18 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import type { Request } from "express";
-import { findUserByCredentials } from "./mock-users";
+import { UserService } from "../user/user.service";
 import { getSessionIdFromRequest } from "./session-cookie";
 import { SessionStoreService } from "./session-store.service";
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly sessionStoreService: SessionStoreService) {}
+  constructor(
+    private readonly sessionStoreService: SessionStoreService,
+    private readonly userService: UserService
+  ) {}
 
   login(username: string, password: string) {
-    const user = findUserByCredentials(username, password);
+    const user = this.userService.findUserByCredentials(username, password);
 
     if (!user) {
       throw new UnauthorizedException("invalid username or password");

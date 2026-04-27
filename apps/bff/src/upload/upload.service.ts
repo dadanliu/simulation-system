@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import type { Request } from "express";
-import type { AuthUser } from "../auth/mock-users";
+import type { AuthUser } from "../user/user.types";
 import { ApiClientService } from "../bff/api-client.service";
 import { BffBusinessException } from "../bff/errors";
 

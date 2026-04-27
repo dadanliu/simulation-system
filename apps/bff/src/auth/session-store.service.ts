@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import type { AuthUser } from "./mock-users";
+import type { AuthUser } from "../user/user.types";
 import { SESSION_MAX_AGE_SECONDS } from "./session-cookie";
 
 type SessionRecord = {

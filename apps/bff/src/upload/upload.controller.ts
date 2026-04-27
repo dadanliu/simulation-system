@@ -3,7 +3,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import type { Request } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
-import type { AuthUser } from "../auth/mock-users";
+import type { AuthUser } from "../user/user.types";
 import { UploadService, type UploadedMemoryFile } from "./upload.service";
 
 type UploadFileBody = {

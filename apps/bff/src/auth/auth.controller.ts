@@ -4,7 +4,7 @@ import { AuthService } from "./auth.service";
 import { AuthGuard } from "./auth.guard";
 import { CurrentUser } from "./current-user.decorator";
 import { LoginDto } from "./dto/login.dto";
-import type { AuthUser } from "./mock-users";
+import type { AuthUser } from "../user/user.types";
 import { clearSessionCookie, createSessionCookie } from "./session-cookie";
 
 @Controller("api/auth")

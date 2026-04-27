@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import type { Request } from "express";
 import { ApiClientService } from "../bff/api-client.service";
-import type { AuthUser } from "../auth/mock-users";
+import type { AuthUser } from "../user/user.types";
 import type { Commodity, CommodityListData, CommodityListQuery, CreateCommodityBody } from "./commodity.types";
 
 @Injectable()

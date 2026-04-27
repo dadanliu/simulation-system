@@ -1,0 +1,33 @@
+import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { AuthGuard } from "../auth/auth.guard";
+import { RequirePermissions } from "../permission/permissions.decorator";
+import { PermissionsGuard } from "../permission/permissions.guard";
+import { UserService } from "./user.service";
+import type { UserRecord } from "./user.types";
+
+@Controller("api/users")
+@UseGuards(AuthGuard, PermissionsGuard)
+@RequirePermissions("user:manage")
+export class UserController {
+  constructor(private readonly userService: UserService) {}
+
+  @Get()
+  listUsers() {
+    return this.userService.listUsers();
+  }
+
+  @Post()
+  createUser(@Body() body: Omit<UserRecord, "id"> & { id?: string }) {
+    return this.userService.createUser(body);
+  }
+
+  @Put(":id")
+  updateUser(@Param("id") id: string, @Body() body: Partial<Omit<UserRecord, "id" | "password">>) {
+    return this.userService.updateUser(id, body);
+  }
+
+  @Put(":id/roles")
+  bindRoles(@Param("id") id: string, @Body("roles") roles: string[]) {
+    return this.userService.bindRoles(id, roles);
+  }
+}

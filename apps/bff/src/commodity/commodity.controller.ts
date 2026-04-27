@@ -2,16 +2,19 @@ import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from "@nest
 import type { Request } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
-import type { AuthUser } from "../auth/mock-users";
+import { RequirePermissions } from "../permission/permissions.decorator";
+import { PermissionsGuard } from "../permission/permissions.guard";
+import type { AuthUser } from "../user/user.types";
 import { CommodityService } from "./commodity.service";
 import type { CommodityListQuery, CreateCommodityBody } from "./commodity.types";
 
 @Controller("api/commodity")
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class CommodityController {
   constructor(private readonly commodityService: CommodityService) {}
 
   @Get("list")
+  @RequirePermissions("commodity:read")
   async listCommodities(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,
@@ -26,6 +29,7 @@ export class CommodityController {
   }
 
   @Get(":id")
+  @RequirePermissions("commodity:read")
   async getCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id") id: string) {
     const data = await this.commodityService.getCommodity(request, user, id);
 
@@ -36,6 +40,7 @@ export class CommodityController {
   }
 
   @Post("create")
+  @RequirePermissions("commodity:create")
   async createCommodity(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,
