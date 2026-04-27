@@ -1,5 +1,6 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from "@nestjs/common";
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { resolveTraceId } from "../http/trace-id";
 
 type HttpExceptionPayload = {
   message?: string | string[];
@@ -11,10 +12,14 @@ function isHttpExceptionPayload(value: unknown): value is HttpExceptionPayload {
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const context = host.switchToHttp();
-    const request = context.getRequest<Request>();
+    const request = context.getRequest<Request & { traceId?: string }>();
     const response = context.getResponse<Response>();
+    const traceId = request.traceId ?? resolveTraceId(request);
+    const path = request.originalUrl ?? request.url;
 
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
@@ -31,17 +36,25 @@ export class HttpExceptionFilter implements ExceptionFilter {
       response.status(status).json({
         success: false,
         message,
-        path: request.url,
+        path,
+        traceId,
         statusCode: status,
         timestamp: new Date().toISOString()
       });
       return;
     }
 
+    if (exception instanceof Error) {
+      this.logger.error(`${exception.name}: ${exception.message}`, exception.stack);
+    } else {
+      this.logger.error("Unhandled non-Error exception", JSON.stringify(exception));
+    }
+
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: "internal server error",
-      path: request.url,
+      path,
+      traceId,
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       timestamp: new Date().toISOString()
     });

@@ -2,10 +2,12 @@ import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import { traceIdMiddleware } from "./common/http/trace-id";
 import { SuccessResponseInterceptor } from "./common/interceptors/success-response.interceptor";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(traceIdMiddleware);
   // 全局启用 DTO 校验。Controller 里只要使用 class DTO，NestJS 就会在进入 handler 前校验请求参数。
   app.useGlobalPipes(
     new ValidationPipe({
