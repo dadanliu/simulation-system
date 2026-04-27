@@ -4,12 +4,14 @@ import { mockBusinessError, mockSuccess } from "./mock-response";
 export type MockCommodity = {
   createdAt: string;
   createdBy: string;
+  deletedAt: string | null;
   description: string;
   id: string;
   name: string;
   price: number;
   status: "on_sale" | "pending" | "offline";
   stock: number;
+  updatedAt: string;
 };
 
 export type CreateCommodityBody = {
@@ -40,32 +42,38 @@ const mockCommodities: MockCommodity[] = [
   {
     createdAt: "2026-04-01T10:00:00.000Z",
     createdBy: "system",
+    deletedAt: null,
     description: "适合桌面和户外场景的便携蓝牙音箱。",
     id: "10001",
     name: "北极光蓝牙音箱",
     price: 299,
     status: "on_sale",
-    stock: 284
+    stock: 284,
+    updatedAt: "2026-04-01T10:00:00.000Z"
   },
   {
     createdAt: "2026-04-03T10:00:00.000Z",
     createdBy: "system",
+    deletedAt: null,
     description: "茶轴手感，支持多设备切换。",
     id: "10002",
     name: "风暴机械键盘",
     price: 699,
     status: "pending",
-    stock: 42
+    stock: 42,
+    updatedAt: "2026-04-03T10:00:00.000Z"
   },
   {
     createdAt: "2026-04-05T10:00:00.000Z",
     createdBy: "system",
+    deletedAt: null,
     description: "铝合金材质，适合显示器增高收纳。",
     id: "10003",
     name: "雾白显示器支架",
     price: 199,
     status: "offline",
-    stock: 0
+    stock: 0,
+    updatedAt: "2026-04-05T10:00:00.000Z"
   }
 ];
 
@@ -84,6 +92,7 @@ export class CommodityService {
 
     // mock 数据筛选保持确定性，方便验证 BFF 和 client 行为。
     const filteredCommodities = mockCommodities.filter((commodity) => {
+      const matchesVisible = !commodity.deletedAt;
       const matchesKeyword = keyword
         ? commodity.name.toLowerCase().includes(keyword) || commodity.id.includes(keyword)
         : true;
@@ -97,6 +106,7 @@ export class CommodityService {
       const matchesCreatedTo = createdAtTo === undefined ? true : commodityCreatedAt <= createdAtTo;
 
       return (
+        matchesVisible &&
         matchesKeyword &&
         matchesStatus &&
         matchesMinPrice &&
@@ -126,7 +136,7 @@ export class CommodityService {
   }
 
   getCommodityById(id: string) {
-    const commodity = mockCommodities.find((item) => item.id === id);
+    const commodity = mockCommodities.find((item) => item.id === id && !item.deletedAt);
 
     if (!commodity) {
       return mockBusinessError(20001, "commodity not found");
@@ -171,12 +181,14 @@ export class CommodityService {
     const commodity: MockCommodity = {
       createdAt: new Date().toISOString(),
       createdBy,
+      deletedAt: null,
       description,
       id: this.nextCommodityId(),
       name,
       price,
       status,
-      stock
+      stock,
+      updatedAt: new Date().toISOString()
     };
 
     mockCommodities.unshift(commodity);
@@ -185,13 +197,18 @@ export class CommodityService {
   }
 
   deleteCommodity(id: string) {
-    const commodityIndex = mockCommodities.findIndex((commodity) => commodity.id === id);
+    const commodityIndex = mockCommodities.findIndex((commodity) => commodity.id === id && !commodity.deletedAt);
 
     if (commodityIndex < 0) {
       return mockBusinessError(20001, "commodity not found");
     }
 
-    const [commodity] = mockCommodities.splice(commodityIndex, 1);
+    const commodity = mockCommodities[commodityIndex];
+    const deletedAt = new Date().toISOString();
+
+    commodity.deletedAt = deletedAt;
+    commodity.updatedAt = deletedAt;
+
     return mockSuccess(commodity);
   }
 

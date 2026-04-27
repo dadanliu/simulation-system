@@ -3,12 +3,14 @@ export type CommodityStatus = "on_sale" | "pending" | "offline";
 export type Commodity = {
   createdAt: string;
   createdBy: string;
+  deletedAt: string | null;
   description: string;
   id: string;
   name: string;
   price: number;
   status: CommodityStatus;
   stock: number;
+  updatedAt: string;
 };
 
 export type CreateCommodityBody = {

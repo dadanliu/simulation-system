@@ -8,6 +8,7 @@ import type { AuthUser } from "../user/user.types";
 import { CommodityService } from "./commodity.service";
 import { CreateCommodityDto } from "./dto/create-commodity.dto";
 import { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
+import { ParseCommodityIdPipe as CommodityIdPipe } from "./pipes/parse-commodity-id.pipe";
 
 @Controller("api/commodity")
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -31,7 +32,7 @@ export class CommodityController {
 
   @Get(":id")
   @RequirePermissions("commodity:read")
-  async getCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id") id: string) {
+  async getCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {
     const data = await this.commodityService.getCommodity(request, user, id);
 
     return {
@@ -57,7 +58,7 @@ export class CommodityController {
 
   @Delete(":id")
   @RequirePermissions("commodity:delete")
-  async deleteCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id") id: string) {
+  async deleteCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {
     const data = await this.commodityService.deleteCommodity(request, user, id);
 
     return {

@@ -1,6 +1,7 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import type { Request } from "express";
 import { ApiClientService } from "../bff/api-client.service";
+import { BffBusinessException } from "../bff/errors";
 import type { AuthUser } from "../user/user.types";
 import type { Commodity, CommodityListData } from "./commodity.types";
 import { AuditLogService } from "./audit-log.service";
@@ -48,12 +49,20 @@ export class CommodityService {
     });
   }
 
-  getCommodity(request: Request, user: AuthUser, id: string) {
+  async getCommodity(request: Request, user: AuthUser, id: string) {
     // id 来自动态路由，编码后再拼接到后端路径，避免特殊字符破坏 URL。
-    return this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
-      // 详情接口同样由 BFF 统一注入登录用户上下文。
-      userId: user.id
-    });
+    try {
+      return await this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
+        // 详情接口同样由 BFF 统一注入登录用户上下文。
+        userId: user.id
+      });
+    } catch (error) {
+      if (error instanceof BffBusinessException && error.code === 20001) {
+        throw new NotFoundException("commodity not found");
+      }
+
+      throw error;
+    }
   }
 
   createCommodity(request: Request, user: AuthUser, body: CreateCommodityDto) {
@@ -69,10 +78,20 @@ export class CommodityService {
   }
 
   async deleteCommodity(request: Request, user: AuthUser, id: string) {
-    const data = await this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
-      method: "DELETE",
-      userId: user.id
-    });
+    let data: Commodity;
+
+    try {
+      data = await this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        userId: user.id
+      });
+    } catch (error) {
+      if (error instanceof BffBusinessException && error.code === 20001) {
+        throw new NotFoundException("commodity not found");
+      }
+
+      throw error;
+    }
 
     const auditLog = this.auditLogService.recordCommodityDelete(user.id, id);
 
