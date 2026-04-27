@@ -1,6 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { CommodityService, type CreateCommodityBody, type ListCommoditiesQuery } from "./commodity.service";
+import {
+  CommodityService,
+  type CreateCommodityBody,
+  type ListCommoditiesQuery,
+  type UpdateCommodityStatusBody
+} from "./commodity.service";
 import { MockBackendService } from "./mock-backend.service";
 import { UploadService, type UploadedMemoryFile } from "./upload.service";
 import { UsersService } from "./users.service";
@@ -56,6 +61,11 @@ export class MockBackendController {
   @Delete("commodity/:id")
   deleteCommodity(@Param("id") id: string) {
     return this.commodityService.deleteCommodity(id);
+  }
+
+  @Patch("commodity/:id/status")
+  updateCommodityStatus(@Param("id") id: string, @Body() body: UpdateCommodityStatusBody) {
+    return this.commodityService.updateCommodityStatus(id, body);
   }
 
   @Post("upload/token")

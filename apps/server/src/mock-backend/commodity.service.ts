@@ -38,6 +38,11 @@ export type ListCommoditiesQuery = {
   stockMin?: string;
 };
 
+export type UpdateCommodityStatusBody = {
+  reason?: string;
+  status?: MockCommodity["status"];
+};
+
 const mockCommodities: MockCommodity[] = [
   {
     createdAt: "2026-04-01T10:00:00.000Z",
@@ -210,6 +215,39 @@ export class CommodityService {
     commodity.updatedAt = deletedAt;
 
     return mockSuccess(commodity);
+  }
+
+  updateCommodityStatus(id: string, body: UpdateCommodityStatusBody = {}) {
+    const commodity = mockCommodities.find((item) => item.id === id && !item.deletedAt);
+    const reason = body.reason?.trim();
+
+    if (!commodity) {
+      return mockBusinessError(20001, "commodity not found");
+    }
+
+    if (!reason) {
+      return mockBusinessError(20009, "status change reason is required");
+    }
+
+    if (body.status !== "on_sale") {
+      return mockBusinessError(20010, "target status is invalid");
+    }
+
+    if (commodity.status !== "pending") {
+      return mockBusinessError(20011, "only pending commodity can be approved");
+    }
+
+    const before: MockCommodity = {
+      ...commodity
+    };
+
+    commodity.status = "on_sale";
+    commodity.updatedAt = new Date().toISOString();
+
+    return mockSuccess({
+      after: commodity,
+      before
+    });
   }
 
   private toPositiveInteger(value: string | undefined, fallback: number) {

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import type { Request } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
@@ -8,6 +8,7 @@ import type { AuthUser } from "../user/user.types";
 import { CommodityService } from "./commodity.service";
 import { CreateCommodityDto } from "./dto/create-commodity.dto";
 import { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
+import { UpdateCommodityStatusDto } from "./dto/update-commodity-status.dto";
 import { ParseCommodityIdPipe as CommodityIdPipe } from "./pipes/parse-commodity-id.pipe";
 
 @Controller("api/commodity")
@@ -60,6 +61,22 @@ export class CommodityController {
   @RequirePermissions("commodity:delete")
   async deleteCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {
     const data = await this.commodityService.deleteCommodity(request, user, id);
+
+    return {
+      success: true,
+      data
+    };
+  }
+
+  @Patch(":id/status")
+  @RequirePermissions("commodity:update")
+  async updateCommodityStatus(
+    @Req() request: Request,
+    @CurrentUser() user: AuthUser,
+    @Param("id", CommodityIdPipe) id: string,
+    @Body() body: UpdateCommodityStatusDto
+  ) {
+    const data = await this.commodityService.updateCommodityStatus(request, user, id, body);
 
     return {
       success: true,
