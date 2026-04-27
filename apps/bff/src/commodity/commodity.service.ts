@@ -83,6 +83,9 @@ export class CommodityService {
 
     try {
       data = await this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
+        body: {
+          deletedBy: user.id
+        },
         method: "DELETE",
         userId: user.id
       });
@@ -100,6 +103,10 @@ export class CommodityService {
       auditLog,
       commodity: data
     };
+  }
+
+  listAuditLogs() {
+    return this.auditLogService.listCommodityLogs();
   }
 
   async updateCommodityStatus(request: Request, user: AuthUser, id: string, body: UpdateCommodityStatusDto) {

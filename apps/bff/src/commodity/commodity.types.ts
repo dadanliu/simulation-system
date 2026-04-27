@@ -4,6 +4,7 @@ export type Commodity = {
   createdAt: string;
   createdBy: string;
   deletedAt: string | null;
+  deletedBy: string | null;
   description: string;
   id: string;
   name: string;

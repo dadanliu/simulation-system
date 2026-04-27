@@ -31,6 +31,17 @@ export class CommodityController {
     };
   }
 
+  @Get("audit-logs")
+  @RequirePermissions("commodity:delete")
+  listAuditLogs() {
+    const data = this.commodityService.listAuditLogs();
+
+    return {
+      success: true,
+      data
+    };
+  }
+
   @Get(":id")
   @RequirePermissions("commodity:read")
   async getCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {

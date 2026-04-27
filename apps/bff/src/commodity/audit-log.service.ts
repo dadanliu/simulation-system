@@ -18,6 +18,9 @@ export class AuditLogService {
   recordCommodityDelete(userId: string, commodityId: string) {
     const log: AuditLogRecord = {
       action: "delete",
+      after: {
+        deletedBy: userId
+      },
       resourceId: commodityId,
       resourceType: "commodity",
       timestamp: new Date().toISOString(),
@@ -56,5 +59,9 @@ export class AuditLogService {
 
   listLogs() {
     return this.logs;
+  }
+
+  listCommodityLogs() {
+    return this.logs.filter((log) => log.resourceType === "commodity");
   }
 }

@@ -5,6 +5,7 @@ export type MockCommodity = {
   createdAt: string;
   createdBy: string;
   deletedAt: string | null;
+  deletedBy: string | null;
   description: string;
   id: string;
   name: string;
@@ -48,6 +49,7 @@ const mockCommodities: MockCommodity[] = [
     createdAt: "2026-04-01T10:00:00.000Z",
     createdBy: "system",
     deletedAt: null,
+    deletedBy: null,
     description: "适合桌面和户外场景的便携蓝牙音箱。",
     id: "10001",
     name: "北极光蓝牙音箱",
@@ -60,6 +62,7 @@ const mockCommodities: MockCommodity[] = [
     createdAt: "2026-04-03T10:00:00.000Z",
     createdBy: "system",
     deletedAt: null,
+    deletedBy: null,
     description: "茶轴手感，支持多设备切换。",
     id: "10002",
     name: "风暴机械键盘",
@@ -72,6 +75,7 @@ const mockCommodities: MockCommodity[] = [
     createdAt: "2026-04-05T10:00:00.000Z",
     createdBy: "system",
     deletedAt: null,
+    deletedBy: null,
     description: "铝合金材质，适合显示器增高收纳。",
     id: "10003",
     name: "雾白显示器支架",
@@ -187,6 +191,7 @@ export class CommodityService {
       createdAt: new Date().toISOString(),
       createdBy,
       deletedAt: null,
+      deletedBy: null,
       description,
       id: this.nextCommodityId(),
       name,
@@ -201,7 +206,7 @@ export class CommodityService {
     return mockSuccess(commodity);
   }
 
-  deleteCommodity(id: string) {
+  deleteCommodity(id: string, deletedBy = "") {
     const commodityIndex = mockCommodities.findIndex((commodity) => commodity.id === id && !commodity.deletedAt);
 
     if (commodityIndex < 0) {
@@ -212,6 +217,7 @@ export class CommodityService {
     const deletedAt = new Date().toISOString();
 
     commodity.deletedAt = deletedAt;
+    commodity.deletedBy = deletedBy.trim() || null;
     commodity.updatedAt = deletedAt;
 
     return mockSuccess(commodity);

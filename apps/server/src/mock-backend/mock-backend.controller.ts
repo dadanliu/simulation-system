@@ -18,6 +18,10 @@ type UploadFileBody = {
   scene?: string;
 };
 
+type DeleteCommodityBody = {
+  deletedBy?: string;
+};
+
 @Controller("api")
 export class MockBackendController {
   constructor(
@@ -59,8 +63,8 @@ export class MockBackendController {
   }
 
   @Delete("commodity/:id")
-  deleteCommodity(@Param("id") id: string) {
-    return this.commodityService.deleteCommodity(id);
+  deleteCommodity(@Param("id") id: string, @Body() body: DeleteCommodityBody) {
+    return this.commodityService.deleteCommodity(id, body.deletedBy);
   }
 
   @Patch("commodity/:id/status")
