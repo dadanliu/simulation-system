@@ -38,14 +38,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       this.logger.warn(
         `request failed method=${method} path=${path} status=${status} durationMs=${durationMs} traceId=${traceId} message=${message}`
       );
-      response.status(status).json({
-        success: false,
-        message,
-        path,
-        traceId,
-        statusCode: status,
-        timestamp: new Date().toISOString()
-      });
+      response.status(status).json(payload);
       return;
     }
 
@@ -61,12 +54,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-      success: false,
       message: "internal server error",
-      path,
-      traceId,
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      timestamp: new Date().toISOString()
+      traceId
     });
   }
 }

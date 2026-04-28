@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import type { Request } from "express";
 import { RequestHeadersService } from "./request-headers.service";
 import { ResponseHandlerService } from "./response-handler.service";
@@ -15,6 +15,7 @@ type RequestOptions = {
 @Injectable()
 export class ApiClientService {
   private readonly backendBaseUrl = process.env.BACKEND_BASE_URL ?? "http://localhost:3002";
+  private readonly logger = new Logger(ApiClientService.name);
 
   constructor(
     private readonly requestHeadersService: RequestHeadersService,
@@ -26,9 +27,15 @@ export class ApiClientService {
       traceId: options.traceId,
       userId: options.userId
     });
+    const method = options.method ?? "GET";
+    const url = this.buildUrl(path);
+    const traceId = headers["x-trace-id"] ?? "";
+    const startedAt = Date.now();
 
-    const response = await fetch(this.buildUrl(path), {
-      method: options.method ?? "GET",
+    this.logger.log(`backend request started method=${method} path=${path} traceId=${traceId}`);
+
+    const response = await fetch(url, {
+      method,
       headers: {
         ...headers,
         ...options.headers,
@@ -38,6 +45,10 @@ export class ApiClientService {
         options.formData ??
         (options.body === undefined ? undefined : JSON.stringify(options.body))
     });
+
+    this.logger.log(
+      `backend request completed method=${method} path=${path} status=${response.status} durationMs=${Date.now() - startedAt} traceId=${traceId}`
+    );
 
     return this.responseHandlerService.handleFetchResponse<T>(response);
   }

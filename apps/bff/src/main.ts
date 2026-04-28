@@ -3,6 +3,7 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { traceIdMiddleware } from "./common/http/trace-id";
+import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
 import { SuccessResponseInterceptor } from "./common/interceptors/success-response.interceptor";
 
 async function bootstrap() {
@@ -20,7 +21,7 @@ async function bootstrap() {
     })
   );
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(app.get(SuccessResponseInterceptor));
+  app.useGlobalInterceptors(app.get(RequestLoggingInterceptor), app.get(SuccessResponseInterceptor));
   await app.listen(process.env.PORT ?? 3001);
 }
 
