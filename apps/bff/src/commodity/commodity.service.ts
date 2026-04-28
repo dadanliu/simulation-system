@@ -66,8 +66,8 @@ export class CommodityService {
     }
   }
 
-  createCommodity(request: Request, user: AuthUser, body: CreateCommodityDto) {
-    return this.apiClientService.request<Commodity>(request, "/api/commodity/create", {
+  async createCommodity(request: Request & { traceId?: string }, user: AuthUser, body: CreateCommodityDto) {
+    const commodity = await this.apiClientService.request<Commodity>(request, "/api/commodity/create", {
       body: {
         ...body,
         createdBy: user.id
@@ -76,9 +76,16 @@ export class CommodityService {
       // 创建接口同样带上当前登录用户，后端后续可用于审计和归属。
       userId: user.id
     });
+
+    const auditLog = await this.auditLogService.recordCommodityCreate(user.id, commodity, request.traceId ?? "");
+
+    return {
+      auditLog,
+      commodity
+    };
   }
 
-  async deleteCommodity(request: Request, user: AuthUser, id: string) {
+  async deleteCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string) {
     let data: Commodity;
 
     try {
@@ -97,7 +104,7 @@ export class CommodityService {
       throw error;
     }
 
-    const auditLog = this.auditLogService.recordCommodityDelete(user.id, id);
+    const auditLog = await this.auditLogService.recordCommodityDelete(user.id, id, request.traceId ?? "");
 
     return {
       auditLog,
@@ -109,7 +116,7 @@ export class CommodityService {
     return this.auditLogService.listCommodityLogs();
   }
 
-  async updateCommodityStatus(request: Request, user: AuthUser, id: string, body: UpdateCommodityStatusDto) {
+  async updateCommodityStatus(request: Request & { traceId?: string }, user: AuthUser, id: string, body: UpdateCommodityStatusDto) {
     let data: {
       after: Commodity;
       before: Commodity;
@@ -133,12 +140,13 @@ export class CommodityService {
       throw error;
     }
 
-    const auditLog = this.auditLogService.recordCommodityStatusChange(
+    const auditLog = await this.auditLogService.recordCommodityStatusChange(
       user.id,
       id,
       data.before.status,
       data.after.status,
-      body.reason
+      body.reason,
+      request.traceId ?? ""
     );
 
     return {
