@@ -23,7 +23,7 @@ export class AuditLogEntity {
   @Prop({ required: true })
   operator!: string;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   reason!: string | null;
 
   @Prop({ required: true })

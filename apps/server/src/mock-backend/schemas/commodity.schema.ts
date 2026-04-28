@@ -14,10 +14,10 @@ export class Commodity {
   @Prop({ required: true })
   createdBy!: string;
 
-  @Prop({ default: null })
+  @Prop({ type: Date, default: null })
   deletedAt!: Date | null;
 
-  @Prop({ default: null })
+  @Prop({ type: String, default: null })
   deletedBy!: string | null;
 
   @Prop({ default: "" })
