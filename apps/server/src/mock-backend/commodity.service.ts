@@ -154,11 +154,17 @@ export class CommodityService implements OnModuleInit {
       };
     }
 
+    // 这里保留 offset 分页，是因为当前列表规模和演示目标还可控。
+    // 但 offset 越大，数据库扫描和跳过的成本越高；同时如果 createdAt 相同或数据在翻页过程中持续插入，
+    // 旧页和新页之间可能出现抖动、重复或漏读。
+    // 后续如果列表规模明显扩大，或者需要“按时间稳定向后翻页”，这里应升级为 cursor 分页：
+    // 例如把 { createdAt, id } 作为 cursor，避免高 offset 扫描和翻页漂移。
     const sortField = query.sortField ?? "createdAt";
     const sortDirection = query.sortDirection === "asc" ? 1 : -1;
+    const sort = this.buildSort(sortField, sortDirection);
 
     const [commodities, total] = await Promise.all([
-      this.commodityModel.find(filters).sort({ [sortField]: sortDirection }).skip(offset).limit(limit).lean(),
+      this.commodityModel.find(filters).sort(sort).skip(offset).limit(limit).lean(),
       this.commodityModel.countDocuments(filters)
     ]);
 
@@ -335,6 +341,18 @@ export class CommodityService implements OnModuleInit {
     const commodities = await this.commodityModel.find({}, { id: 1, _id: 0 }).lean();
     const maxId = commodities.reduce((max, commodity) => Math.max(max, Number(commodity.id)), 10000);
     return String(maxId + 1);
+  }
+
+  private buildSort(
+    sortField: NonNullable<ListCommoditiesQuery["sortField"]>,
+    sortDirection: 1 | -1
+  ): Record<string, 1 | -1> {
+    // 主排序字段允许按 UI 选择切换；id 作为稳定的次排序字段，
+    // 避免相同 createdAt / price / stock 等值时，分页结果顺序不确定。
+    return {
+      [sortField]: sortDirection,
+      id: sortDirection
+    };
   }
 
   private toCommodityView(commodity: {

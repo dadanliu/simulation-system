@@ -44,5 +44,6 @@ export class Commodity {
 
 export const CommoditySchema = SchemaFactory.createForClass(Commodity);
 
+CommoditySchema.index({ status: 1 });
 CommoditySchema.index({ createdAt: -1 });
 CommoditySchema.index({ status: 1, createdAt: -1 });

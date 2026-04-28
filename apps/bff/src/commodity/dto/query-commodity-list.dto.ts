@@ -1,6 +1,8 @@
 import { Transform } from "class-transformer";
-import { IsEnum, IsInt, IsISO8601, IsOptional, IsString, Min } from "class-validator";
+import { IsEnum, IsInt, IsISO8601, IsOptional, IsString, Max, Min } from "class-validator";
 import type { CommodityStatus } from "../commodity.types";
+
+export const COMMODITY_LIST_MAX_PAGE_SIZE = 100;
 
 enum QueryCommodityStatus {
   Offline = "offline",
@@ -80,6 +82,7 @@ export class QueryCommodityListDto {
   @Transform(({ value }) => toOptionalNumber(value))
   @IsInt()
   @Min(1)
+  @Max(COMMODITY_LIST_MAX_PAGE_SIZE)
   pageSize = 10;
 
   @IsOptional()
