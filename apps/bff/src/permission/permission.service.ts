@@ -1,44 +1,49 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { RoleService } from "../role/role.service";
-import { mockPermissions } from "./mock-permissions";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { RoleEntity, type RoleDocument } from "../role/schemas/role.schema";
+import { PermissionEntity, type PermissionDocument } from "./schemas/permission.schema";
 import type { Permission, PermissionCode } from "./permission.types";
 
 @Injectable()
 export class PermissionService {
-  private readonly permissions = mockPermissions;
-
-  constructor(private readonly roleService: RoleService) {}
+  constructor(
+    @InjectModel(PermissionEntity.name) private readonly permissionModel: Model<PermissionDocument>,
+    @InjectModel(RoleEntity.name) private readonly roleModel: Model<RoleDocument>
+  ) {}
 
   listPermissions() {
-    return this.permissions;
+    return this.permissionModel.find().sort({ code: 1 }).lean();
   }
 
   getPermission(code: string) {
-    return this.permissions.find((permission) => permission.code === code) ?? null;
+    return this.permissionModel.findOne({ code }).lean();
   }
 
-  createPermission(permission: Permission) {
-    if (this.getPermission(permission.code)) {
-      return permission;
+  async createPermission(permission: Permission) {
+    const existingPermission = await this.getPermission(permission.code);
+
+    if (existingPermission) {
+      return existingPermission;
     }
 
-    this.permissions.push(permission);
-    return permission;
+    return this.permissionModel.create(permission);
   }
 
-  updatePermission(code: string, body: Partial<Omit<Permission, "code">>) {
-    const permission = this.getPermission(code);
+  async updatePermission(code: string, body: Partial<Omit<Permission, "code">>) {
+    const permission = await this.permissionModel.findOneAndUpdate({ code }, { $set: body }, { new: true }).lean();
 
     if (!permission) {
       throw new NotFoundException("permission not found");
     }
 
-    Object.assign(permission, body);
     return permission;
   }
 
-  assertPermissionCodes(codes: string[]): PermissionCode[] {
-    const unknownCode = codes.find((code) => !this.getPermission(code));
+  async assertPermissionCodes(codes: string[]): Promise<PermissionCode[]> {
+    const permissions = await this.permissionModel.find({ code: { $in: codes } }, { code: 1, _id: 0 }).lean();
+    const existingCodes = new Set(permissions.map((permission) => permission.code));
+    const unknownCode = codes.find((code) => !existingCodes.has(code));
 
     if (unknownCode) {
       throw new NotFoundException(`permission not found: ${unknownCode}`);
@@ -47,8 +52,10 @@ export class PermissionService {
     return codes as PermissionCode[];
   }
 
-  hasAllPermissionsByRoleCodes(roleCodes: string[], requiredPermissions: PermissionCode[]) {
-    const userPermissions = this.roleService.getPermissionCodesByRoleCodes(roleCodes);
-    return requiredPermissions.every((permission) => userPermissions.includes(permission));
+  async hasAllPermissionsByRoleCodes(roleCodes: string[], requiredPermissions: PermissionCode[]) {
+    const roles = await this.roleModel.find({ code: { $in: roleCodes } }, { permissions: 1, _id: 0 }).lean();
+    const userPermissions = new Set(roles.flatMap((role) => role.permissions));
+
+    return requiredPermissions.every((permission) => userPermissions.has(permission));
   }
 }

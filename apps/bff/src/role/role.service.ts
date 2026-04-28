@@ -1,43 +1,49 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { mockPermissions } from "../permission/mock-permissions";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { PermissionEntity, type PermissionDocument } from "../permission/schemas/permission.schema";
 import type { PermissionCode } from "../permission/permission.types";
-import { mockRoles } from "./mock-roles";
+import { RoleEntity, type RoleDocument } from "./schemas/role.schema";
 import type { Role } from "./role.types";
 
 @Injectable()
 export class RoleService {
-  private readonly roles = mockRoles;
+  constructor(
+    @InjectModel(RoleEntity.name) private readonly roleModel: Model<RoleDocument>,
+    @InjectModel(PermissionEntity.name) private readonly permissionModel: Model<PermissionDocument>
+  ) {}
 
   listRoles() {
-    return this.roles;
+    return this.roleModel.find().sort({ code: 1 }).lean();
   }
 
   getRole(code: string) {
-    return this.roles.find((role) => role.code === code) ?? null;
+    return this.roleModel.findOne({ code }).lean();
   }
 
-  createRole(role: Role) {
-    if (this.getRole(role.code)) {
-      return role;
+  async createRole(role: Role) {
+    const existingRole = await this.getRole(role.code);
+
+    if (existingRole) {
+      return existingRole;
     }
 
-    this.assertPermissionCodes(role.permissions);
-    this.roles.push(role);
-    return role;
+    await this.assertPermissionCodes(role.permissions);
+    return this.roleModel.create(role);
   }
 
-  updateRole(code: string, body: Partial<Omit<Role, "code">>) {
-    const role = this.getRole(code);
+  async updateRole(code: string, body: Partial<Omit<Role, "code">>) {
+
+    if (body.permissions) {
+      await this.assertPermissionCodes(body.permissions);
+    }
+
+    const role = await this.roleModel.findOneAndUpdate({ code }, { $set: body }, { new: true }).lean();
 
     if (!role) {
       throw new NotFoundException("role not found");
     }
 
-    if (body.permissions) {
-      this.assertPermissionCodes(body.permissions);
-    }
-
-    Object.assign(role, body);
     return role;
   }
 
@@ -45,22 +51,23 @@ export class RoleService {
     return this.updateRole(code, { permissions });
   }
 
-  getPermissionCodesByRoleCodes(roleCodes: string[]) {
+  async getPermissionCodesByRoleCodes(roleCodes: string[]) {
+    const roles = await this.roleModel.find({ code: { $in: roleCodes } }, { permissions: 1, _id: 0 }).lean();
     const permissionCodes = new Set<PermissionCode>();
 
-    for (const roleCode of roleCodes) {
-      const role = this.getRole(roleCode);
-
-      for (const permission of role?.permissions ?? []) {
-        permissionCodes.add(permission);
+    for (const role of roles) {
+      for (const permission of role.permissions) {
+        permissionCodes.add(permission as PermissionCode);
       }
     }
 
     return [...permissionCodes];
   }
 
-  assertRoleCodes(roleCodes: string[]) {
-    const unknownRole = roleCodes.find((roleCode) => !this.getRole(roleCode));
+  async assertRoleCodes(roleCodes: string[]) {
+    const roles = await this.roleModel.find({ code: { $in: roleCodes } }, { code: 1, _id: 0 }).lean();
+    const existingRoleCodes = new Set(roles.map((role) => role.code));
+    const unknownRole = roleCodes.find((roleCode) => !existingRoleCodes.has(roleCode));
 
     if (unknownRole) {
       throw new NotFoundException(`role not found: ${unknownRole}`);
@@ -69,8 +76,10 @@ export class RoleService {
     return roleCodes;
   }
 
-  private assertPermissionCodes(codes: string[]) {
-    const unknownCode = codes.find((code) => !mockPermissions.some((permission) => permission.code === code));
+  private async assertPermissionCodes(codes: string[]) {
+    const permissions = await this.permissionModel.find({ code: { $in: codes } }, { code: 1, _id: 0 }).lean();
+    const existingCodes = new Set(permissions.map((permission) => permission.code));
+    const unknownCode = codes.find((code) => !existingCodes.has(code));
 
     if (unknownCode) {
       throw new NotFoundException(`permission not found: ${unknownCode}`);

@@ -14,7 +14,7 @@ export class PermissionsGuard implements CanActivate {
     private readonly permissionService: PermissionService
   ) {}
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext) {
     // 读取当前接口声明的权限要求。
     // 例如 @RequirePermissions("commodity:create") 会写入 REQUIRED_PERMISSIONS_KEY。
     // getHandler() 代表具体方法，getClass() 代表整个 Controller；
@@ -45,7 +45,7 @@ export class PermissionsGuard implements CanActivate {
     // 用户身上只有角色 code，例如 ["operator"]。
     // Guard 不直接展开角色权限，而是交给 PermissionService 判断。
     // 这样 Guard 只负责“拦截流程”，权限规则集中放在 PermissionService。
-    const hasPermission = this.permissionService.hasAllPermissionsByRoleCodes(user.roles, requiredPermissions);
+    const hasPermission = await this.permissionService.hasAllPermissionsByRoleCodes(user.roles, requiredPermissions);
 
     // 已登录但缺少权限时返回 403。
     // 401 是“你是谁我不知道”，403 是“我知道你是谁，但你不能做这件事”。

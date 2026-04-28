@@ -13,8 +13,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post("login")
-  login(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
-    const result = this.authService.login(body.username.trim(), body.password);
+  async login(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
+    const result = await this.authService.login(body.username.trim(), body.password);
 
     response.setHeader("Set-Cookie", createSessionCookie(result.sessionId));
 

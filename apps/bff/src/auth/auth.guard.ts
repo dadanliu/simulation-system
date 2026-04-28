@@ -6,9 +6,9 @@ import type { AuthenticatedRequest } from "./auth-request";
 export class AuthGuard implements CanActivate {
   constructor(private readonly getCurrentUserService: GetCurrentUserService) {}
 
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
-    const user = this.getCurrentUserService.execute(request);
+    const user = await this.getCurrentUserService.execute(request);
 
     if (!user) {
       throw new UnauthorizedException("Unauthorized");

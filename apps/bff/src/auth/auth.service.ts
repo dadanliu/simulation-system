@@ -11,14 +11,14 @@ export class AuthService {
     private readonly userService: UserService
   ) {}
 
-  login(username: string, password: string) {
-    const user = this.userService.findUserByCredentials(username, password);
+  async login(username: string, password: string) {
+    const user = await this.userService.findUserByCredentials(username, password);
 
     if (!user) {
       throw new UnauthorizedException("invalid username or password");
     }
 
-    const sessionId = this.sessionStoreService.createSession(user);
+    const sessionId = this.sessionStoreService.createSession(user.id);
 
     return {
       user,

@@ -1,10 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
-import type { AuthUser } from "../user/user.types";
 import { SESSION_MAX_AGE_SECONDS } from "./session-cookie";
 
 type SessionRecord = {
-  user: AuthUser;
+  userId: string;
   expiresAt: number;
 };
 
@@ -12,11 +11,11 @@ type SessionRecord = {
 export class SessionStoreService {
   private readonly store = new Map<string, SessionRecord>();
 
-  createSession(user: AuthUser) {
+  createSession(userId: string) {
     const sessionId = randomUUID();
 
     this.store.set(sessionId, {
-      user,
+      userId,
       expiresAt: Date.now() + SESSION_MAX_AGE_SECONDS * 1000
     });
 
