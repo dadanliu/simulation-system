@@ -1,5 +1,8 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, type OnModuleInit } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
+import { Model } from "mongoose";
 import { mockBusinessError, mockSuccess } from "./mock-response";
+import { Commodity, type CommodityDocument } from "./schemas/commodity.schema";
 
 export type MockCommodity = {
   createdAt: string;
@@ -44,7 +47,7 @@ export type UpdateCommodityStatusBody = {
   status?: MockCommodity["status"];
 };
 
-const mockCommodities: MockCommodity[] = [
+const defaultCommodities: MockCommodity[] = [
   {
     createdAt: "2026-04-01T10:00:00.000Z",
     createdBy: "system",
@@ -87,74 +90,99 @@ const mockCommodities: MockCommodity[] = [
 ];
 
 @Injectable()
-export class CommodityService {
-  listCommodities(query: ListCommoditiesQuery = {}) {
+export class CommodityService implements OnModuleInit {
+  constructor(@InjectModel(Commodity.name) private readonly commodityModel: Model<CommodityDocument>) {}
+
+  async onModuleInit() {
+    const total = await this.commodityModel.countDocuments();
+
+    if (total > 0) {
+      return;
+    }
+
+    await this.commodityModel.insertMany(
+      defaultCommodities.map((commodity) => ({
+        ...commodity,
+        createdAt: new Date(commodity.createdAt),
+        deletedAt: commodity.deletedAt ? new Date(commodity.deletedAt) : null,
+        updatedAt: new Date(commodity.updatedAt)
+      }))
+    );
+  }
+
+  async listCommodities(query: ListCommoditiesQuery = {}) {
     const offset = this.toNonNegativeInteger(query.offset, 0);
     const limit = this.toPositiveInteger(query.limit, 10);
-    const keyword = query.keyword?.trim().toLowerCase();
+    const keyword = query.keyword?.trim();
     const priceMin = this.toOptionalNumber(query.priceMin);
     const priceMax = this.toOptionalNumber(query.priceMax);
     const stockMin = this.toOptionalNumber(query.stockMin);
     const stockMax = this.toOptionalNumber(query.stockMax);
-    const createdAtFrom = query.createdAtFrom ? Date.parse(query.createdAtFrom) : undefined;
-    const createdAtTo = query.createdAtTo ? Date.parse(query.createdAtTo) : undefined;
+    const createdAtFrom = query.createdAtFrom ? new Date(query.createdAtFrom) : undefined;
+    const createdAtTo = query.createdAtTo ? new Date(query.createdAtTo) : undefined;
 
-    // mock 数据筛选保持确定性，方便验证 BFF 和 client 行为。
-    const filteredCommodities = mockCommodities.filter((commodity) => {
-      const matchesVisible = !commodity.deletedAt;
-      const matchesKeyword = keyword
-        ? commodity.name.toLowerCase().includes(keyword) || commodity.id.includes(keyword)
-        : true;
-      const matchesStatus = query.status ? commodity.status === query.status : true;
-      const matchesMinPrice = priceMin === undefined ? true : commodity.price >= priceMin;
-      const matchesMaxPrice = priceMax === undefined ? true : commodity.price <= priceMax;
-      const matchesMinStock = stockMin === undefined ? true : commodity.stock >= stockMin;
-      const matchesMaxStock = stockMax === undefined ? true : commodity.stock <= stockMax;
-      const commodityCreatedAt = Date.parse(commodity.createdAt);
-      const matchesCreatedFrom = createdAtFrom === undefined ? true : commodityCreatedAt >= createdAtFrom;
-      const matchesCreatedTo = createdAtTo === undefined ? true : commodityCreatedAt <= createdAtTo;
+    const filters: Record<string, unknown> = {
+      deletedAt: null
+    };
 
-      return (
-        matchesVisible &&
-        matchesKeyword &&
-        matchesStatus &&
-        matchesMinPrice &&
-        matchesMaxPrice &&
-        matchesMinStock &&
-        matchesMaxStock &&
-        matchesCreatedFrom &&
-        matchesCreatedTo
-      );
-    });
+    if (keyword) {
+      filters.$or = [{ name: { $regex: keyword, $options: "i" } }, { id: { $regex: keyword, $options: "i" } }];
+    }
 
-    const sortedCommodities = this.sortCommodities(
-      filteredCommodities,
-      query.sortField ?? "createdAt",
-      query.sortDirection ?? "desc"
-    );
-    const list = sortedCommodities.slice(offset, offset + limit);
+    if (query.status) {
+      filters.status = query.status;
+    }
+
+    if (priceMin !== undefined || priceMax !== undefined) {
+      filters.price = {
+        ...(priceMin === undefined ? {} : { $gte: priceMin }),
+        ...(priceMax === undefined ? {} : { $lte: priceMax })
+      };
+    }
+
+    if (stockMin !== undefined || stockMax !== undefined) {
+      filters.stock = {
+        ...(stockMin === undefined ? {} : { $gte: stockMin }),
+        ...(stockMax === undefined ? {} : { $lte: stockMax })
+      };
+    }
+
+    if ((createdAtFrom && !Number.isNaN(createdAtFrom.getTime())) || (createdAtTo && !Number.isNaN(createdAtTo.getTime()))) {
+      filters.createdAt = {
+        ...(createdAtFrom && !Number.isNaN(createdAtFrom.getTime()) ? { $gte: createdAtFrom } : {}),
+        ...(createdAtTo && !Number.isNaN(createdAtTo.getTime()) ? { $lte: createdAtTo } : {})
+      };
+    }
+
+    const sortField = query.sortField ?? "createdAt";
+    const sortDirection = query.sortDirection === "asc" ? 1 : -1;
+
+    const [commodities, total] = await Promise.all([
+      this.commodityModel.find(filters).sort({ [sortField]: sortDirection }).skip(offset).limit(limit).lean(),
+      this.commodityModel.countDocuments(filters)
+    ]);
 
     return mockSuccess({
-      list,
+      list: commodities.map((commodity) => this.toCommodityView(commodity)),
       pagination: {
         page: Math.floor(offset / limit) + 1,
         pageSize: limit,
-        total: filteredCommodities.length
+        total
       }
     });
   }
 
-  getCommodityById(id: string) {
-    const commodity = mockCommodities.find((item) => item.id === id && !item.deletedAt);
+  async getCommodityById(id: string) {
+    const commodity = await this.commodityModel.findOne({ id, deletedAt: null }).lean();
 
     if (!commodity) {
       return mockBusinessError(20001, "commodity not found");
     }
 
-    return mockSuccess(commodity);
+    return mockSuccess(this.toCommodityView(commodity));
   }
 
-  createCommodity(body: CreateCommodityBody = {}) {
+  async createCommodity(body: CreateCommodityBody = {}) {
     const name = body.name?.trim();
     const description = body.description?.trim() ?? "";
     const createdBy = body.createdBy?.trim() ?? "";
@@ -162,7 +190,6 @@ export class CommodityService {
     const stock = Number(body.stock);
     const status = body.status;
 
-    // mock backend 做业务校验，BFF 只负责转发和错误语义转换。
     if (!name) {
       return mockBusinessError(20002, "commodity name is required");
     }
@@ -183,48 +210,57 @@ export class CommodityService {
       return mockBusinessError(20007, "createdBy is required");
     }
 
-    if (mockCommodities.some((commodity) => commodity.name === name)) {
+    const duplicatedCommodity = await this.commodityModel.exists({ name });
+
+    if (duplicatedCommodity) {
       return mockBusinessError(20006, "commodity name already exists");
     }
 
-    const commodity: MockCommodity = {
-      createdAt: new Date().toISOString(),
+    const now = new Date();
+    const commodity = await this.commodityModel.create({
+      createdAt: now,
       createdBy,
       deletedAt: null,
       deletedBy: null,
       description,
-      id: this.nextCommodityId(),
+      id: await this.nextCommodityId(),
       name,
       price,
       status,
       stock,
-      updatedAt: new Date().toISOString()
-    };
+      updatedAt: now
+    });
 
-    mockCommodities.unshift(commodity);
-
-    return mockSuccess(commodity);
+    return mockSuccess(this.toCommodityView(commodity.toObject()));
   }
 
-  deleteCommodity(id: string, deletedBy = "") {
-    const commodityIndex = mockCommodities.findIndex((commodity) => commodity.id === id && !commodity.deletedAt);
+  async deleteCommodity(id: string, deletedBy = "") {
+    const deletedAt = new Date();
+    const commodity = await this.commodityModel
+      .findOneAndUpdate(
+        { id, deletedAt: null },
+        {
+          $set: {
+            deletedAt,
+            deletedBy: deletedBy.trim() || null,
+            updatedAt: deletedAt
+          }
+        },
+        {
+          new: true
+        }
+      )
+      .lean();
 
-    if (commodityIndex < 0) {
+    if (!commodity) {
       return mockBusinessError(20001, "commodity not found");
     }
 
-    const commodity = mockCommodities[commodityIndex];
-    const deletedAt = new Date().toISOString();
-
-    commodity.deletedAt = deletedAt;
-    commodity.deletedBy = deletedBy.trim() || null;
-    commodity.updatedAt = deletedAt;
-
-    return mockSuccess(commodity);
+    return mockSuccess(this.toCommodityView(commodity));
   }
 
-  updateCommodityStatus(id: string, body: UpdateCommodityStatusBody = {}) {
-    const commodity = mockCommodities.find((item) => item.id === id && !item.deletedAt);
+  async updateCommodityStatus(id: string, body: UpdateCommodityStatusBody = {}) {
+    const commodity = await this.commodityModel.findOne({ id, deletedAt: null });
     const reason = body.reason?.trim();
 
     if (!commodity) {
@@ -251,15 +287,13 @@ export class CommodityService {
       return mockBusinessError(20013, "offline commodity cannot change status directly");
     }
 
-    const before: MockCommodity = {
-      ...commodity
-    };
-
+    const before = this.toCommodityView(commodity.toObject());
     commodity.status = body.status;
-    commodity.updatedAt = new Date().toISOString();
+    commodity.updatedAt = new Date();
+    await commodity.save();
 
     return mockSuccess({
-      after: commodity,
+      after: this.toCommodityView(commodity.toObject()),
       before
     });
   }
@@ -267,7 +301,6 @@ export class CommodityService {
   private toPositiveInteger(value: string | undefined, fallback: number) {
     const parsedValue = Number(value);
 
-    // 非法分页参数直接降级为默认值，不作为业务错误处理。
     if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
       return fallback;
     }
@@ -294,35 +327,41 @@ export class CommodityService {
     return Number.isFinite(parsedValue) ? parsedValue : undefined;
   }
 
-  private sortCommodities(
-    commodities: MockCommodity[],
-    sortField: NonNullable<ListCommoditiesQuery["sortField"]>,
-    sortDirection: NonNullable<ListCommoditiesQuery["sortDirection"]>
-  ) {
-    const direction = sortDirection === "asc" ? 1 : -1;
-
-    return [...commodities].sort((left, right) => {
-      const leftValue = left[sortField];
-      const rightValue = right[sortField];
-
-      if (leftValue < rightValue) {
-        return -1 * direction;
-      }
-
-      if (leftValue > rightValue) {
-        return 1 * direction;
-      }
-
-      return 0;
-    });
-  }
-
   private isCommodityStatus(value: string): value is MockCommodity["status"] {
     return value === "on_sale" || value === "pending" || value === "offline";
   }
 
-  private nextCommodityId() {
-    const maxId = mockCommodities.reduce((max, commodity) => Math.max(max, Number(commodity.id)), 10000);
+  private async nextCommodityId() {
+    const commodities = await this.commodityModel.find({}, { id: 1, _id: 0 }).lean();
+    const maxId = commodities.reduce((max, commodity) => Math.max(max, Number(commodity.id)), 10000);
     return String(maxId + 1);
+  }
+
+  private toCommodityView(commodity: {
+    createdAt: Date | string;
+    createdBy: string;
+    deletedAt: Date | string | null;
+    deletedBy: string | null;
+    description: string;
+    id: string;
+    name: string;
+    price: number;
+    status: MockCommodity["status"];
+    stock: number;
+    updatedAt: Date | string;
+  }): MockCommodity {
+    return {
+      createdAt: new Date(commodity.createdAt).toISOString(),
+      createdBy: commodity.createdBy,
+      deletedAt: commodity.deletedAt ? new Date(commodity.deletedAt).toISOString() : null,
+      deletedBy: commodity.deletedBy,
+      description: commodity.description,
+      id: commodity.id,
+      name: commodity.name,
+      price: commodity.price,
+      status: commodity.status,
+      stock: commodity.stock,
+      updatedAt: new Date(commodity.updatedAt).toISOString()
+    };
   }
 }

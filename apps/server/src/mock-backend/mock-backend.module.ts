@@ -1,8 +1,10 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { MongooseModule } from "@nestjs/mongoose";
 import { CommodityService } from "./commodity.service";
 import { MockBackendController } from "./mock-backend.controller";
 import { MockBackendService } from "./mock-backend.service";
+import { Commodity, CommoditySchema } from "./schemas/commodity.schema";
 import { LocalStorageService } from "./storage/local-storage.service";
 import { OssStorageService } from "./storage/oss-storage.service";
 import { S3StorageService } from "./storage/s3-storage.service";
@@ -11,7 +13,7 @@ import { UploadService } from "./upload.service";
 import { UsersService } from "./users.service";
 
 @Module({
-  imports: [ConfigModule.forRoot()],
+  imports: [ConfigModule, MongooseModule.forFeature([{ name: Commodity.name, schema: CommoditySchema }])],
   controllers: [MockBackendController],
   providers: [
     MockBackendService,
