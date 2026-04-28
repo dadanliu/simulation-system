@@ -6,6 +6,7 @@ export const mockRoles: Role[] = [
     name: "管理员",
     description: "系统管理员，拥有用户、角色、权限和商品全部操作权限",
     permissions: [
+      "audit:read",
       "commodity:read",
       "commodity:create",
       "commodity:update",

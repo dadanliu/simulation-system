@@ -1,4 +1,5 @@
 export type PermissionCode =
+  | "audit:read"
   | "commodity:read"
   | "commodity:create"
   | "commodity:update"

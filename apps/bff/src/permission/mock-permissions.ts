@@ -2,6 +2,11 @@ import type { Permission } from "./permission.types";
 
 export const mockPermissions: Permission[] = [
   {
+    code: "audit:read",
+    name: "审计日志读取",
+    description: "查看商品审计日志"
+  },
+  {
     code: "commodity:read",
     name: "商品读取",
     description: "查看商品列表和商品详情"

@@ -7,6 +7,7 @@ import { PermissionsGuard } from "../permission/permissions.guard";
 import type { AuthUser } from "../user/user.types";
 import { CommodityService } from "./commodity.service";
 import { CreateCommodityDto } from "./dto/create-commodity.dto";
+import { QueryAuditLogDto } from "./dto/query-audit-log.dto";
 import { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
 import { UpdateCommodityStatusDto } from "./dto/update-commodity-status.dto";
 import { ParseCommodityIdPipe as CommodityIdPipe } from "./pipes/parse-commodity-id.pipe";
@@ -27,9 +28,9 @@ export class CommodityController {
   }
 
   @Get("audit-logs")
-  @RequirePermissions("commodity:delete")
-  listAuditLogs() {
-    return this.commodityService.listAuditLogs();
+  @RequirePermissions("audit:read")
+  listAuditLogs(@Query() query: QueryAuditLogDto) {
+    return this.commodityService.listAuditLogs(query);
   }
 
   @Get(":id")

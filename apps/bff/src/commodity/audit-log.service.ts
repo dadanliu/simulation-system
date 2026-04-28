@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import type { Commodity } from "./commodity.types";
+import type { QueryAuditLogDto } from "./dto/query-audit-log.dto";
 import { AuditLogEntity, type AuditLogDocument } from "./schemas/audit-log.schema";
 
 type AuditLogRecord = {
@@ -81,9 +82,53 @@ export class AuditLogService {
     return logs.map((log) => this.toRecord(log));
   }
 
-  async listCommodityLogs() {
-    const logs = await this.auditLogModel.find({ resourceType: "commodity" }).sort({ createdAt: -1 }).lean();
-    return logs.map((log) => this.toRecord(log));
+  async listCommodityLogs(query: QueryAuditLogDto) {
+    const page = query.page;
+    const pageSize = query.pageSize;
+    const filters: Record<string, unknown> = {
+      resourceType: "commodity"
+    };
+
+    if (query.operator?.trim()) {
+      filters.operator = query.operator.trim();
+    }
+
+    if (query.action) {
+      filters.action = query.action;
+    }
+
+    if (query.createdFrom || query.createdTo) {
+      const createdAt: Record<string, Date> = {};
+
+      if (query.createdFrom) {
+        createdAt.$gte = new Date(query.createdFrom);
+      }
+
+      if (query.createdTo) {
+        createdAt.$lte = new Date(query.createdTo);
+      }
+
+      filters.createdAt = createdAt;
+    }
+
+    const [logs, total] = await Promise.all([
+      this.auditLogModel
+        .find(filters)
+        .sort({ createdAt: -1, resourceId: -1 })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .lean(),
+      this.auditLogModel.countDocuments(filters)
+    ]);
+
+    return {
+      list: logs.map((log) => this.toRecord(log)),
+      pagination: {
+        page,
+        pageSize,
+        total
+      }
+    };
   }
 
   private async createAuditLog(input: {
