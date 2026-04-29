@@ -11,6 +11,8 @@ export type MockCommodity = {
   deletedBy: string | null;
   description: string;
   id: string;
+  imageFileId: string;
+  imageUrl: string;
   name: string;
   price: number;
   status: "on_sale" | "pending" | "offline";
@@ -21,6 +23,8 @@ export type MockCommodity = {
 export type CreateCommodityBody = {
   createdBy?: string;
   description?: string;
+  imageFileId?: string;
+  imageUrl?: string;
   name?: string;
   price?: number | string;
   status?: MockCommodity["status"];
@@ -55,6 +59,8 @@ const defaultCommodities: MockCommodity[] = [
     deletedBy: null,
     description: "适合桌面和户外场景的便携蓝牙音箱。",
     id: "10001",
+    imageFileId: "",
+    imageUrl: "",
     name: "北极光蓝牙音箱",
     price: 299,
     status: "on_sale",
@@ -68,6 +74,8 @@ const defaultCommodities: MockCommodity[] = [
     deletedBy: null,
     description: "茶轴手感，支持多设备切换。",
     id: "10002",
+    imageFileId: "",
+    imageUrl: "",
     name: "风暴机械键盘",
     price: 699,
     status: "pending",
@@ -81,6 +89,8 @@ const defaultCommodities: MockCommodity[] = [
     deletedBy: null,
     description: "铝合金材质，适合显示器增高收纳。",
     id: "10003",
+    imageFileId: "",
+    imageUrl: "",
     name: "雾白显示器支架",
     price: 199,
     status: "offline",
@@ -192,6 +202,8 @@ export class CommodityService implements OnModuleInit {
     const name = body.name?.trim();
     const description = body.description?.trim() ?? "";
     const createdBy = body.createdBy?.trim() ?? "";
+    const imageFileId = body.imageFileId?.trim() ?? "";
+    const imageUrl = body.imageUrl?.trim() ?? "";
     const price = Number(body.price);
     const stock = Number(body.stock);
     const status = body.status;
@@ -230,6 +242,8 @@ export class CommodityService implements OnModuleInit {
       deletedBy: null,
       description,
       id: await this.nextCommodityId(),
+      imageFileId,
+      imageUrl,
       name,
       price,
       status,
@@ -362,6 +376,8 @@ export class CommodityService implements OnModuleInit {
     deletedBy: string | null;
     description: string;
     id: string;
+    imageFileId?: string;
+    imageUrl?: string;
     name: string;
     price: number;
     status: MockCommodity["status"];
@@ -375,6 +391,8 @@ export class CommodityService implements OnModuleInit {
       deletedBy: commodity.deletedBy,
       description: commodity.description,
       id: commodity.id,
+      imageFileId: commodity.imageFileId ?? "",
+      imageUrl: commodity.imageUrl ?? "",
       name: commodity.name,
       price: commodity.price,
       status: commodity.status,

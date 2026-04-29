@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { CommodityListFiltersPanel } from "./commodity-list-filters";
 import { CommodityListPagination } from "./commodity-list-pagination";
 import type { CommoditySearchParams } from "@/src/features/commodity/query";
@@ -61,6 +62,7 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
           <table className="data-table">
             <thead>
               <tr>
+                <th>图片</th>
                 <th>ID</th>
                 <th>商品名</th>
                 <th>价格</th>
@@ -71,6 +73,20 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
             <tbody>
               {list.map((commodity) => (
                 <tr key={commodity.id}>
+                  <td>
+                    {commodity.imageUrl ? (
+                      <Image
+                        alt={commodity.name}
+                        className="commodity-thumb"
+                        height={56}
+                        src={commodity.imageUrl}
+                        unoptimized
+                        width={56}
+                      />
+                    ) : (
+                      <span className="commodity-thumb commodity-thumb--empty">无图</span>
+                    )}
+                  </td>
                   <td>{commodity.id}</td>
                   <td>
                     <Link className="table-link" href={`/present/commodity/${commodity.id}`}>

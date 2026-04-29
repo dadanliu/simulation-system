@@ -1,4 +1,5 @@
 export type NavRoute = {
+  adminOnly?: boolean;
   href: string;
   label: string;
   matchPrefixes: string[];
@@ -22,6 +23,14 @@ export const routes: NavRoute[] = [
     description: "填写商品基础信息，后续在这里接入提交校验和创建接口。"
   },
   {
+    href: "/present/commodity/audit",
+    label: "审计日志",
+    matchPrefixes: ["/present/commodity/audit"],
+    adminOnly: true,
+    title: "审计日志",
+    description: "查看商品写操作记录，确认操作人、动作、对象和 traceId。"
+  },
+  {
     href: "/present/commodity/10001",
     label: "商品详情",
     matchPrefixes: ["/present/commodity/"],
@@ -42,6 +51,7 @@ export function getActiveRoute(pathname: string) {
     route.matchPrefixes.some((prefix) =>
       prefix === "/present/commodity/"
         ? pathname.startsWith(prefix) &&
+          pathname !== "/present/commodity/audit" &&
           pathname !== "/present/commodity/create" &&
           pathname !== "/present/commodity/list"
         : pathname === prefix || pathname.startsWith(`${prefix}/`)

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type {
+  AuditLogListData,
   Commodity,
   CommodityListData,
   CommodityListPageData
@@ -76,4 +77,46 @@ export async function getCommodityDetail(id: string) {
   });
 
   return readApiResponse<Commodity>(response, `/present/commodity/${encodeURIComponent(id)}`);
+}
+
+export async function getCommodityAuditLogs(searchParams: {
+  action?: string | string[];
+  operator?: string | string[];
+  page?: string | string[];
+  pageSize?: string | string[];
+}) {
+  const cookie = await getCookieHeader();
+  const query = new URLSearchParams();
+  const operator = Array.isArray(searchParams.operator) ? searchParams.operator[0] : searchParams.operator;
+  const action = Array.isArray(searchParams.action) ? searchParams.action[0] : searchParams.action;
+  const page = Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page;
+  const pageSize = Array.isArray(searchParams.pageSize) ? searchParams.pageSize[0] : searchParams.pageSize;
+
+  if (operator) {
+    query.set("operator", operator);
+  }
+
+  if (action) {
+    query.set("action", action);
+  }
+
+  if (page) {
+    query.set("page", page);
+  }
+
+  if (pageSize) {
+    query.set("pageSize", pageSize);
+  }
+
+  const response = await fetch(`http://127.0.0.1:3000/api/commodity/audit-logs?${query.toString()}`, {
+    cache: "no-store",
+    headers: {
+      cookie
+    }
+  });
+
+  return readApiResponse<AuditLogListData>(
+    response,
+    query.toString() ? `/present/commodity/audit?${query.toString()}` : "/present/commodity/audit"
+  );
 }

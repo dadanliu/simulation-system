@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
         // 浏览器保持同源请求，Next 负责转发到 BFF。
         source: "/api/commodity/:path*",
         destination: "http://localhost:3001/api/commodity/:path*"
+      },
+      {
+        source: "/api/upload",
+        destination: "http://localhost:3001/api/upload"
       }
     ];
   }

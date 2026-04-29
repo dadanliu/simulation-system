@@ -1,6 +1,10 @@
 import Link from "next/link";
+import Image from "next/image";
+import { getCurrentUser } from "@/src/features/auth/server";
 import { getCommodityDetail } from "@/src/features/commodity/server";
 import type { CommodityStatus } from "@/src/features/commodity/types";
+import { CommodityDeleteForm } from "./commodity-delete-form";
+import { CommodityStatusForm } from "./commodity-status-form";
 
 type CommodityDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -16,7 +20,12 @@ export const dynamic = "force-dynamic";
 
 export default async function CommodityDetailPage({ params }: CommodityDetailPageProps) {
   const { id } = await params;
-  const commodity = await getCommodityDetail(id);
+  const [commodity, currentUser] = await Promise.all([
+    getCommodityDetail(id),
+    getCurrentUser(`/present/commodity/${encodeURIComponent(id)}`)
+  ]);
+  const canUpdateCommodity = currentUser.roles.some((role) => role === "admin" || role === "operator");
+  const canDeleteCommodity = currentUser.roles.includes("admin");
 
   return (
     <section className="panel stack">
@@ -56,12 +65,35 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
 
       <article className="detail-card">
         <p className="card__label">商品名称</p>
+        {commodity.imageUrl ? (
+          <Image
+            alt={commodity.name}
+            className="commodity-cover"
+            height={260}
+            src={commodity.imageUrl}
+            unoptimized
+            width={420}
+          />
+        ) : null}
         <h3>{commodity.name}</h3>
         <p>
           当前商品处于「{statusLabel[commodity.status]}」状态，库存数量为 {commodity.stock}。
         </p>
         {commodity.description ? <p>{commodity.description}</p> : null}
       </article>
+
+      {canUpdateCommodity ? (
+        <section className="panel stack">
+          <div>
+            <p className="badge">Audit Trail</p>
+            <h3>商品状态变更</h3>
+            <p>operator 可以在这里完成审核上架或下架，提交后 BFF 会同步写入审计日志。</p>
+          </div>
+          <CommodityStatusForm commodityId={commodity.id} currentStatus={commodity.status} />
+        </section>
+      ) : null}
+
+      {canDeleteCommodity ? <CommodityDeleteForm commodityId={commodity.id} commodityName={commodity.name} /> : null}
     </section>
   );
 }

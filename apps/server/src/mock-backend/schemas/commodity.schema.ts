@@ -23,6 +23,12 @@ export class Commodity {
   @Prop({ default: "" })
   description!: string;
 
+  @Prop({ default: "" })
+  imageFileId!: string;
+
+  @Prop({ default: "" })
+  imageUrl!: string;
+
   @Prop({ required: true, unique: true })
   id!: string;
 

@@ -106,7 +106,7 @@ export function UploadDemo() {
   return (
     <form className="form-grid" onSubmit={handleSubmit}>
       <label className="field">
-        <span>演示文件 *</span>
+        <span>商品图片 *</span>
         <input
           accept="image/jpeg,image/png,image/webp"
           disabled={isUploading}
@@ -126,7 +126,9 @@ export function UploadDemo() {
           <p>文件名：{uploaded.fileName}</p>
           <p>文件类型：{uploaded.fileType}</p>
           <p>文件大小：{uploaded.fileSize} bytes</p>
-          <p>Mock 地址：{uploaded.url}</p>
+          <p>文件 ID：{uploaded.uploadId}</p>
+          <p>访问地址：{uploaded.url}</p>
+          <p>上传场景：{uploaded.scene}</p>
         </div>
       ) : null}
 

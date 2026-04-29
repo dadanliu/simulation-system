@@ -10,7 +10,7 @@ type AppShellProps = {
 export function AppShell({ children, currentUser }: AppShellProps) {
   return (
     <div className="page-shell">
-      <SideNav />
+      <SideNav currentUser={currentUser} />
       <main className="main-panel">
         <TopBar currentUser={currentUser} />
         {children}

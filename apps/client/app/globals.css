@@ -8,6 +8,8 @@
   --line: #d7e0ef;
   --accent: #0057ff;
   --accent-soft: #dfe9ff;
+  --danger: #be123c;
+  --danger-soft: #fff1f2;
   --success: #067647;
   --warning: #b54708;
 }
@@ -152,6 +154,11 @@ textarea {
   font-weight: 600;
 }
 
+.badge--danger {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -222,6 +229,11 @@ textarea {
   color: var(--text);
 }
 
+.button--danger {
+  background: var(--danger);
+  color: #fff;
+}
+
 .form-grid {
   display: grid;
   gap: 16px;
@@ -282,12 +294,47 @@ textarea {
   text-decoration: underline;
 }
 
+.commodity-thumb {
+  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  object-fit: cover;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.commodity-thumb--empty {
+  border-style: dashed;
+}
+
+.mono-cell {
+  max-width: 240px;
+  overflow-wrap: anywhere;
+  font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+}
+
 .form-error {
   padding: 12px 14px;
   border: 1px solid rgba(190, 18, 60, 0.22);
   border-radius: 14px;
   background: rgba(255, 241, 242, 0.82);
   color: #be123c;
+  font-weight: 600;
+}
+
+.form-success {
+  padding: 12px 14px;
+  border: 1px solid rgba(6, 118, 71, 0.22);
+  border-radius: 14px;
+  background: #ecfdf3;
+  color: var(--success);
   font-weight: 600;
 }
 
@@ -351,9 +398,23 @@ textarea {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(223, 233, 255, 0.62));
 }
 
+.danger-zone {
+  border-color: rgba(190, 18, 60, 0.22);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 241, 242, 0.72));
+}
+
 .detail-card h3 {
   margin: 0 0 12px;
   font-size: 24px;
+}
+
+.commodity-cover {
+  width: min(100%, 420px);
+  max-height: 260px;
+  margin-bottom: 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  object-fit: cover;
 }
 
 .skeleton-list {

@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { createCommodity } from "@/src/features/commodity/client";
 import type { CommodityStatus } from "@/src/features/commodity/types";
 
@@ -22,11 +23,31 @@ const initialFormState: FormState = {
   stock: ""
 };
 
+type UploadResult = {
+  fileId: string;
+  mimeType: string;
+  scene: string;
+  size: number;
+  url: string;
+};
+
+type UploadResponse = {
+  data?: UploadResult;
+  message?: string;
+  success: boolean;
+};
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
+const ALLOWED_FILE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
 export function CommodityCreateForm() {
   const router = useRouter();
   const [form, setForm] = useState(initialFormState);
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [uploadedImage, setUploadedImage] = useState<UploadResult>();
 
   function updateForm<T extends keyof FormState>(key: T, value: FormState[T]) {
     setForm((current) => ({
@@ -51,6 +72,67 @@ export function CommodityCreateForm() {
     return "";
   }
 
+  function validateFile(file?: File) {
+    if (!file) {
+      return "请选择一个文件";
+    }
+
+    if (!ALLOWED_FILE_TYPES.has(file.type)) {
+      return "仅支持 JPG、PNG、WEBP 图片";
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return "文件大小不能超过 2MB";
+    }
+
+    return "";
+  }
+
+  async function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    setUploadedImage(undefined);
+    setSelectedFileName(file?.name ?? "");
+
+    const validationError = validateFile(file);
+
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+
+    if (!file) {
+      return;
+    }
+
+    setErrorMessage("");
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+
+      formData.append("file", file);
+      formData.append("scene", "commodity");
+
+      const response = await fetch("/api/upload", {
+        body: formData,
+        method: "POST"
+      });
+      const payload = (await response.json()) as UploadResponse;
+
+      if (!response.ok || !payload.success || !payload.data) {
+        setErrorMessage(payload.message ?? "上传失败");
+        return;
+      }
+
+      setUploadedImage(payload.data);
+    } catch {
+      setErrorMessage("图片上传失败，请稍后重试");
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const validationError = validateForm();
@@ -66,6 +148,8 @@ export function CommodityCreateForm() {
     try {
       const created = await createCommodity({
         description: form.description.trim(),
+        imageFileId: uploadedImage?.fileId,
+        imageUrl: uploadedImage?.url,
         name: form.name.trim(),
         price: Number(form.price),
         status: form.status,
@@ -83,6 +167,36 @@ export function CommodityCreateForm() {
 
   return (
     <form className="form-grid" onSubmit={handleSubmit}>
+      <label className="field">
+        <span>商品图片</span>
+        <input
+          accept="image/jpeg,image/png,image/webp"
+          disabled={isSubmitting || isUploading}
+          onChange={handleImageUpload}
+          type="file"
+        />
+      </label>
+      <p className="form-hint">
+        限制：JPG、PNG、WEBP，最大 2MB。当前选择：{selectedFileName || "未选择文件"}
+      </p>
+      {isUploading ? <p className="form-hint">图片上传中...</p> : null}
+      {uploadedImage ? (
+        <div className="upload-result">
+          <p className="upload-result__title">图片已上传</p>
+          <Image
+            alt="已上传商品图"
+            className="commodity-thumb"
+            height={56}
+            src={uploadedImage.url}
+            unoptimized
+            width={56}
+          />
+          <p>文件 ID：{uploadedImage.fileId}</p>
+          <p>文件类型：{uploadedImage.mimeType}</p>
+          <p>文件大小：{uploadedImage.size} bytes</p>
+        </div>
+      ) : null}
+
       <label className="field">
         <span>商品名称 *</span>
         <input
@@ -154,6 +268,8 @@ export function CommodityCreateForm() {
           onClick={() => {
             setForm(initialFormState);
             setErrorMessage("");
+            setSelectedFileName("");
+            setUploadedImage(undefined);
           }}
           type="button"
         >

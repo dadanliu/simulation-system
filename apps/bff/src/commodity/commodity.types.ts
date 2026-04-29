@@ -7,6 +7,8 @@ export type Commodity = {
   deletedBy: string | null;
   description: string;
   id: string;
+  imageFileId: string;
+  imageUrl: string;
   name: string;
   price: number;
   status: CommodityStatus;
@@ -17,6 +19,8 @@ export type Commodity = {
 export type CreateCommodityBody = {
   createdBy?: string;
   description?: string;
+  imageFileId?: string;
+  imageUrl?: string;
   name?: string;
   price?: number | string;
   status?: CommodityStatus;

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { CommodityCreateForm } from "./commodity-create-form";
-import { UploadDemo } from "./upload-demo";
 
 export default function CommodityCreatePage() {
   return (
@@ -17,12 +16,10 @@ export default function CommodityCreatePage() {
 
       <section className="panel stack">
         <div>
-          <p className="badge">Upload Demo</p>
-          <h2>上传演示</h2>
-          <p>选择一张 JPG、PNG 或 WEBP 图片，通过 `formData` 提交到 BFF `/api/upload`。</p>
+          <p className="badge">Product Image</p>
+          <h2>上传商品图片</h2>
+          <p>图片上传入口已合并到创建表单。先上传图片，创建商品时会保存图片元数据并在列表页展示。</p>
         </div>
-
-        <UploadDemo />
 
         <div className="inline-actions">
           <Link className="button button--secondary" href="/present/commodity/list">

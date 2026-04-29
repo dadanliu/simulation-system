@@ -5,7 +5,6 @@ import type { UploadedMemoryFile } from "../upload.service";
 @Injectable()
 export class LocalStorageService implements StorageService {
   save(file: UploadedMemoryFile, scene: StorageScene): StoredFile {
-    const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
     const fileId = `mock_file_${Date.now()}`;
 
     return {
@@ -14,7 +13,8 @@ export class LocalStorageService implements StorageService {
       mimeType: file.mimetype,
       scene,
       size: file.size,
-      url: `https://mock-cdn.local/uploads/${fileId}-${sanitizedFilename}`
+      // 本地演示不启动静态文件服务，直接返回 data URL，保证列表页能真实预览图片。
+      url: `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
     };
   }
 }
