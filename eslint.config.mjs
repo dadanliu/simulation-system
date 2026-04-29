@@ -67,5 +67,11 @@ export default [
     rules: {
       "@typescript-eslint/no-require-imports": "off"
     }
+  },
+  {
+    files: ["**/*.spec.ts", "**/*.e2e-spec.ts"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off"
+    }
   }
 ];

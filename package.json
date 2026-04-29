@@ -20,6 +20,8 @@
     "start:bff": "pnpm --filter @next-bff/bff start",
     "start:server": "pnpm --filter @next-bff/server start",
     "start:all": "pnpm -r --parallel --if-present run start",
+    "test:bff": "pnpm --filter @next-bff/bff test",
+    "test:bff:e2e": "pnpm --filter @next-bff/bff test:e2e",
     "lint": "pnpm lint:all",
     "lint:client": "eslint apps/client --max-warnings=0",
     "lint:bff": "eslint apps/bff --max-warnings=0",
