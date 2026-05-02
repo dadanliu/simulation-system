@@ -27,6 +27,8 @@ describe("CommodityController e2e", () => {
     deletedBy: null,
     description: "测试商品",
     id: "10099",
+    imageFileId: "",
+    imageUrl: "",
     name: "测试键盘",
     price: 299,
     status: "pending",

@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import {
   ApiBody,
   ApiCookieAuth,
@@ -19,7 +20,10 @@ import { clearSessionCookie, createSessionCookie } from "./session-cookie";
 @ApiTags("Auth")
 @Controller("api/auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService
+  ) {}
 
   @Post("login")
   @ApiOperation({ summary: "用户登录" })
@@ -30,7 +34,7 @@ export class AuthController {
   async login(@Body() body: LoginDto, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(body.username.trim(), body.password);
 
-    response.setHeader("Set-Cookie", createSessionCookie(result.sessionId));
+    response.setHeader("Set-Cookie", createSessionCookie(result.sessionId, { secure: this.shouldUseSecureCookie() }));
 
     return {
       user: result.user
@@ -45,7 +49,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
   logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     this.authService.logout(request);
-    response.setHeader("Set-Cookie", clearSessionCookie());
+    response.setHeader("Set-Cookie", clearSessionCookie({ secure: this.shouldUseSecureCookie() }));
 
     return null;
   }
@@ -60,5 +64,19 @@ export class AuthController {
     return {
       user
     };
+  }
+
+  private shouldUseSecureCookie() {
+    const explicitValue = this.configService.get<string>("COOKIE_SECURE");
+
+    if (explicitValue === "true") {
+      return true;
+    }
+
+    if (explicitValue === "false") {
+      return false;
+    }
+
+    return this.configService.get<string>("NODE_ENV") === "production";
   }
 }

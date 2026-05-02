@@ -1,4 +1,5 @@
 import { ValidationPipe, type INestApplication } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
 import { Test } from "@nestjs/testing";
 import { AuthController } from "../auth/auth.controller";
@@ -78,6 +79,18 @@ export async function createBffTestApp(mocks: TestAppMocks): Promise<INestApplic
       {
         provide: GetCurrentUserService,
         useValue: mocks.getCurrentUserService
+      },
+      {
+        provide: ConfigService,
+        useValue: {
+          get: jest.fn((key: string) => {
+            if (key === "NODE_ENV") {
+              return "test";
+            }
+
+            return undefined;
+          })
+        }
       },
       {
         provide: PermissionService,

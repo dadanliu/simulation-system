@@ -1,4 +1,5 @@
 import { Module, forwardRef } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
 import { PermissionEntity, PermissionSchema } from "../permission/schemas/permission.schema";
 import { RoleEntity, RoleSchema } from "../role/schemas/role.schema";
@@ -13,6 +14,7 @@ import { SessionStoreService } from "./session-store.service";
 
 @Module({
   imports: [
+    ConfigModule,
     forwardRef(() => UserModule),
     MongooseModule.forFeature([
       { name: UserEntity.name, schema: UserSchema },

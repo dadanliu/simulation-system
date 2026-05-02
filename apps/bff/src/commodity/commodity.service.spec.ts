@@ -28,6 +28,8 @@ describe("CommodityService", () => {
     deletedBy: "u_admin_001",
     description: "测试商品",
     id: "10099",
+    imageFileId: "",
+    imageUrl: "",
     name: "测试键盘",
     price: 299,
     status: "offline",

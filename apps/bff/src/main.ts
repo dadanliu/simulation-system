@@ -3,6 +3,7 @@ import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
+import { createCsrfOriginMiddleware, getConfiguredCsrfAllowedOrigins } from "./common/http/csrf-origin";
 import { traceIdMiddleware } from "./common/http/trace-id";
 import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
 import { SuccessResponseInterceptor } from "./common/interceptors/success-response.interceptor";
@@ -19,6 +20,7 @@ async function bootstrap() {
 
   SwaggerModule.setup("api/docs", app, swaggerDocument);
   app.use(traceIdMiddleware);
+  app.use(createCsrfOriginMiddleware(getConfiguredCsrfAllowedOrigins()));
   // 全局启用 DTO 校验。Controller 里只要使用 class DTO，NestJS 就会在进入 handler 前校验请求参数。
   app.useGlobalPipes(
     new ValidationPipe({

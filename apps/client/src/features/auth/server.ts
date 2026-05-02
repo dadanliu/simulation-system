@@ -8,6 +8,8 @@ type ApiResponse<T> = {
   success: boolean;
 };
 
+const internalOrigin = process.env.NEXT_INTERNAL_ORIGIN ?? "http://127.0.0.1:3000";
+
 async function getCookieHeader() {
   const cookieStore = await cookies();
   return cookieStore.toString();
@@ -15,7 +17,7 @@ async function getCookieHeader() {
 
 export async function getCurrentUser(nextPath = "/present/commodity/list"): Promise<CurrentUser> {
   const cookie = await getCookieHeader();
-  const response = await fetch("http://127.0.0.1:3000/api/auth/me", {
+  const response = await fetch(`${internalOrigin}/api/auth/me`, {
     cache: "no-store",
     headers: {
       cookie

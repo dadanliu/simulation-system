@@ -1,5 +1,8 @@
 # next-bff
 
+## 目标
+从“会调接口” → 到“看懂链路” → 到“理解系统” → 到“能解释性能和规模” → 最后才是“理解云和架构”。
+
 项目目录按三层直接拆分，不做共享代码包：
 
 ```text
@@ -66,6 +69,7 @@ pnpm lint
 
 ```bash
 pnpm dev:all
+pnpm dev:https
 pnpm build:all
 pnpm start:all
 pnpm lint:all
@@ -112,6 +116,112 @@ pnpm lint:server
 登录与会话的图文说明见 [docs/03-login-session.md](./docs/03-login-session.md)。
 
 Auth 接口 curl 调试说明见 [docs/mock-auth.md](./docs/mock-auth.md)。
+
+## BFF session cookie 安全配置
+
+登录成功后，BFF 会通过 `Set-Cookie` 写入 `next_bff_session`：
+
+```http
+Set-Cookie: next_bff_session=<sessionId>; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400
+```
+
+字段含义：
+
+- `HttpOnly`：禁止浏览器 JS 读取 cookie，降低 XSS 直接窃取 session 的风险。
+- `SameSite=Lax`：减少跨站请求自动携带 cookie 的风险，兼顾后台系统常见跳转体验。
+- `Max-Age=86400`：cookie 有效期为 24 小时。
+- `Secure`：只在 HTTPS 下发送 cookie。生产环境应开启，本地 HTTP 开发环境通常关闭。
+
+`Secure` 的启用规则：
+
+```text
+COOKIE_SECURE=true   -> 强制写入 Secure
+COOKIE_SECURE=false  -> 强制不写入 Secure
+未配置 COOKIE_SECURE 且 NODE_ENV=production -> 写入 Secure
+未配置 COOKIE_SECURE 且非 production        -> 不写入 Secure
+```
+
+本地开发通常不需要配置：
+
+```bash
+pnpm dev:all
+```
+
+生产或 HTTPS 环境建议配置：
+
+```bash
+COOKIE_SECURE=true pnpm start:bff
+```
+
+如果本地使用 HTTP 却设置了 `COOKIE_SECURE=true`，浏览器不会发送这个 cookie，表现通常是“登录成功后刷新又变成未登录”。
+
+本地验证 HTTPS 和 `Secure` cookie：
+
+```bash
+pnpm dev:https
+```
+
+这个脚本会：
+
+- 在 `.cert/` 下生成本地自签 HTTPS 证书。
+- 使用 `https://localhost:3000` 启动 Next.js。
+- 仍以内网 HTTP 方式启动 BFF `http://localhost:3001` 和 backend `http://localhost:3002`。
+- 给 BFF 注入 `COOKIE_SECURE=true`，登录后 `next_bff_session` 会带 `Secure`。
+
+首次打开时浏览器可能提示证书不受信任，接受本地自签证书后访问：
+
+```text
+https://localhost:3000
+```
+
+然后登录并在 DevTools 的 Application / Cookies 中检查 `next_bff_session`，应能看到：
+
+```text
+HttpOnly: true
+Secure: true
+SameSite: Lax
+```
+
+如果只想对比 `SameSite`、`Secure`、`Max-Age` 有无差异，可以运行：
+
+```bash
+pnpm explain:cookie
+```
+
+如果想模拟 `Secure` 对 HTTP 链路 session 劫持的防护，可以运行：
+
+```bash
+pnpm simulate:cookie-hijack
+```
+
+如果想进一步模拟“中间人截获 cookie 后重放请求”，可以运行：
+
+```bash
+pnpm simulate:cookie-replay
+```
+
+如果想用真实浏览器点击页面触发请求，并让终端里的中间人代理实时截取，可以运行：
+
+```bash
+pnpm simulate:browser-mitm
+```
+
+脚本会打印一个独立 Chrome 启动命令。用这个命令打开浏览器后，在页面里依次点击四个场景。
+
+`simulate:cookie-hijack` 会模拟四种请求：
+
+- 没有 `Secure` 时访问 `http://...`：浏览器会把 `next_bff_session` 放进 Cookie 请求头，中间人能在明文 HTTP 链路中看到 session。
+- 没有 `Secure` 时访问 `https://...`：本次 HTTPS 请求不泄露，但 cookie 仍然允许后续被发送到 HTTP。
+- 有 `Secure` 时访问 `http://...`：浏览器不会发送 `next_bff_session`，中间人看不到 session。
+- 有 `Secure` 时访问 `https://...`：浏览器会发送 `next_bff_session`，但请求头在 HTTPS 链路中被加密传输。
+
+`simulate:cookie-replay` 会启动本地受害服务和中间人代理。受害者请求全部经过代理，脚本会验证四种组合下中间人是否能截获 `next_bff_session`，以及攻击者能否重放 `/api/auth/me`。
+
+`simulate:browser-mitm` 会保留服务不退出，等待你在浏览器里真实点击。终端会实时打印 HTTP 明文 Cookie、HTTPS CONNECT 记录和攻击者重放结果。
+
+注意：不要直接用普通浏览器打开脚本打印的站点地址。必须使用脚本打印的 Chrome 命令，因为这个命令会把浏览器流量导入中间人代理。脚本使用 `mitm.test` 而不是 `localhost`，避免浏览器默认绕过本地代理。
+
+更完整的图文说明见 [docs/04-cookie-hijack-secure.md](./docs/04-cookie-hijack-secure.md)。
 
 ## Server 当前能力
 

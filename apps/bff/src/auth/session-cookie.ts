@@ -3,6 +3,10 @@ import type { Request } from "express";
 export const SESSION_COOKIE_NAME = "next_bff_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
 
+type SessionCookieOptions = {
+  secure?: boolean;
+};
+
 export function parseCookies(cookieHeader = "") {
   return cookieHeader
     .split(";")
@@ -20,16 +24,28 @@ export function getSessionIdFromRequest(request: Request) {
   return cookies[SESSION_COOKIE_NAME] ?? null;
 }
 
-export function createSessionCookie(sessionId: string) {
-  return [
+export function createSessionCookie(sessionId: string, options: SessionCookieOptions = {}) {
+  const cookieParts = [
     `${SESSION_COOKIE_NAME}=${encodeURIComponent(sessionId)}`,
     "Path=/",
     "HttpOnly",
     "SameSite=Lax",
     `Max-Age=${SESSION_MAX_AGE_SECONDS}`
-  ].join("; ");
+  ];
+
+  if (options.secure) {
+    cookieParts.push("Secure");
+  }
+
+  return cookieParts.join("; ");
 }
 
-export function clearSessionCookie() {
-  return [`${SESSION_COOKIE_NAME}=`, "Path=/", "HttpOnly", "SameSite=Lax", "Max-Age=0"].join("; ");
+export function clearSessionCookie(options: SessionCookieOptions = {}) {
+  const cookieParts = [`${SESSION_COOKIE_NAME}=`, "Path=/", "HttpOnly", "SameSite=Lax", "Max-Age=0"];
+
+  if (options.secure) {
+    cookieParts.push("Secure");
+  }
+
+  return cookieParts.join("; ");
 }

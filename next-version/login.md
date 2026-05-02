@@ -1,4 +1,9 @@
 常见会话方案
+# csrf
+
+1. CSRF Token
+2. refrer/origin
+
 Cookie + Session：浏览器自动带 Cookie，服务端用 Session 识别用户登录态，这是最传统也很常见的方案。
 
 Token/JWT：登录成功后服务端返回 Token，客户端后续一般放在 HTTP Header 里提交，常用于 SPA、移动端和微服务场景。

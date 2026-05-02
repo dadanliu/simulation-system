@@ -18,6 +18,8 @@ type ApiResponse<T> = {
   success: boolean;
 };
 
+const internalOrigin = process.env.NEXT_INTERNAL_ORIGIN ?? "http://127.0.0.1:3000";
+
 async function getCookieHeader() {
   const cookieStore = await cookies();
   return cookieStore.toString();
@@ -52,7 +54,7 @@ export async function getCommodityListPageData(
   const cookie = await getCookieHeader();
   const query = buildCommodityListSearchParams(filters);
   const nextPath = query.toString() ? `/present/commodity/list?${query.toString()}` : "/present/commodity/list";
-  const response = await fetch(`http://127.0.0.1:3000/api/commodity/list?${query.toString()}`, {
+  const response = await fetch(`${internalOrigin}/api/commodity/list?${query.toString()}`, {
     cache: "no-store",
     headers: {
       cookie
@@ -69,7 +71,7 @@ export async function getCommodityListPageData(
 
 export async function getCommodityDetail(id: string) {
   const cookie = await getCookieHeader();
-  const response = await fetch(`http://127.0.0.1:3000/api/commodity/${encodeURIComponent(id)}`, {
+  const response = await fetch(`${internalOrigin}/api/commodity/${encodeURIComponent(id)}`, {
     cache: "no-store",
     headers: {
       cookie
@@ -108,7 +110,7 @@ export async function getCommodityAuditLogs(searchParams: {
     query.set("pageSize", pageSize);
   }
 
-  const response = await fetch(`http://127.0.0.1:3000/api/commodity/audit-logs?${query.toString()}`, {
+  const response = await fetch(`${internalOrigin}/api/commodity/audit-logs?${query.toString()}`, {
     cache: "no-store",
     headers: {
       cookie
