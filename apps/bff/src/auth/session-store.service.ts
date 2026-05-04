@@ -19,11 +19,14 @@ export type SessionRecord = {
 
 @Injectable()
 export class SessionStoreService implements OnModuleDestroy {
+  private static readonly REDIS_ERROR_LOG_INTERVAL_MS = 30_000;
+
   private readonly logger = new Logger(SessionStoreService.name);
   private readonly redis: Redis;
   private readonly sessionKeyPrefix: string;
   private readonly userSessionsKeyPrefix: string;
   private readonly ttlSeconds: number;
+  private lastRedisErrorLogAt = 0;
 
   constructor(private readonly configService: ConfigService) {
     this.ttlSeconds = this.readPositiveInteger("SESSION_TTL_SECONDS", SESSION_MAX_AGE_SECONDS);
@@ -34,10 +37,11 @@ export class SessionStoreService implements OnModuleDestroy {
     );
     this.redis = new Redis(this.configService.get<string>("REDIS_URL", "redis://127.0.0.1:6379"), {
       enableOfflineQueue: false,
-      maxRetriesPerRequest: 1
+      maxRetriesPerRequest: 1,
+      retryStrategy: (times) => Math.min(times * 500, 5_000)
     });
     this.redis.on("error", (error) => {
-      this.logger.error(`Redis session store error: ${error.message}`);
+      this.logRedisError(error);
     });
   }
 
@@ -151,5 +155,18 @@ export class SessionStoreService implements OnModuleDestroy {
   private readPositiveInteger(key: string, fallback: number) {
     const value = Number(this.configService.get<string>(key));
     return Number.isInteger(value) && value > 0 ? value : fallback;
+  }
+
+  private logRedisError(error: Error) {
+    const now = Date.now();
+
+    if (now - this.lastRedisErrorLogAt < SessionStoreService.REDIS_ERROR_LOG_INTERVAL_MS) {
+      return;
+    }
+
+    this.lastRedisErrorLogAt = now;
+    this.logger.error(
+      `Redis session store error: ${error.message}. Start Redis or set REDIS_URL to a reachable Redis instance.`
+    );
   }
 }

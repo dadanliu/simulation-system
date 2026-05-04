@@ -63,7 +63,15 @@ export function createTestAppMocks(): TestAppMocks {
   };
 }
 
-export async function createBffTestApp(mocks: TestAppMocks): Promise<INestApplication> {
+type CreateBffTestAppOptions = {
+  config?: Record<string, string | undefined>;
+};
+
+export async function createBffTestApp(
+  mocks: TestAppMocks,
+  options: CreateBffTestAppOptions = {}
+): Promise<INestApplication> {
+  const config = options.config ?? {};
   const moduleRef = await Test.createTestingModule({
     controllers: [AuthController, CommodityController],
     providers: [
@@ -88,6 +96,10 @@ export async function createBffTestApp(mocks: TestAppMocks): Promise<INestApplic
         provide: ConfigService,
         useValue: {
           get: jest.fn((key: string) => {
+            if (Object.prototype.hasOwnProperty.call(config, key)) {
+              return config[key];
+            }
+
             if (key === "NODE_ENV") {
               return "test";
             }

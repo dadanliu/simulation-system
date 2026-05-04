@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
   ApiBody,
@@ -51,6 +51,7 @@ export class AuthController {
   }
 
   @Post("logout")
+  @HttpCode(200)
   @SuccessResponseMessage("logout success")
   @ApiOperation({ summary: "退出登录" })
   @ApiCookieAuth("next_bff_session")

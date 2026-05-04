@@ -3,6 +3,20 @@ const readline = require("node:readline");
 
 const services = [
   {
+    name: "mongo",
+    command: "node",
+    args: ["scripts/dev-mongo.js"],
+    url: "mongodb://127.0.0.1:27017/next-bff",
+    readyPattern: /MongoDB ready|Using existing MongoDB/i
+  },
+  {
+    name: "redis",
+    command: "node",
+    args: ["scripts/dev-redis.js"],
+    url: "redis://127.0.0.1:6379",
+    readyPattern: /Redis ready|Using existing Redis/i
+  },
+  {
     name: "client",
     packageName: "@next-bff/client",
     url: "http://localhost:3000",
@@ -47,6 +61,8 @@ function printAccessInfo() {
   console.log(`- client: ${services.find((service) => service.name === "client").url}`);
   console.log(`- bff:    ${services.find((service) => service.name === "bff").url}`);
   console.log(`- server: ${services.find((service) => service.name === "server").url}`);
+  console.log(`- mongo:  ${services.find((service) => service.name === "mongo").url}`);
+  console.log(`- redis:  ${services.find((service) => service.name === "redis").url}`);
   console.log("");
 }
 
@@ -59,7 +75,7 @@ function markReady(service) {
   printAccessInfo();
 }
 
-function pipeWithPrefix(stream, service) {
+function pipeWithPrefix(stream, service, onReady) {
   const reader = readline.createInterface({ input: stream });
 
   reader.on("line", (line) => {
@@ -67,6 +83,7 @@ function pipeWithPrefix(stream, service) {
 
     if (service.readyPattern.test(line)) {
       markReady(service);
+      onReady?.();
     }
   });
 }
@@ -85,15 +102,13 @@ function stopChildren(signal = "SIGTERM") {
   }
 }
 
-for (const service of services) {
-  const child = spawn("pnpm", ["--filter", service.packageName, "dev"], {
+function spawnService(service) {
+  return spawn(service.command ?? "pnpm", service.args ?? ["--filter", service.packageName, "dev"], {
     stdio: ["inherit", "pipe", "pipe"]
   });
+}
 
-  children.push(child);
-  pipeWithPrefix(child.stdout, service);
-  pipeWithPrefix(child.stderr, service);
-
+function bindLifecycle(child, service) {
   child.on("exit", (code, signal) => {
     if (isShuttingDown) {
       return;
@@ -111,6 +126,74 @@ for (const service of services) {
     process.exitCode = 1;
   });
 }
+
+function startService(service) {
+  const child = spawnService(service);
+
+  children.push(child);
+  pipeWithPrefix(child.stdout, service);
+  pipeWithPrefix(child.stderr, service);
+  bindLifecycle(child, service);
+}
+
+function startServiceAndWait(service) {
+  return new Promise((resolve, reject) => {
+    const child = spawnService(service);
+    let isReady = false;
+
+    children.push(child);
+    pipeWithPrefix(child.stdout, service, () => {
+      if (!isReady) {
+        isReady = true;
+        resolve();
+      }
+    });
+    pipeWithPrefix(child.stderr, service, () => {
+      if (!isReady) {
+        isReady = true;
+        resolve();
+      }
+    });
+
+    child.on("exit", (code, signal) => {
+      if (isShuttingDown) {
+        return;
+      }
+
+      const reason = signal ? `signal ${signal}` : `code ${code}`;
+
+      if (!isReady) {
+        reject(new Error(`[${service.name}] exited before ready with ${reason}`));
+        return;
+      }
+
+      console.error(`[${service.name}] exited with ${reason}`);
+      stopChildren();
+      process.exitCode = code ?? 1;
+    });
+
+    child.on("error", (error) => {
+      reject(new Error(`[${service.name}] failed to start: ${error.message}`));
+    });
+  });
+}
+
+async function main() {
+  const [mongoService, redisService, ...appServices] = services;
+
+  await startServiceAndWait(mongoService);
+  await startServiceAndWait(redisService);
+
+  for (const service of appServices) {
+    startService(service);
+  }
+}
+
+main().catch((error) => {
+  console.error(error.message);
+  stopChildren();
+  process.exitCode = 1;
+});
 
 process.on("SIGINT", () => {
   stopChildren("SIGINT");
