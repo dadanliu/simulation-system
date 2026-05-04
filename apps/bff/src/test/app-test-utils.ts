@@ -17,6 +17,8 @@ import { PermissionsGuard } from "../permission/permissions.guard";
 
 export type TestAppMocks = {
   authService: {
+    getSessionTtlSeconds: jest.Mock;
+    listUserSessions: jest.Mock;
     login: jest.Mock;
     logout: jest.Mock;
   };
@@ -39,6 +41,8 @@ export type TestAppMocks = {
 export function createTestAppMocks(): TestAppMocks {
   return {
     authService: {
+      getSessionTtlSeconds: jest.fn().mockReturnValue(86400),
+      listUserSessions: jest.fn(),
       login: jest.fn(),
       logout: jest.fn()
     },

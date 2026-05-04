@@ -4,6 +4,7 @@ export const SESSION_COOKIE_NAME = "next_bff_session";
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24;
 
 type SessionCookieOptions = {
+  maxAgeSeconds?: number;
   secure?: boolean;
 };
 
@@ -25,12 +26,13 @@ export function getSessionIdFromRequest(request: Request) {
 }
 
 export function createSessionCookie(sessionId: string, options: SessionCookieOptions = {}) {
+  const maxAgeSeconds = options.maxAgeSeconds ?? SESSION_MAX_AGE_SECONDS;
   const cookieParts = [
     `${SESSION_COOKIE_NAME}=${encodeURIComponent(sessionId)}`,
     "Path=/",
     "HttpOnly",
     "SameSite=Lax",
-    `Max-Age=${SESSION_MAX_AGE_SECONDS}`
+    `Max-Age=${maxAgeSeconds}`
   ];
 
   if (options.secure) {

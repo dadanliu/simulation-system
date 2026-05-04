@@ -13,7 +13,7 @@ export class GetCurrentUserService {
 
   async execute(request: Request) {
     const sessionId = getSessionIdFromRequest(request);
-    const session = this.sessionStoreService.getSession(sessionId);
+    const session = await this.sessionStoreService.getSession(sessionId);
 
     if (!session) {
       return null;

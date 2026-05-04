@@ -31,6 +31,7 @@ describe("AuthController e2e", () => {
     const response = await request(app.getHttpServer())
       .post("/api/auth/login")
       .set("x-trace-id", "trace-login")
+      .set("user-agent", "jest")
       .send({
         password: "admin123",
         username: "admin"
@@ -46,6 +47,13 @@ describe("AuthController e2e", () => {
       success: true,
       traceId: "trace-login"
     });
-    expect(mocks.authService.login).toHaveBeenCalledWith("admin", "admin123");
+    expect(mocks.authService.login).toHaveBeenCalledWith(
+      "admin",
+      "admin123",
+      expect.objectContaining({
+        ip: expect.any(String),
+        userAgent: expect.any(String)
+      })
+    );
   });
 });
