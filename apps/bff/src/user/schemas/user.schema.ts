@@ -18,7 +18,7 @@ export class UserEntity {
   displayName!: string;
 
   @Prop({ required: true })
-  password!: string;
+  passwordHash!: string;
 
   @Prop({ default: true })
   enabled!: boolean;

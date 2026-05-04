@@ -6,6 +6,7 @@ import { PermissionEntity, type PermissionDocument } from "../permission/schemas
 import { mockRoles } from "../role/mock-roles";
 import { RoleEntity, type RoleDocument } from "../role/schemas/role.schema";
 import { mockUsers } from "../user/mock-users";
+import { hashPassword } from "../user/password-hash";
 import { UserEntity, type UserDocument } from "../user/schemas/user.schema";
 
 @Injectable()
@@ -17,12 +18,43 @@ export class RbacSeedService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    await this.migrateLegacyPlaintextPasswords();
+
+    const seededUsers = await Promise.all(
+      mockUsers.map(async (user) => {
+        const { password, ...userData } = user;
+
+        return {
+          ...userData,
+          passwordHash: await hashPassword(password)
+        };
+      })
+    );
+
     await Promise.all([
       ...mockPermissions.map((permission) =>
         this.permissionModel.updateOne({ code: permission.code }, { $set: permission }, { upsert: true })
       ),
       ...mockRoles.map((role) => this.roleModel.updateOne({ code: role.code }, { $set: role }, { upsert: true })),
-      ...mockUsers.map((user) => this.userModel.updateOne({ id: user.id }, { $set: user }, { upsert: true }))
+      ...seededUsers.map((user) =>
+        this.userModel.updateOne({ id: user.id }, { $set: user, $unset: { password: "" } }, { upsert: true })
+      )
     ]);
+  }
+
+  private async migrateLegacyPlaintextPasswords() {
+    const legacyUsers = await this.userModel
+      .find({ password: { $exists: true, $type: "string" } })
+      .select({ id: 1, password: 1 })
+      .lean<Array<{ id: string; password: string }>>();
+
+    await Promise.all(
+      legacyUsers.map(async (user) =>
+        this.userModel.updateOne(
+          { id: user.id },
+          { $set: { passwordHash: await hashPassword(user.password) }, $unset: { password: "" } }
+        )
+      )
+    );
   }
 }

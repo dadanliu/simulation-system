@@ -3,7 +3,7 @@ import { AuthGuard } from "../auth/auth.guard";
 import { RequirePermissions } from "../permission/permissions.decorator";
 import { PermissionsGuard } from "../permission/permissions.guard";
 import { UserService } from "./user.service";
-import type { UserRecord } from "./user.types";
+import type { CreateUserInput, UpdateUserInput } from "./user.types";
 
 @Controller("api/users")
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -17,12 +17,12 @@ export class UserController {
   }
 
   @Post()
-  createUser(@Body() body: Omit<UserRecord, "id"> & { id?: string }) {
+  createUser(@Body() body: CreateUserInput) {
     return this.userService.createUser(body);
   }
 
   @Put(":id")
-  updateUser(@Param("id") id: string, @Body() body: Partial<Omit<UserRecord, "id" | "password">>) {
+  updateUser(@Param("id") id: string, @Body() body: UpdateUserInput) {
     return this.userService.updateUser(id, body);
   }
 

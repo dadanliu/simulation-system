@@ -1,6 +1,6 @@
-import type { UserRecord } from "./user.types";
+import type { CreateUserInput } from "./user.types";
 
-export const mockUsers: UserRecord[] = [
+export const mockUsers: CreateUserInput[] = [
   {
     id: "u_admin_001",
     username: "admin",

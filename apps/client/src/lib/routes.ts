@@ -31,6 +31,14 @@ export const routes: NavRoute[] = [
     description: "查看商品写操作记录，确认操作人、动作、对象和 traceId。"
   },
   {
+    href: "/present/user/create",
+    label: "创建用户",
+    matchPrefixes: ["/present/user/create"],
+    adminOnly: true,
+    title: "创建用户",
+    description: "新增后台账号，配置启用状态和基础角色。"
+  },
+  {
     href: "/present/commodity/10001",
     label: "商品详情",
     matchPrefixes: ["/present/commodity/"],

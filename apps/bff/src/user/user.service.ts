@@ -2,11 +2,13 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { RoleService } from "../role/role.service";
+import { hashPassword, verifyPassword } from "./password-hash";
 import { UserEntity, type UserDocument } from "./schemas/user.schema";
-import type { AuthUser, User, UserRecord } from "./user.types";
+import type { AuthUser, CreateUserInput, UpdateUserInput, User, UserRecord } from "./user.types";
 
-type CreateUserBody = Omit<UserRecord, "id"> & {
-  id?: string;
+type PersistedUserRecord = UserRecord & {
+  _id?: unknown;
+  password?: string;
 };
 
 @Injectable()
@@ -24,11 +26,13 @@ export class UserService {
     return this.userModel.findOne({ id }).lean().then((user) => (user ? this.toSafeUser(user) : null));
   }
 
-  async createUser(body: CreateUserBody) {
+  async createUser(body: CreateUserInput) {
     await this.roleService.assertRoleCodes(body.roles);
 
+    const { password, ...userBody } = body;
     const user: UserRecord = {
-      ...body,
+      ...userBody,
+      passwordHash: await hashPassword(password),
       id: body.id ?? `u_${Date.now()}`
     };
 
@@ -36,7 +40,7 @@ export class UserService {
     return this.toSafeUser(createdUser.toObject());
   }
 
-  async updateUser(id: string, body: Partial<Omit<UserRecord, "id" | "password">>) {
+  async updateUser(id: string, body: UpdateUserInput) {
     if (body.roles) {
       await this.roleService.assertRoleCodes(body.roles);
     }
@@ -55,9 +59,9 @@ export class UserService {
   }
 
   async findUserByCredentials(username: string, password: string): Promise<AuthUser | null> {
-    const user = await this.userModel.findOne({ username, password, enabled: true }).lean();
+    const user = await this.userModel.findOne({ username, enabled: true }).lean<PersistedUserRecord | null>();
 
-    if (!user) {
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return null;
     }
 
@@ -74,8 +78,8 @@ export class UserService {
     return this.toAuthUser(user);
   }
 
-  private toSafeUser(user: UserRecord): User {
-    const { password: _password, ...safeUser } = user;
+  private toSafeUser(user: PersistedUserRecord): User {
+    const { _id: _id, password: _password, passwordHash: _passwordHash, ...safeUser } = user;
     return safeUser;
   }
 
