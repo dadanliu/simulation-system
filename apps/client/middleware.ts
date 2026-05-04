@@ -23,7 +23,10 @@ function unauthorizedJson() {
   return NextResponse.json(
     {
       success: false,
-      message: "Unauthorized"
+      message: "Unauthorized",
+      path: "",
+      statusCode: 401,
+      timestamp: new Date().toISOString()
     },
     {
       status: 401
@@ -31,11 +34,14 @@ function unauthorizedJson() {
   );
 }
 
-function forbiddenJson(message: string) {
+function forbiddenJson(request: NextRequest, message: string) {
   return NextResponse.json(
     {
       success: false,
-      message
+      message,
+      path: `${request.nextUrl.pathname}${request.nextUrl.search}`,
+      statusCode: 403,
+      timestamp: new Date().toISOString()
     },
     {
       status: 403
@@ -83,7 +89,7 @@ export function middleware(request: NextRequest) {
   const isLoggedIn = hasSessionCookie(request);
 
   if (!isCsrfSafeApiRequest(request)) {
-    return forbiddenJson("CSRF origin denied");
+    return forbiddenJson(request, "CSRF origin denied");
   }
 
   // Auth APIs must stay public, otherwise the login request itself would be blocked by this middleware.

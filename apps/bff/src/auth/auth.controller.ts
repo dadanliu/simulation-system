@@ -8,6 +8,7 @@ import {
   ApiTags
 } from "@nestjs/swagger";
 import type { Request, Response } from "express";
+import { createCsrfCookie, generateCsrfToken } from "../common/http/csrf-token";
 import { ErrorResponseDto } from "../common/swagger/error-response.dto";
 import { AuthService } from "./auth.service";
 import { AuthGuard } from "./auth.guard";
@@ -36,14 +37,15 @@ export class AuthController {
       ip: request.ip,
       userAgent: request.headers["user-agent"]?.toString()
     });
+    const csrfToken = generateCsrfToken();
 
-    response.setHeader(
-      "Set-Cookie",
+    response.setHeader("Set-Cookie", [
       createSessionCookie(result.sessionId, {
         maxAgeSeconds: this.authService.getSessionTtlSeconds(),
         secure: this.shouldUseSecureCookie()
-      })
-    );
+      }),
+      createCsrfCookie(csrfToken, { secure: this.shouldUseSecureCookie() })
+    ]);
 
     return {
       user: result.user
@@ -59,9 +61,25 @@ export class AuthController {
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
   async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
     await this.authService.logout(request);
-    response.setHeader("Set-Cookie", clearSessionCookie({ secure: this.shouldUseSecureCookie() }));
+    response.setHeader("Set-Cookie", [
+      clearSessionCookie({ secure: this.shouldUseSecureCookie() }),
+      createCsrfCookie(generateCsrfToken(), { secure: this.shouldUseSecureCookie() })
+    ]);
 
     return null;
+  }
+
+  @Get("csrf")
+  @ApiOperation({ summary: "获取 CSRF token" })
+  @ApiResponse({ status: 200, description: "获取 CSRF token 成功" })
+  csrf(@Res({ passthrough: true }) response: Response) {
+    const csrfToken = generateCsrfToken();
+
+    response.setHeader("Set-Cookie", createCsrfCookie(csrfToken, { secure: this.shouldUseSecureCookie() }));
+
+    return {
+      csrfToken
+    };
   }
 
   @Get("me")

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { fetchWithCsrf } from "@/src/features/auth/client";
 import { createCommodity } from "@/src/features/commodity/client";
 import type { CommodityStatus } from "@/src/features/commodity/types";
 
@@ -114,7 +115,7 @@ export function CommodityCreateForm() {
       formData.append("file", file);
       formData.append("scene", "commodity");
 
-      const response = await fetch("/api/upload", {
+      const response = await fetchWithCsrf("/api/upload", {
         body: formData,
         method: "POST"
       });

@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
+import { CSRF_HEADER_NAME, getCsrfTokenFromRequest } from "./csrf-token";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+const CSRF_EXEMPT_PATHS = new Set(["/api/auth/csrf"]);
 
 type RequestWithTraceId = Request & {
   traceId?: string;
@@ -42,22 +44,41 @@ export function createCsrfOriginMiddleware(allowedOrigins: string[]) {
       return;
     }
 
-    const requestOrigin = getHeaderOrigin(request);
-
-    // Non-browser callers may not send Origin/Referer. Browser CSRF requests do, so only reject explicit mismatches.
-    if (!requestOrigin || allowedOriginSet.has(requestOrigin)) {
+    if (CSRF_EXEMPT_PATHS.has(request.path)) {
       next();
       return;
     }
 
-    response.status(403).json({
-      success: false,
-      message: "CSRF origin denied",
-      path: request.originalUrl,
-      traceId: (request as RequestWithTraceId).traceId,
-      statusCode: 403,
-      timestamp: new Date().toISOString()
-    });
+    const requestOrigin = getHeaderOrigin(request);
+
+    // Non-browser callers may not send Origin/Referer. Browser CSRF requests do, so only reject explicit mismatches.
+    if (requestOrigin && !allowedOriginSet.has(requestOrigin)) {
+      response.status(403).json({
+        success: false,
+        message: "CSRF origin denied",
+        path: request.originalUrl,
+        traceId: (request as RequestWithTraceId).traceId,
+        statusCode: 403,
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    const { cookieToken, headerToken } = getCsrfTokenFromRequest(request);
+
+    if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+      response.status(403).json({
+        success: false,
+        message: `CSRF token invalid: expected ${CSRF_HEADER_NAME}`,
+        path: request.originalUrl,
+        traceId: (request as RequestWithTraceId).traceId,
+        statusCode: 403,
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+
+    next();
   };
 }
 

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { fetchWithCsrf } from "@/src/features/auth/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,12 +17,11 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetchWithCsrf("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        credentials: "same-origin",
         body: JSON.stringify({
           username,
           password

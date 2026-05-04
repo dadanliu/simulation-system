@@ -1,5 +1,6 @@
 import type { INestApplication } from "@nestjs/common";
 import request = require("supertest");
+import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "../common/http/csrf-token";
 import type { AuthUser } from "../user/user.types";
 import { createBffTestApp, createTestAppMocks, type TestAppMocks } from "../test/app-test-utils";
 
@@ -29,12 +30,62 @@ describe("AuthController e2e", () => {
     });
   }
 
+  function getSetCookies(response: request.Response) {
+    const setCookieHeader = response.headers["set-cookie"];
+
+    if (Array.isArray(setCookieHeader)) {
+      return setCookieHeader;
+    }
+
+    return typeof setCookieHeader === "string" ? [setCookieHeader] : [];
+  }
+
+  async function issueCsrfToken() {
+    const response = await request(app.getHttpServer()).get("/api/auth/csrf").expect(200);
+    const setCookie = getSetCookies(response).find((value) => value.startsWith(`${CSRF_COOKIE_NAME}=`));
+
+    expect(setCookie).toBeDefined();
+
+    const rawCookie = setCookie!.split(";", 1)[0];
+    const token = decodeURIComponent(rawCookie.split("=", 2)[1] ?? "");
+
+    expect(token).not.toBe("");
+
+    return {
+      cookie: rawCookie,
+      token
+    };
+  }
+
+  it("rejects login without a CSRF token using a unified 403 response", async () => {
+    const response = await request(app.getHttpServer())
+      .post("/api/auth/login")
+      .set("x-trace-id", "trace-login-csrf")
+      .send({
+        password: "admin123",
+        username: "admin"
+      })
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: `CSRF token invalid: expected ${CSRF_HEADER_NAME}`,
+      path: "/api/auth/login",
+      statusCode: 403,
+      success: false,
+      traceId: "trace-login-csrf"
+    });
+    expect(mocks.authService.login).not.toHaveBeenCalled();
+  });
+
   it("logs in successfully and writes a local HTTP compatible HttpOnly cookie", async () => {
     mockLoginSuccess();
     mocks.authService.getSessionTtlSeconds.mockReturnValue(3600);
+    const csrf = await issueCsrfToken();
 
     const response = await request(app.getHttpServer())
       .post("/api/auth/login")
+      .set("Cookie", csrf.cookie)
+      .set(CSRF_HEADER_NAME, csrf.token)
       .set("x-trace-id", "trace-login")
       .set("user-agent", "jest")
       .send({
@@ -42,8 +93,9 @@ describe("AuthController e2e", () => {
         username: "admin"
       })
       .expect(201);
-    const setCookie = response.headers["set-cookie"][0];
+    const setCookie = getSetCookies(response).find((value) => value.startsWith("next_bff_session="));
 
+    expect(setCookie).toBeDefined();
     expect(setCookie).toContain("next_bff_session=session-admin");
     expect(setCookie).toContain("Path=/");
     expect(setCookie).toContain("HttpOnly");
@@ -76,9 +128,12 @@ describe("AuthController e2e", () => {
       }
     });
     mockLoginSuccess();
+    const csrf = await issueCsrfToken();
 
     const response = await request(app.getHttpServer())
       .post("/api/auth/login")
+      .set("Cookie", csrf.cookie)
+      .set(CSRF_HEADER_NAME, csrf.token)
       .set("user-agent", "jest")
       .send({
         password: "admin123",
@@ -86,7 +141,9 @@ describe("AuthController e2e", () => {
       })
       .expect(201);
 
-    expect(response.headers["set-cookie"][0]).toContain("Secure");
+    const sessionCookie = getSetCookies(response).find((value) => value.startsWith("next_bff_session="));
+
+    expect(sessionCookie).toContain("Secure");
   });
 
   it("lets COOKIE_SECURE override the environment", async () => {
@@ -98,9 +155,12 @@ describe("AuthController e2e", () => {
       }
     });
     mockLoginSuccess();
+    let csrf = await issueCsrfToken();
 
     const secureResponse = await request(app.getHttpServer())
       .post("/api/auth/login")
+      .set("Cookie", csrf.cookie)
+      .set(CSRF_HEADER_NAME, csrf.token)
       .set("user-agent", "jest")
       .send({
         password: "admin123",
@@ -108,7 +168,11 @@ describe("AuthController e2e", () => {
       })
       .expect(201);
 
-    expect(secureResponse.headers["set-cookie"][0]).toContain("Secure");
+    const secureSessionCookie = getSetCookies(secureResponse).find((value) =>
+      value.startsWith("next_bff_session=")
+    );
+
+    expect(secureSessionCookie).toContain("Secure");
 
     await app.close();
     app = await createBffTestApp(mocks, {
@@ -118,9 +182,12 @@ describe("AuthController e2e", () => {
       }
     });
     mockLoginSuccess();
+    csrf = await issueCsrfToken();
 
     const insecureResponse = await request(app.getHttpServer())
       .post("/api/auth/login")
+      .set("Cookie", csrf.cookie)
+      .set(CSRF_HEADER_NAME, csrf.token)
       .set("user-agent", "jest")
       .send({
         password: "admin123",
@@ -128,7 +195,11 @@ describe("AuthController e2e", () => {
       })
       .expect(201);
 
-    expect(insecureResponse.headers["set-cookie"][0]).not.toContain("Secure");
+    const insecureSessionCookie = getSetCookies(insecureResponse).find((value) =>
+      value.startsWith("next_bff_session=")
+    );
+
+    expect(insecureSessionCookie).not.toContain("Secure");
   });
 
   it("clears the cookie on logout with the same security attributes", async () => {
@@ -138,14 +209,17 @@ describe("AuthController e2e", () => {
         COOKIE_SECURE: "true"
       }
     });
+    const csrf = await issueCsrfToken();
 
     const response = await request(app.getHttpServer())
       .post("/api/auth/logout")
-      .set("Cookie", "next_bff_session=session-admin")
+      .set("Cookie", ["next_bff_session=session-admin", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
       .expect(200);
-    const setCookie = response.headers["set-cookie"][0];
+    const setCookie = getSetCookies(response).find((value) => value.startsWith("next_bff_session="));
 
     expect(mocks.authService.logout).toHaveBeenCalled();
+    expect(setCookie).toBeDefined();
     expect(setCookie).toContain("next_bff_session=");
     expect(setCookie).toContain("Path=/");
     expect(setCookie).toContain("HttpOnly");

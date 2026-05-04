@@ -1,3 +1,4 @@
+import { fetchWithCsrf } from "../auth/client";
 import type { CreateUserInput, User } from "./types";
 
 type ApiResponse<T> = {
@@ -7,7 +8,7 @@ type ApiResponse<T> = {
 };
 
 export async function createUser(input: CreateUserInput) {
-  const response = await fetch("/api/users", {
+  const response = await fetchWithCsrf("/api/users", {
     body: JSON.stringify(input),
     headers: {
       "Content-Type": "application/json"

@@ -1,3 +1,4 @@
+import { fetchWithCsrf } from "@/src/features/auth/client";
 import type { Commodity, CommodityStatus, CreateCommodityInput } from "@/src/features/commodity/types";
 
 type CreateCommodityResponse = {
@@ -13,7 +14,7 @@ type ApiResponse<T> = {
 };
 
 export async function createCommodity(input: CreateCommodityInput) {
-  const response = await fetch("/api/commodity/create", {
+  const response = await fetchWithCsrf("/api/commodity/create", {
     body: JSON.stringify(input),
     headers: {
       "Content-Type": "application/json"
@@ -35,7 +36,7 @@ type UpdateCommodityStatusResponse = {
 };
 
 export async function updateCommodityStatus(id: string, input: { reason: string; status: CommodityStatus }) {
-  const response = await fetch(`/api/commodity/${encodeURIComponent(id)}/status`, {
+  const response = await fetchWithCsrf(`/api/commodity/${encodeURIComponent(id)}/status`, {
     body: JSON.stringify(input),
     headers: {
       "Content-Type": "application/json"
@@ -52,7 +53,7 @@ export async function updateCommodityStatus(id: string, input: { reason: string;
 }
 
 export async function deleteCommodity(id: string) {
-  const response = await fetch(`/api/commodity/${encodeURIComponent(id)}`, {
+  const response = await fetchWithCsrf(`/api/commodity/${encodeURIComponent(id)}`, {
     method: "DELETE"
   });
   const payload = (await response.json().catch(() => null)) as ApiResponse<{ commodity: Commodity }> | null;

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { fetchWithCsrf } from "@/src/features/auth/client";
 
 type UploadResult = {
   fileName: string;
@@ -83,7 +84,7 @@ export function UploadDemo() {
       formData.append("file", file);
       formData.append("scene", "commodity");
 
-      const response = await fetch("/api/upload", {
+      const response = await fetchWithCsrf("/api/upload", {
         body: formData,
         method: "POST"
       });

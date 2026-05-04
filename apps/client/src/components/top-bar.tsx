@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
+import { fetchWithCsrf } from "../features/auth/client";
 import type { CurrentUser } from "../features/auth/types";
 import { getActiveRoute } from "../lib/routes";
 
@@ -19,8 +20,7 @@ export function TopBar({ currentUser }: TopBarProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/auth/logout", {
-        credentials: "same-origin",
+      const response = await fetchWithCsrf("/api/auth/logout", {
         method: "POST"
       });
 
