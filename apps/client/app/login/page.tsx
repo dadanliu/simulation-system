@@ -11,6 +11,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  function getLoginErrorMessage(status: number) {
+    if (status === 429) {
+      return "登录失败次数过多，请稍后再试";
+    }
+
+    return "用户名或密码错误";
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -29,7 +37,7 @@ export default function LoginPage() {
       });
 
       if (!response.ok) {
-        const message = response.status === 401 ? "用户名或密码错误" : "登录失败，请稍后重试";
+        const message = getLoginErrorMessage(response.status);
         setError(message);
         return;
       }

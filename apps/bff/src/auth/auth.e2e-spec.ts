@@ -1,4 +1,4 @@
-import type { INestApplication } from "@nestjs/common";
+import { HttpException, HttpStatus, type INestApplication } from "@nestjs/common";
 import request = require("supertest");
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "../common/http/csrf-token";
 import type { AuthUser } from "../user/user.types";
@@ -115,9 +115,36 @@ describe("AuthController e2e", () => {
       "admin123",
       expect.objectContaining({
         ip: expect.any(String),
+        traceId: "trace-login",
         userAgent: expect.any(String)
       })
     );
+  });
+
+  it("returns a unified 429 response when login is rate limited", async () => {
+    mocks.authService.login.mockRejectedValue(
+      new HttpException("too many login attempts, try again in 60s", HttpStatus.TOO_MANY_REQUESTS)
+    );
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .post("/api/auth/login")
+      .set("Cookie", csrf.cookie)
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-login-rate-limit")
+      .send({
+        password: "admin123",
+        username: "admin"
+      })
+      .expect(429);
+
+    expect(response.body).toMatchObject({
+      message: "too many login attempts, try again in 60s",
+      path: "/api/auth/login",
+      statusCode: 429,
+      success: false,
+      traceId: "trace-login-rate-limit"
+    });
   });
 
   it("adds Secure in production when COOKIE_SECURE is not explicitly configured", async () => {
@@ -226,5 +253,63 @@ describe("AuthController e2e", () => {
     expect(setCookie).toContain("SameSite=Lax");
     expect(setCookie).toContain("Max-Age=0");
     expect(setCookie).toContain("Secure");
+  });
+
+  it("lists login logs with audit permission and query filters", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(true);
+    mocks.authService.listLoginLogs.mockResolvedValue({
+      list: [
+        {
+          createdAt: "2026-05-04T10:00:00.000Z",
+          ip: "127.0.0.1",
+          outcome: "success",
+          reason: null,
+          traceId: "trace-log",
+          userAgent: "jest",
+          userId: "u_admin_001",
+          username: "admin"
+        }
+      ],
+      pagination: {
+        page: 1,
+        pageSize: 20,
+        total: 1
+      }
+    });
+
+    const response = await request(app.getHttpServer())
+      .get("/api/auth/login-logs")
+      .query({
+        createdFrom: "2026-05-04T00:00:00.000Z",
+        createdTo: "2026-05-04T23:59:59.999Z",
+        username: "admin"
+      })
+      .set("Cookie", "next_bff_session=session-admin")
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      data: {
+        list: [
+          {
+            outcome: "success",
+            username: "admin"
+          }
+        ],
+        pagination: {
+          page: 1,
+          total: 1
+        }
+      },
+      message: "ok",
+      success: true
+    });
+    expect(mocks.authService.listLoginLogs).toHaveBeenCalledWith(
+      expect.objectContaining({
+        createdFrom: "2026-05-04T00:00:00.000Z",
+        createdTo: "2026-05-04T23:59:59.999Z",
+        username: "admin"
+      })
+    );
   });
 });

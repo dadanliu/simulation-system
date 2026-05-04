@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
   ApiBody,
@@ -17,6 +17,9 @@ import { LoginDto } from "./dto/login.dto";
 import type { AuthUser } from "../user/user.types";
 import { SuccessResponseMessage } from "../common/interceptors/response-envelope.decorator";
 import { clearSessionCookie, createSessionCookie } from "./session-cookie";
+import { QueryLoginAuditLogDto } from "./dto/query-login-audit-log.dto";
+import { PermissionsGuard } from "../permission/permissions.guard";
+import { RequirePermissions } from "../permission/permissions.decorator";
 
 @ApiTags("Auth")
 @Controller("api/auth")
@@ -35,6 +38,7 @@ export class AuthController {
   async login(@Body() body: LoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
     const result = await this.authService.login(body.username.trim(), body.password, {
       ip: request.ip,
+      traceId: (request as Request & { traceId?: string }).traceId,
       userAgent: request.headers["user-agent"]?.toString()
     });
     const csrfToken = generateCsrfToken();
@@ -102,6 +106,18 @@ export class AuthController {
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
   sessions(@CurrentUser() user: AuthUser) {
     return this.authService.listUserSessions(user.id);
+  }
+
+  @Get("login-logs")
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions("audit:read")
+  @ApiOperation({ summary: "查询登录日志" })
+  @ApiCookieAuth("next_bff_session")
+  @ApiResponse({ status: 200, description: "查询登录日志成功" })
+  @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: "无审计日志查看权限", type: ErrorResponseDto })
+  loginLogs(@Query() query: QueryLoginAuditLogDto) {
+    return this.authService.listLoginLogs(query);
   }
 
   private shouldUseSecureCookie() {
