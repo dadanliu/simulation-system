@@ -1,15 +1,17 @@
 import { ValidationPipe } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
-import { createCsrfOriginMiddleware, getConfiguredCsrfAllowedOrigins } from "./common/http/csrf-origin";
+import { createCsrfOriginMiddleware } from "./common/http/csrf-origin";
 import { traceIdMiddleware } from "./common/http/trace-id";
 import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
 import { SuccessResponseInterceptor } from "./common/interceptors/success-response.interceptor";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
   const swaggerConfig = new DocumentBuilder()
     .setTitle("Next BFF API")
     .setDescription("Core BFF APIs for auth, commodity, upload and audit logs")
@@ -20,7 +22,15 @@ async function bootstrap() {
 
   SwaggerModule.setup("api/docs", app, swaggerDocument);
   app.use(traceIdMiddleware);
-  app.use(createCsrfOriginMiddleware(getConfiguredCsrfAllowedOrigins()));
+  app.use(
+    createCsrfOriginMiddleware(
+      configService
+        .getOrThrow<string>("CSRF_ALLOWED_ORIGINS")
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean)
+    )
+  );
   // 全局启用 DTO 校验。Controller 里只要使用 class DTO，NestJS 就会在进入 handler 前校验请求参数。
   app.useGlobalPipes(
     new ValidationPipe({
@@ -34,7 +44,7 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(app.get(RequestLoggingInterceptor), app.get(SuccessResponseInterceptor));
-  await app.listen(process.env.PORT ?? 3001);
+  await app.listen(Number(configService.getOrThrow<string>("BFF_PORT")));
 }
 
 bootstrap();

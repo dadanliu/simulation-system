@@ -11,6 +11,7 @@ import {
   readCommodityListFilters,
   type CommoditySearchParams
 } from "@/src/features/commodity/query";
+import { loadClientConfig } from "@/src/config/env";
 
 type ApiResponse<T> = {
   data?: T;
@@ -18,7 +19,7 @@ type ApiResponse<T> = {
   success: boolean;
 };
 
-const internalOrigin = process.env.NEXT_INTERNAL_ORIGIN ?? "http://127.0.0.1:3000";
+const { internalOrigin } = loadClientConfig();
 
 async function getCookieHeader() {
   const cookieStore = await cookies();

@@ -4,6 +4,7 @@ const SESSION_COOKIE_NAME = "next_bff_session";
 const LOGIN_PATH = "/login";
 const PRESENT_PATH_PREFIX = "/present";
 const AUTH_API_PATH_PREFIX = "/api/auth";
+const AUTH_ME_PATH = "/api/auth/me";
 const API_PATH_PREFIX = "/api";
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
@@ -19,12 +20,12 @@ function redirectToLogin(request: NextRequest) {
   return NextResponse.redirect(loginUrl);
 }
 
-function unauthorizedJson() {
+function unauthorizedJson(request: NextRequest) {
   return NextResponse.json(
     {
       success: false,
       message: "Unauthorized",
-      path: "",
+      path: `${request.nextUrl.pathname}${request.nextUrl.search}`,
       statusCode: 401,
       timestamp: new Date().toISOString()
     },
@@ -92,6 +93,10 @@ export function middleware(request: NextRequest) {
     return forbiddenJson(request, "CSRF origin denied");
   }
 
+  if (pathname === AUTH_ME_PATH && !isLoggedIn) {
+    return unauthorizedJson(request);
+  }
+
   // Auth APIs must stay public, otherwise the login request itself would be blocked by this middleware.
   if (pathname.startsWith(AUTH_API_PATH_PREFIX)) {
     return NextResponse.next();
@@ -104,7 +109,7 @@ export function middleware(request: NextRequest) {
 
   // Protected client APIs should not redirect to HTML; callers need a clear 401 JSON response.
   if (pathname.startsWith(API_PATH_PREFIX)) {
-    return isLoggedIn ? NextResponse.next() : unauthorizedJson();
+    return isLoggedIn ? NextResponse.next() : unauthorizedJson(request);
   }
 
   return NextResponse.next();

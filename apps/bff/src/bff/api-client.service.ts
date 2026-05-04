@@ -1,5 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import type { Request } from "express";
+import { BackendRequestException } from "./errors";
 import { RequestHeadersService } from "./request-headers.service";
 import { ResponseHandlerService } from "./response-handler.service";
 
@@ -14,10 +16,10 @@ type RequestOptions = {
 
 @Injectable()
 export class ApiClientService {
-  private readonly backendBaseUrl = process.env.BACKEND_BASE_URL ?? "http://localhost:3002";
   private readonly logger = new Logger(ApiClientService.name);
 
   constructor(
+    private readonly configService: ConfigService,
     private readonly requestHeadersService: RequestHeadersService,
     private readonly responseHandlerService: ResponseHandlerService
   ) {}
@@ -28,22 +30,26 @@ export class ApiClientService {
       userId: options.userId
     });
     const method = options.method ?? "GET";
+    const backendBaseUrl = this.configService.getOrThrow<string>("BACKEND_BASE_URL");
     const url = this.buildUrl(path);
     const traceId = headers["x-trace-id"] ?? "";
     const startedAt = Date.now();
 
-    this.logger.log(`backend request started method=${method} path=${path} traceId=${traceId}`);
+    this.logger.log(`backend request started method=${method} baseUrl=${backendBaseUrl} path=${path} traceId=${traceId}`);
 
-    const response = await fetch(url, {
+    const response = await this.fetchBackend(url, {
       method,
       headers: {
         ...headers,
         ...options.headers,
         ...(options.body === undefined ? {} : { "Content-Type": "application/json" })
       },
-      body:
-        options.formData ??
-        (options.body === undefined ? undefined : JSON.stringify(options.body))
+      body: options.formData ?? (options.body === undefined ? undefined : JSON.stringify(options.body))
+    }, {
+      backendBaseUrl,
+      method,
+      path,
+      traceId
     });
 
     this.logger.log(
@@ -55,6 +61,28 @@ export class ApiClientService {
 
   private buildUrl(path: string) {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-    return `${this.backendBaseUrl}${normalizedPath}`;
+    return `${this.configService.getOrThrow<string>("BACKEND_BASE_URL")}${normalizedPath}`;
+  }
+
+  private async fetchBackend(
+    url: string,
+    init: RequestInit,
+    context: {
+      backendBaseUrl: string;
+      method: string;
+      path: string;
+      traceId: string;
+    }
+  ) {
+    try {
+      return await fetch(url, init);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      this.logger.error(
+        `backend request failed method=${context.method} baseUrl=${context.backendBaseUrl} path=${context.path} traceId=${context.traceId} error=${message}`
+      );
+      throw new BackendRequestException(`Backend request failed. Check BACKEND_BASE_URL=${context.backendBaseUrl}`);
+    }
   }
 }

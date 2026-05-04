@@ -18,18 +18,33 @@ const services = [
   },
   {
     name: "client",
+    env: {
+      BFF_BASE_URL: "http://localhost:3001",
+      NEXT_INTERNAL_ORIGIN: "http://127.0.0.1:3000"
+    },
     packageName: "@next-bff/client",
     url: "http://localhost:3000",
     readyPattern: /Ready in|Local:|started server/i
   },
   {
     name: "bff",
+    env: {
+      BACKEND_BASE_URL: "http://localhost:3002",
+      BFF_PORT: "3001",
+      MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff",
+      REDIS_URL: "redis://127.0.0.1:6379"
+    },
     packageName: "@next-bff/bff",
     url: "http://localhost:3001",
     readyPattern: /Nest application successfully started/i
   },
   {
     name: "server",
+    env: {
+      MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff",
+      SERVER_PORT: "3002",
+      STORAGE_DRIVER: "local"
+    },
     packageName: "@next-bff/server",
     url: "http://localhost:3002",
     readyPattern: /Nest application successfully started/i
@@ -104,6 +119,10 @@ function stopChildren(signal = "SIGTERM") {
 
 function spawnService(service) {
   return spawn(service.command ?? "pnpm", service.args ?? ["--filter", service.packageName, "dev"], {
+    env: {
+      ...process.env,
+      ...service.env
+    },
     stdio: ["inherit", "pipe", "pipe"]
   });
 }

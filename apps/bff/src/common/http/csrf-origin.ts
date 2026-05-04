@@ -83,5 +83,5 @@ export function createCsrfOriginMiddleware(allowedOrigins: string[]) {
 }
 
 export function getConfiguredCsrfAllowedOrigins() {
-  return normalizeAllowedOrigins(process.env.CSRF_ALLOWED_ORIGINS ?? "http://localhost:3000");
+  return normalizeAllowedOrigins("http://localhost:3000");
 }

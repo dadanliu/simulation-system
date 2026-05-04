@@ -3,3 +3,7 @@ node_modules
 dist
 .DS_Store
 .cert
+.env
+.env.local
+.env.*.local
+!.env.example

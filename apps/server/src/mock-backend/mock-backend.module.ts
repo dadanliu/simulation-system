@@ -31,7 +31,7 @@ import { UsersService } from "./users.service";
         s3StorageService: S3StorageService,
         ossStorageService: OssStorageService
       ) => {
-        const storageDriver = configService.get<string>("STORAGE_DRIVER", "local");
+        const storageDriver = configService.getOrThrow<string>("STORAGE_DRIVER");
 
         if (storageDriver === "s3") {
           return s3StorageService;

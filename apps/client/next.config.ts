@@ -1,25 +1,30 @@
 import type { NextConfig } from "next";
+import { loadClientConfig } from "./src/config/env";
+
+const clientConfig = loadClientConfig();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   async rewrites() {
+    const bffBaseUrl = clientConfig.bffBaseUrl;
+
     return [
       {
         source: "/api/auth/:path*",
-        destination: "http://localhost:3001/api/auth/:path*"
+        destination: `${bffBaseUrl}/api/auth/:path*`
       },
       {
         // 浏览器保持同源请求，Next 负责转发到 BFF。
         source: "/api/commodity/:path*",
-        destination: "http://localhost:3001/api/commodity/:path*"
+        destination: `${bffBaseUrl}/api/commodity/:path*`
       },
       {
         source: "/api/upload",
-        destination: "http://localhost:3001/api/upload"
+        destination: `${bffBaseUrl}/api/upload`
       },
       {
         source: "/api/users/:path*",
-        destination: "http://localhost:3001/api/users/:path*"
+        destination: `${bffBaseUrl}/api/users/:path*`
       }
     ];
   }

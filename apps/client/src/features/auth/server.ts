@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { loadClientConfig } from "@/src/config/env";
 import type { CurrentUser } from "./types";
 
 type ApiResponse<T> = {
@@ -8,7 +9,7 @@ type ApiResponse<T> = {
   success: boolean;
 };
 
-const internalOrigin = process.env.NEXT_INTERNAL_ORIGIN ?? "http://127.0.0.1:3000";
+const { bffBaseUrl, internalOrigin } = loadClientConfig();
 
 async function getCookieHeader() {
   const cookieStore = await cookies();
@@ -34,7 +35,10 @@ export async function getCurrentUser(nextPath = "/present/commodity/list"): Prom
   }
 
   if (!response.ok || !payload?.success || !payload.data?.user) {
-    throw new Error(payload?.message ?? `Request failed with status ${response.status}`);
+    throw new Error(
+      payload?.message ??
+        `Auth API request failed with status ${response.status}. Check BFF_BASE_URL=${bffBaseUrl} and BFF availability.`
+    );
   }
 
   return payload.data.user;
