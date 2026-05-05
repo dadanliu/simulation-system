@@ -7,6 +7,7 @@ const rootDir = process.cwd();
 const certDir = path.join(rootDir, ".cert");
 const keyPath = path.join(certDir, "localhost-key.pem");
 const certPath = path.join(certDir, "localhost-cert.pem");
+const DEV_MONGODB_URI = "mongodb://127.0.0.1:27017/next-bff-dev";
 
 const services = [
   {
@@ -23,6 +24,8 @@ const services = [
       certPath
     ],
     env: {
+      NEXT_PUBLIC_APP_ENV: "development",
+      NEXT_PUBLIC_SHOW_ENV_BADGE: "true",
       NEXT_INTERNAL_ORIGIN: "https://localhost:3000",
       // Local self-signed HTTPS is only for development. Browser traffic is still protected by HTTPS,
       // but Node's server-side fetch needs this to call the local Next HTTPS origin.
@@ -35,7 +38,10 @@ const services = [
   {
     args: ["--filter", "@next-bff/bff", "dev"],
     env: {
-      COOKIE_SECURE: "true"
+      APP_ENV: "development",
+      COOKIE_SECURE: "true",
+      MOCK_SEED_ENABLED: "true",
+      MONGODB_URI: DEV_MONGODB_URI
     },
     name: "bff",
     readyPattern: /Nest application successfully started/i,
@@ -43,7 +49,11 @@ const services = [
   },
   {
     args: ["--filter", "@next-bff/server", "dev"],
-    env: {},
+    env: {
+      APP_ENV: "development",
+      MOCK_SEED_ENABLED: "true",
+      MONGODB_URI: DEV_MONGODB_URI
+    },
     name: "server",
     readyPattern: /Nest application successfully started/i,
     url: "http://localhost:3002"

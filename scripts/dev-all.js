@@ -9,6 +9,7 @@ const readline = require("node:readline");
 const STATE_DIR = path.resolve(".dev");
 const STATE_FILE = path.join(STATE_DIR, "dev-all.json");
 const READY_TIMEOUT_MS = 60_000;
+const DEV_MONGODB_URI = "mongodb://127.0.0.1:27017/next-bff-dev";
 const RESERVED_APP_PORTS = [
   {
     name: "client",
@@ -29,7 +30,7 @@ const services = [
     name: "mongo",
     command: "node",
     args: ["scripts/dev-mongo.js"],
-    url: "mongodb://127.0.0.1:27017/next-bff",
+    url: DEV_MONGODB_URI,
     readyPattern: /MongoDB ready|Using existing MongoDB/i
   },
   {
@@ -43,6 +44,8 @@ const services = [
     name: "client",
     env: {
       BFF_BASE_URL: "http://localhost:3001",
+      NEXT_PUBLIC_APP_ENV: "development",
+      NEXT_PUBLIC_SHOW_ENV_BADGE: "true",
       NEXT_INTERNAL_ORIGIN: "http://127.0.0.1:3000"
     },
     packageName: "@next-bff/client",
@@ -53,9 +56,11 @@ const services = [
   {
     name: "bff",
     env: {
+      APP_ENV: "development",
       BACKEND_BASE_URL: "http://localhost:3002",
       BFF_PORT: "3001",
-      MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff",
+      MOCK_SEED_ENABLED: "true",
+      MONGODB_URI: DEV_MONGODB_URI,
       REDIS_URL: "redis://127.0.0.1:6379"
     },
     packageName: "@next-bff/bff",
@@ -66,7 +71,9 @@ const services = [
   {
     name: "server",
     env: {
-      MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff",
+      APP_ENV: "development",
+      MOCK_SEED_ENABLED: "true",
+      MONGODB_URI: DEV_MONGODB_URI,
       SERVER_PORT: "3002",
       STORAGE_DRIVER: "local"
     },

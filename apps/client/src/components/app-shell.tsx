@@ -1,3 +1,4 @@
+import { loadClientConfig } from "../config/env";
 import type { CurrentUser } from "../features/auth/types";
 import { SideNav } from "./side-nav";
 import { TopBar } from "./top-bar";
@@ -8,11 +9,13 @@ type AppShellProps = {
 };
 
 export function AppShell({ children, currentUser }: AppShellProps) {
+  const { appEnv, showEnvBadge } = loadClientConfig();
+
   return (
     <div className="page-shell">
       <SideNav currentUser={currentUser} />
       <main className="main-panel">
-        <TopBar currentUser={currentUser} />
+        <TopBar appEnv={appEnv} currentUser={currentUser} showEnvBadge={showEnvBadge} />
         {children}
       </main>
     </div>

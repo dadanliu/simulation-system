@@ -1,9 +1,11 @@
 type ClientRuntimeEnvironment = "development" | "production" | "test";
 
 type ClientConfig = {
+  appEnv: ClientRuntimeEnvironment;
   bffBaseUrl: string;
   internalOrigin: string;
   nodeEnv: ClientRuntimeEnvironment;
+  showEnvBadge: boolean;
 };
 
 function readEnvironment(value: string | undefined): ClientRuntimeEnvironment {
@@ -29,8 +31,10 @@ function requireUrl(name: string, value: string | undefined, errors: string[]) {
 
 export function loadClientConfig(env: NodeJS.ProcessEnv = process.env): ClientConfig {
   const nodeEnv = readEnvironment(env.NODE_ENV);
+  const appEnv = readEnvironment(env.NEXT_PUBLIC_APP_ENV ?? env.APP_ENV ?? env.NODE_ENV);
   const bffBaseUrl = env.BFF_BASE_URL ?? "http://localhost:3001";
   const internalOrigin = env.NEXT_INTERNAL_ORIGIN ?? "http://127.0.0.1:3000";
+  const showEnvBadge = env.NEXT_PUBLIC_SHOW_ENV_BADGE !== "false" && appEnv !== "production";
   const errors: string[] = [];
 
   requireUrl("BFF_BASE_URL", bffBaseUrl, errors);
@@ -41,8 +45,10 @@ export function loadClientConfig(env: NodeJS.ProcessEnv = process.env): ClientCo
   }
 
   return {
+    appEnv,
     bffBaseUrl,
     internalOrigin,
-    nodeEnv
+    nodeEnv,
+    showEnvBadge
   };
 }

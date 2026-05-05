@@ -1,4 +1,5 @@
 import { Injectable, type OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { mockPermissions } from "../permission/mock-permissions";
@@ -14,10 +15,15 @@ export class RbacSeedService implements OnModuleInit {
   constructor(
     @InjectModel(UserEntity.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(RoleEntity.name) private readonly roleModel: Model<RoleDocument>,
-    @InjectModel(PermissionEntity.name) private readonly permissionModel: Model<PermissionDocument>
+    @InjectModel(PermissionEntity.name) private readonly permissionModel: Model<PermissionDocument>,
+    private readonly configService: ConfigService
   ) {}
 
   async onModuleInit() {
+    if (!this.shouldRunMockSeed()) {
+      return;
+    }
+
     await this.migrateLegacyPlaintextPasswords();
 
     const seededUsers = await Promise.all(
@@ -40,6 +46,21 @@ export class RbacSeedService implements OnModuleInit {
         this.userModel.updateOne({ id: user.id }, { $set: user, $unset: { password: "" } }, { upsert: true })
       )
     ]);
+  }
+
+  private shouldRunMockSeed() {
+    const appEnv = this.configService.get<string>("APP_ENV", "development");
+    const enabled = this.configService.get<string>("MOCK_SEED_ENABLED");
+
+    if (appEnv === "production") {
+      return false;
+    }
+
+    if (enabled !== undefined) {
+      return enabled === "true";
+    }
+
+    return true;
   }
 
   private async migrateLegacyPlaintextPasswords() {

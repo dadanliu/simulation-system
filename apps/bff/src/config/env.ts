@@ -2,6 +2,7 @@ type BffEnvironment = "development" | "production" | "test";
 
 const ENV_FILE_PATHS = [".env.local", ".env", "../../.env.local", "../../.env"];
 const DEFAULTS = {
+  APP_ENV: "development",
   BFF_PORT: "3001",
   COOKIE_SECURE: undefined,
   CSRF_ALLOWED_ORIGINS: "http://localhost:3000",
@@ -10,6 +11,7 @@ const DEFAULTS = {
   LOGIN_MAX_FAILURES_PER_IP: "20",
   LOGIN_MAX_FAILURES_PER_USER: "5",
   LOG_LEVEL: "log,warn,error",
+  MOCK_SEED_ENABLED: undefined,
   NODE_ENV: "development",
   REDIS_URL: "redis://127.0.0.1:6379",
   SESSION_TTL_SECONDS: "86400"
@@ -24,6 +26,10 @@ function readEnvironment(value: ConfigValue): BffEnvironment {
   }
 
   return DEFAULTS.NODE_ENV;
+}
+
+function readAppEnvironment(value: ConfigValue): BffEnvironment {
+  return readEnvironment(value);
 }
 
 function requireNonEmpty(config: RawConfig, key: string, errors: string[]) {
@@ -63,10 +69,50 @@ function requireBooleanString(config: RawConfig, key: string, errors: string[]) 
   }
 }
 
+function getDatabaseName(uri: string) {
+  try {
+    const parsedUrl = new URL(uri);
+    const databaseName = parsedUrl.pathname.replace(/^\//, "").split("?")[0];
+
+    return databaseName || "";
+  } catch {
+    return "";
+  }
+}
+
+function requireEnvironmentDatabase(config: RawConfig, errors: string[]) {
+  const appEnv = config.APP_ENV;
+  const mongoUri = config.MONGODB_URI;
+
+  if (!appEnv || !mongoUri) {
+    return;
+  }
+
+  const databaseName = getDatabaseName(mongoUri);
+
+  if (!databaseName) {
+    errors.push("MONGODB_URI must include an explicit database name");
+    return;
+  }
+
+  if (appEnv === "development" && !databaseName.endsWith("-dev")) {
+    errors.push('APP_ENV=development requires MONGODB_URI database name to end with "-dev"');
+  }
+
+  if (appEnv === "test" && !databaseName.endsWith("-test")) {
+    errors.push('APP_ENV=test requires MONGODB_URI database name to end with "-test"');
+  }
+
+  if (appEnv === "production" && /(?:^|[-_])(dev|test|mock)(?:$|[-_])/.test(databaseName)) {
+    errors.push("APP_ENV=production must not use a dev/test/mock database name");
+  }
+}
+
 export function validateBffEnv(input: RawConfig) {
   const config: RawConfig = {
     ...DEFAULTS,
     ...input,
+    APP_ENV: readAppEnvironment(input.APP_ENV ?? input.NODE_ENV),
     BFF_PORT: input.BFF_PORT ?? input.PORT ?? DEFAULTS.BFF_PORT,
     NODE_ENV: readEnvironment(input.NODE_ENV)
   };
@@ -82,6 +128,12 @@ export function validateBffEnv(input: RawConfig) {
   requirePositiveInteger(config, "LOGIN_FAILURE_WINDOW_SECONDS", errors);
   requirePositiveInteger(config, "LOGIN_LOCK_SECONDS", errors);
   requireBooleanString(config, "COOKIE_SECURE", errors);
+  requireBooleanString(config, "MOCK_SEED_ENABLED", errors);
+  requireEnvironmentDatabase(config, errors);
+
+  if (config.APP_ENV === "production" && config.MOCK_SEED_ENABLED === "true") {
+    errors.push("MOCK_SEED_ENABLED=true is not allowed when APP_ENV=production");
+  }
 
   if (errors.length) {
     throw new Error(`BFF configuration error:\n- ${errors.join("\n- ")}`);

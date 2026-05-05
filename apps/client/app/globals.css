@@ -159,6 +159,11 @@ textarea {
   color: var(--danger);
 }
 
+.badge--warning {
+  background: #fff7ed;
+  color: var(--warning);
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

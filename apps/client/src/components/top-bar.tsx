@@ -7,10 +7,12 @@ import type { CurrentUser } from "../features/auth/types";
 import { getActiveRoute } from "../lib/routes";
 
 type TopBarProps = {
+  appEnv: string;
   currentUser: CurrentUser;
+  showEnvBadge: boolean;
 };
 
-export function TopBar({ currentUser }: TopBarProps) {
+export function TopBar({ appEnv, currentUser, showEnvBadge }: TopBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const activeRoute = getActiveRoute(pathname);
@@ -47,6 +49,7 @@ export function TopBar({ currentUser }: TopBarProps) {
             <p className="user-chip__name">{currentUser.username}</p>
             <p className="user-chip__meta">{currentUser.roles.join(" / ")}</p>
           </div>
+          {showEnvBadge ? <span className="badge badge--warning">{appEnv}</span> : null}
           <span className="badge">{pathname}</span>
         </div>
         <button className="button button--secondary" disabled={isSubmitting} onClick={handleLogout} type="button">

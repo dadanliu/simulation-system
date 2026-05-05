@@ -1,4 +1,5 @@
 import { Injectable, type OnModuleInit } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { mockBusinessError, mockSuccess } from "./mock-response";
@@ -101,9 +102,16 @@ const defaultCommodities: MockCommodity[] = [
 
 @Injectable()
 export class CommodityService implements OnModuleInit {
-  constructor(@InjectModel(Commodity.name) private readonly commodityModel: Model<CommodityDocument>) {}
+  constructor(
+    @InjectModel(Commodity.name) private readonly commodityModel: Model<CommodityDocument>,
+    private readonly configService: ConfigService
+  ) {}
 
   async onModuleInit() {
+    if (!this.shouldRunMockSeed()) {
+      return;
+    }
+
     const total = await this.commodityModel.countDocuments();
 
     if (total > 0) {
@@ -118,6 +126,21 @@ export class CommodityService implements OnModuleInit {
         updatedAt: new Date(commodity.updatedAt)
       }))
     );
+  }
+
+  private shouldRunMockSeed() {
+    const appEnv = this.configService.get<string>("APP_ENV", "development");
+    const enabled = this.configService.get<string>("MOCK_SEED_ENABLED");
+
+    if (appEnv === "production") {
+      return false;
+    }
+
+    if (enabled !== undefined) {
+      return enabled === "true";
+    }
+
+    return true;
   }
 
   async listCommodities(query: ListCommoditiesQuery = {}) {

@@ -2,6 +2,12 @@ import { verifyPassword } from "../user/password-hash";
 import { RbacSeedService } from "./rbac-seed.service";
 
 describe("RbacSeedService", () => {
+  function createConfigService(values: Record<string, string | undefined> = {}) {
+    return {
+      get: jest.fn((key: string, fallback?: string) => values[key] ?? fallback)
+    };
+  }
+
   it("seeds users with passwordHash and removes legacy password", async () => {
     const userModel = {
       find: jest.fn().mockReturnValue({
@@ -17,7 +23,12 @@ describe("RbacSeedService", () => {
     const permissionModel = {
       updateOne: jest.fn()
     };
-    const service = new RbacSeedService(userModel as never, roleModel as never, permissionModel as never);
+    const service = new RbacSeedService(
+      userModel as never,
+      roleModel as never,
+      permissionModel as never,
+      createConfigService() as never
+    );
 
     await service.onModuleInit();
 
@@ -52,7 +63,12 @@ describe("RbacSeedService", () => {
     const permissionModel = {
       updateOne: jest.fn()
     };
-    const service = new RbacSeedService(userModel as never, roleModel as never, permissionModel as never);
+    const service = new RbacSeedService(
+      userModel as never,
+      roleModel as never,
+      permissionModel as never,
+      createConfigService() as never
+    );
 
     await service.onModuleInit();
 
@@ -63,5 +79,31 @@ describe("RbacSeedService", () => {
     expect(update.$set.passwordHash).toMatch(/^\$2[aby]\$/);
     await expect(verifyPassword("legacy123", update.$set.passwordHash)).resolves.toBe(true);
     expect(update.$unset).toEqual({ password: "" });
+  });
+
+  it("does not run mock seed or legacy migration in production", async () => {
+    const userModel = {
+      find: jest.fn(),
+      updateOne: jest.fn()
+    };
+    const roleModel = {
+      updateOne: jest.fn()
+    };
+    const permissionModel = {
+      updateOne: jest.fn()
+    };
+    const service = new RbacSeedService(
+      userModel as never,
+      roleModel as never,
+      permissionModel as never,
+      createConfigService({ APP_ENV: "production" }) as never
+    );
+
+    await service.onModuleInit();
+
+    expect(userModel.find).not.toHaveBeenCalled();
+    expect(userModel.updateOne).not.toHaveBeenCalled();
+    expect(roleModel.updateOne).not.toHaveBeenCalled();
+    expect(permissionModel.updateOne).not.toHaveBeenCalled();
   });
 });

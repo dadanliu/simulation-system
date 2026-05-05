@@ -59,7 +59,7 @@ Dev services are ready:
 - client: http://localhost:3000
 - bff:    http://localhost:3001
 - server: http://localhost:3002
-- mongo:  mongodb://127.0.0.1:27017/next-bff
+- mongo:  mongodb://127.0.0.1:27017/next-bff-dev
 - redis:  redis://127.0.0.1:6379
 ```
 
@@ -156,6 +156,12 @@ pnpm dev:all
 
 ```text
 .env.example
+```
+
+环境隔离设计见：
+
+```text
+docs/07-environment-isolation.md
 ```
 
 本地开发配置在：
