@@ -51,7 +51,11 @@ const services = [
     args: ["--filter", "@next-bff/server", "dev"],
     env: {
       APP_ENV: "development",
+      LOCAL_UPLOAD_DIR: ".dev/uploads",
+      LOCAL_UPLOAD_PUBLIC_BASE_URL: "http://localhost:3002/uploads",
       MOCK_SEED_ENABLED: "true",
+      SERVER_PORT: "3002",
+      STORAGE_DRIVER: "local",
       MONGODB_URI: DEV_MONGODB_URI
     },
     name: "server",

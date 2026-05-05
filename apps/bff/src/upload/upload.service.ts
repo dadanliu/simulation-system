@@ -11,10 +11,15 @@ export type UploadedMemoryFile = {
 };
 
 export type UploadResult = {
+  driver?: string;
+  fileId?: string;
   fileName: string;
   fileSize: number;
   fileType: string;
+  key?: string;
+  mimeType?: string;
   scene: string;
+  size?: number;
   uploadId: string;
   url: string;
 };
@@ -45,10 +50,10 @@ export class UploadService {
     });
 
     return {
-      fileId: result.uploadId,
-      mimeType: result.fileType,
+      fileId: result.fileId ?? result.uploadId,
+      mimeType: result.mimeType ?? result.fileType,
       scene: result.scene,
-      size: result.fileSize,
+      size: result.size ?? result.fileSize,
       url: result.url
     } satisfies ProductImageUploadResult;
   }

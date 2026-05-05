@@ -164,6 +164,12 @@ pnpm dev:all
 docs/07-environment-isolation.md
 ```
 
+对象存储配置见：
+
+```text
+docs/08-object-storage.md
+```
+
 本地开发配置在：
 
 ```text

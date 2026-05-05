@@ -30,7 +30,7 @@ export class UploadService {
     });
   }
 
-  uploadFile(file?: UploadedMemoryFile, scene?: string) {
+  async uploadFile(file?: UploadedMemoryFile, scene?: string) {
     if (!file) {
       return mockBusinessError(30002, "file is required");
     }
@@ -43,13 +43,18 @@ export class UploadService {
       return mockBusinessError(30004, "file size exceeds 2MB limit");
     }
 
-    const storedFile = this.storageService.save(file, scene?.trim() || "commodity");
+    const storedFile = await this.storageService.save(file, scene?.trim() || "commodity");
 
     return mockSuccess({
+      driver: storedFile.driver,
+      fileId: storedFile.fileId,
       fileName: storedFile.fileName,
       fileSize: storedFile.size,
       fileType: storedFile.mimeType,
+      key: storedFile.key,
+      mimeType: storedFile.mimeType,
       scene: storedFile.scene,
+      size: storedFile.size,
       uploadId: storedFile.fileId,
       url: storedFile.url
     });

@@ -72,6 +72,8 @@ const services = [
     name: "server",
     env: {
       APP_ENV: "development",
+      LOCAL_UPLOAD_DIR: ".dev/uploads",
+      LOCAL_UPLOAD_PUBLIC_BASE_URL: "http://localhost:3002/uploads",
       MOCK_SEED_ENABLED: "true",
       MONGODB_URI: DEV_MONGODB_URI,
       SERVER_PORT: "3002",

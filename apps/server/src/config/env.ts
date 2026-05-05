@@ -3,6 +3,8 @@ type ServerEnvironment = "development" | "production" | "test";
 const ENV_FILE_PATHS = [".env.local", ".env", "../../.env.local", "../../.env"];
 const DEFAULTS = {
   APP_ENV: "development",
+  LOCAL_UPLOAD_DIR: ".dev/uploads",
+  LOCAL_UPLOAD_PUBLIC_BASE_URL: "http://localhost:3002/uploads",
   LOG_LEVEL: "log,warn,error",
   MOCK_SEED_ENABLED: undefined,
   NODE_ENV: "development",
@@ -44,6 +46,52 @@ function requireStorageDriver(config: RawConfig, errors: string[]) {
 
   if (value !== "local" && value !== "s3" && value !== "oss") {
     errors.push('STORAGE_DRIVER must be one of "local", "s3", "oss"');
+  }
+}
+
+function requireObjectStorageConfig(config: RawConfig, errors: string[]) {
+  if (config.STORAGE_DRIVER === "s3") {
+    requireNonEmpty(config, "S3_BUCKET", errors);
+    requireNonEmpty(config, "S3_REGION", errors);
+    requireNonEmpty(config, "S3_ACCESS_KEY_ID", errors);
+    requireNonEmpty(config, "S3_SECRET_ACCESS_KEY", errors);
+    return;
+  }
+
+  if (config.STORAGE_DRIVER === "oss") {
+    requireNonEmpty(config, "OSS_BUCKET", errors);
+    requireNonEmpty(config, "OSS_REGION", errors);
+    requireNonEmpty(config, "OSS_ACCESS_KEY_ID", errors);
+    requireNonEmpty(config, "OSS_ACCESS_KEY_SECRET", errors);
+  }
+}
+
+function requireUrl(config: RawConfig, key: string, errors: string[]) {
+  const value = config[key]?.trim();
+
+  if (!value) {
+    errors.push(`${key} is required`);
+    return;
+  }
+
+  try {
+    new URL(value);
+  } catch {
+    errors.push(`${key} must be a valid URL, received "${value}"`);
+  }
+}
+
+function requireOptionalUrl(config: RawConfig, key: string, errors: string[]) {
+  const value = config[key]?.trim();
+
+  if (!value) {
+    return;
+  }
+
+  try {
+    new URL(value);
+  } catch {
+    errors.push(`${key} must be a valid URL, received "${value}"`);
   }
 }
 
@@ -109,9 +157,19 @@ export function validateServerEnv(input: RawConfig) {
   requireStorageDriver(config, errors);
   requireBooleanString(config, "MOCK_SEED_ENABLED", errors);
   requireEnvironmentDatabase(config, errors);
+  requireUrl(config, "LOCAL_UPLOAD_PUBLIC_BASE_URL", errors);
+  requireOptionalUrl(config, "S3_PUBLIC_BASE_URL", errors);
+  requireOptionalUrl(config, "S3_UPLOAD_BASE_URL", errors);
+  requireOptionalUrl(config, "OSS_PUBLIC_BASE_URL", errors);
+  requireOptionalUrl(config, "OSS_UPLOAD_BASE_URL", errors);
+  requireObjectStorageConfig(config, errors);
 
   if (config.APP_ENV === "production" && config.MOCK_SEED_ENABLED === "true") {
     errors.push("MOCK_SEED_ENABLED=true is not allowed when APP_ENV=production");
+  }
+
+  if (config.APP_ENV === "production" && config.STORAGE_DRIVER === "local") {
+    errors.push("STORAGE_DRIVER=local is not allowed when APP_ENV=production");
   }
 
   if (errors.length) {

@@ -219,6 +219,8 @@ backend 有默认值的配置：
 ```text
 SERVER_PORT=3002
 STORAGE_DRIVER=local
+LOCAL_UPLOAD_DIR=.dev/uploads
+LOCAL_UPLOAD_PUBLIC_BASE_URL=http://localhost:3002/uploads
 LOG_LEVEL=log,warn,error
 ```
 
@@ -233,6 +235,7 @@ flowchart LR
 
   ServerConfig -->|MONGODB_URI| Mongo
   ServerConfig -->|STORAGE_DRIVER| Storage
+  ServerConfig -->|LOCAL_UPLOAD_DIR| Main
   ServerConfig -->|SERVER_PORT| Main
 ```
 
@@ -251,7 +254,7 @@ oss
 用途：
 
 ```text
-决定上传服务使用本地 mock、S3 mock，还是 OSS mock。
+决定上传服务写入本地静态目录、S3 bucket，还是 OSS bucket。
 ```
 
 配置错误时：
@@ -259,6 +262,10 @@ oss
 ```text
 Backend configuration error:
 - STORAGE_DRIVER must be one of "local", "s3", "oss"
+- S3_BUCKET is required
+- S3_ACCESS_KEY_ID is required
+- OSS_BUCKET is required
+- OSS_ACCESS_KEY_ID is required
 ```
 
 ## 6.6 Client 配置怎么设计
