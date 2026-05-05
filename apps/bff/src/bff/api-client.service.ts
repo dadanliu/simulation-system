@@ -25,6 +25,11 @@ export class ApiClientService {
   ) {}
 
   async request<T>(request: Request, path: string, options: RequestOptions = {}) {
+    const response = await this.requestRaw(request, path, options);
+    return this.responseHandlerService.handleFetchResponse<T>(response);
+  }
+
+  async requestRaw(request: Request, path: string, options: RequestOptions = {}) {
     const headers = this.requestHeadersService.build(request, {
       traceId: options.traceId,
       userId: options.userId
@@ -56,7 +61,7 @@ export class ApiClientService {
       `backend request completed method=${method} path=${path} status=${response.status} durationMs=${Date.now() - startedAt} traceId=${traceId}`
     );
 
-    return this.responseHandlerService.handleFetchResponse<T>(response);
+    return response;
   }
 
   private buildUrl(path: string) {

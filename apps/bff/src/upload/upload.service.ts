@@ -18,6 +18,7 @@ export type UploadResult = {
   fileType: string;
   key?: string;
   mimeType?: string;
+  scanStatus?: "ready";
   scene: string;
   size?: number;
   uploadId: string;
@@ -27,6 +28,7 @@ export type UploadResult = {
 export type ProductImageUploadResult = {
   fileId: string;
   mimeType: string;
+  scanStatus?: "ready";
   scene: string;
   size: number;
   url: string;
@@ -52,9 +54,17 @@ export class UploadService {
     return {
       fileId: result.fileId ?? result.uploadId,
       mimeType: result.mimeType ?? result.fileType,
+      scanStatus: result.scanStatus,
       scene: result.scene,
       size: result.size ?? result.fileSize,
-      url: result.url
+      url: `/api/files/${result.fileId ?? result.uploadId}`
     } satisfies ProductImageUploadResult;
+  }
+
+  async getFile(request: Request, user: AuthUser, fileId: string) {
+    return this.apiClientService.requestRaw(request, `/api/files/${fileId}`, {
+      method: "GET",
+      userId: user.id
+    });
   }
 }

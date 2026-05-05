@@ -1,5 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import type { Response } from "express";
 import {
   CommodityService,
   type CreateCommodityBody,
@@ -92,5 +93,18 @@ export class MockBackendController {
   @UseInterceptors(FileInterceptor("file"))
   uploadFile(@UploadedFile() file: UploadedMemoryFile | undefined, @Body() body: UploadFileBody) {
     return this.uploadService.uploadFile(file, body.scene);
+  }
+
+  @Get("files/:fileId")
+  async getFile(@Param("fileId") fileId: string, @Res() response: Response) {
+    const access = await this.uploadService.getFileAccess(fileId);
+
+    if (!access?.body) {
+      throw new NotFoundException("file not found");
+    }
+
+    response.setHeader("Cache-Control", "private, no-store");
+    response.setHeader("Content-Type", access.mimeType);
+    response.send(access.body);
   }
 }

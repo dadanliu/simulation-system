@@ -9,7 +9,8 @@ const DEFAULTS = {
   MOCK_SEED_ENABLED: undefined,
   NODE_ENV: "development",
   SERVER_PORT: "3002",
-  STORAGE_DRIVER: "local"
+  STORAGE_DRIVER: "local",
+  UPLOAD_REGISTRY_PATH: ".dev/upload-registry.json"
 } as const;
 
 type ConfigValue = string | undefined;

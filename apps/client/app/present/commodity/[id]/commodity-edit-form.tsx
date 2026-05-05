@@ -22,6 +22,7 @@ type FormState = {
 type UploadResult = {
   fileId: string;
   mimeType: string;
+  scanStatus?: "ready";
   scene: string;
   size: number;
   url: string;
@@ -200,6 +201,7 @@ export function CommodityEditForm({ commodity }: CommodityEditFormProps) {
             <>
               <p>文件类型：{uploadedImage.mimeType}</p>
               <p>文件大小：{uploadedImage.size} bytes</p>
+              <p>扫描状态：{uploadedImage.scanStatus ?? "ready"}</p>
             </>
           ) : null}
         </div>

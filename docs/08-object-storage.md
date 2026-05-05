@@ -8,7 +8,7 @@
 
 | driver | 用途 | 必要配置 |
 | --- | --- | --- |
-| `local` | 本地开发、测试 | `LOCAL_UPLOAD_DIR`、`LOCAL_UPLOAD_PUBLIC_BASE_URL` |
+| `local` | 本地开发、测试 | `LOCAL_UPLOAD_DIR`、`LOCAL_UPLOAD_PUBLIC_BASE_URL`、`UPLOAD_REGISTRY_PATH` |
 | `s3` | S3 风格对象存储 | `S3_BUCKET`、`S3_REGION`、`S3_ACCESS_KEY_ID`、`S3_SECRET_ACCESS_KEY`，可选 `S3_PUBLIC_BASE_URL`、`S3_UPLOAD_BASE_URL`、`S3_KEY_PREFIX` |
 | `oss` | OSS 风格对象存储 | `OSS_BUCKET`、`OSS_REGION`、`OSS_ACCESS_KEY_ID`、`OSS_ACCESS_KEY_SECRET`，可选 `OSS_PUBLIC_BASE_URL`、`OSS_UPLOAD_BASE_URL`、`OSS_KEY_PREFIX` |
 
@@ -22,10 +22,10 @@
 .dev/uploads/<scene>/<fileId>-<filename>
 ```
 
-backend 通过 `/uploads/...` 暴露静态访问 URL：
+文件元数据会记录到：
 
 ```text
-http://localhost:3002/uploads/<scene>/<fileId>-<filename>
+.dev/upload-registry.json
 ```
 
 ## S3 / OSS 上传
@@ -65,14 +65,14 @@ BFF 对前端暴露稳定字段：
 ```json
 {
   "fileId": "local_xxx",
-  "url": "http://localhost:3002/uploads/commodity/local_xxx.png",
+  "url": "/api/files/local_xxx",
   "mimeType": "image/png",
   "size": 12345,
   "scene": "commodity"
 }
 ```
 
-商品创建和编辑只保存 `imageFileId`、`imageUrl`，不保存图片二进制。
+商品创建和编辑只保存 `imageFileId`、`imageUrl`，不保存图片二进制。`imageUrl` 统一指向 BFF 的 `/api/files/:fileId`，访问时必须带登录态。
 
 ## 图例
 
@@ -86,9 +86,11 @@ flowchart LR
   Local --> Meta[稳定文件元数据]
   S3 --> Meta
   OSS --> Meta
-  Meta --> BFF
+  Meta --> Registry[upload registry]
+  Registry --> BFFFile[BFF /api/files/:fileId]
   BFF --> Client
+  BFFFile --> Client
   Client -->|imageFileId/imageUrl| Commodity[商品创建/编辑]
 ```
 
-商品列表和详情只读取商品上的 `imageUrl` 展示图片，文件二进制不进入商品表。
+商品列表和详情只读取商品上的 `imageUrl` 展示图片，未登录请求会被 BFF 拒绝，文件二进制不进入商品表。

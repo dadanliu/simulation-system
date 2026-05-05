@@ -1,6 +1,5 @@
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
-import path from "node:path";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
@@ -10,9 +9,6 @@ import { RequestLoggingInterceptor } from "./common/interceptors/request-logging
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
-  app.useStaticAssets(path.resolve(configService.get<string>("LOCAL_UPLOAD_DIR", ".dev/uploads")), {
-    prefix: "/uploads/"
-  });
   app.use(traceIdMiddleware);
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(app.get(RequestLoggingInterceptor));

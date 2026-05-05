@@ -5,6 +5,7 @@ import { CommodityService } from "./commodity.service";
 import { MockBackendController } from "./mock-backend.controller";
 import { MockBackendService } from "./mock-backend.service";
 import { Commodity, CommoditySchema } from "./schemas/commodity.schema";
+import { FileRegistryService } from "./storage/file-registry.service";
 import { LocalStorageService } from "./storage/local-storage.service";
 import { OssStorageService } from "./storage/oss-storage.service";
 import { S3StorageService } from "./storage/s3-storage.service";
@@ -19,6 +20,7 @@ import { UsersService } from "./users.service";
     MockBackendService,
     UsersService,
     CommodityService,
+    FileRegistryService,
     LocalStorageService,
     S3StorageService,
     OssStorageService,

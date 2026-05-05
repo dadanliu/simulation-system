@@ -13,6 +13,14 @@ export type StoredFile = {
   url: string;
 };
 
+export type StoredFileAccess = {
+  body?: Buffer;
+  driver: StoredFile["driver"];
+  mimeType: string;
+  redirectUrl?: string;
+};
+
 export type StorageService = {
+  getAccess(fileId: string): Promise<StoredFileAccess | null> | StoredFileAccess | null;
   save(file: UploadedMemoryFile, scene: StorageScene): Promise<StoredFile> | StoredFile;
 };

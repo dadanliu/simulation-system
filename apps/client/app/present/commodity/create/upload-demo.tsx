@@ -5,11 +5,11 @@ import type { ChangeEvent, FormEvent } from "react";
 import { fetchWithCsrf } from "@/src/features/auth/client";
 
 type UploadResult = {
-  fileName: string;
-  fileSize: number;
-  fileType: string;
+  fileId: string;
+  mimeType: string;
+  scanStatus?: "ready";
   scene: string;
-  uploadId: string;
+  size: number;
   url: string;
 };
 
@@ -124,11 +124,11 @@ export function UploadDemo() {
       {uploaded ? (
         <div className="upload-result">
           <p className="upload-result__title">上传成功</p>
-          <p>文件名：{uploaded.fileName}</p>
-          <p>文件类型：{uploaded.fileType}</p>
-          <p>文件大小：{uploaded.fileSize} bytes</p>
-          <p>文件 ID：{uploaded.uploadId}</p>
+          <p>文件类型：{uploaded.mimeType}</p>
+          <p>文件大小：{uploaded.size} bytes</p>
+          <p>文件 ID：{uploaded.fileId}</p>
           <p>访问地址：{uploaded.url}</p>
+          <p>扫描状态：{uploaded.scanStatus ?? "ready"}</p>
           <p>上传场景：{uploaded.scene}</p>
         </div>
       ) : null}

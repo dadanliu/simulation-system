@@ -1,14 +1,18 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { randomUUID } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { FileRegistryService } from "./file-registry.service";
 import type { StoredFile, StorageScene, StorageService } from "./storage.types";
 import type { UploadedMemoryFile } from "../upload.service";
 
 @Injectable()
 export class LocalStorageService implements StorageService {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly fileRegistryService: FileRegistryService
+  ) {}
 
   save(file: UploadedMemoryFile, scene: StorageScene): StoredFile {
     const sanitizedFilename = this.sanitizeFilename(file.originalname);
@@ -30,6 +34,20 @@ export class LocalStorageService implements StorageService {
       scene,
       size: file.size,
       url: `${publicBaseUrl.replace(/\/$/, "")}/${key}`
+    };
+  }
+
+  getAccess(fileId: string) {
+    const storedFile = this.fileRegistryService.get(fileId);
+
+    if (!storedFile || storedFile.driver !== "local") {
+      return null;
+    }
+
+    return {
+      body: readFileSync(path.resolve(this.configService.get<string>("LOCAL_UPLOAD_DIR", ".dev/uploads"), storedFile.key)),
+      driver: storedFile.driver,
+      mimeType: storedFile.mimeType
     };
   }
 

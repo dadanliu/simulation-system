@@ -27,6 +27,7 @@ const initialFormState: FormState = {
 type UploadResult = {
   fileId: string;
   mimeType: string;
+  scanStatus?: "ready";
   scene: string;
   size: number;
   url: string;
@@ -195,6 +196,7 @@ export function CommodityCreateForm() {
           <p>文件 ID：{uploadedImage.fileId}</p>
           <p>文件类型：{uploadedImage.mimeType}</p>
           <p>文件大小：{uploadedImage.size} bytes</p>
+          <p>扫描状态：{uploadedImage.scanStatus ?? "ready"}</p>
         </div>
       ) : null}
 
