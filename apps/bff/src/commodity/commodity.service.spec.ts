@@ -12,6 +12,7 @@ describe("CommodityService", () => {
   };
   let auditLogService: {
     recordCommodityDelete: jest.Mock;
+    recordCommodityStatusChange: jest.Mock;
     recordCommodityUpdate: jest.Mock;
   };
   let service: CommodityService;
@@ -44,6 +45,7 @@ describe("CommodityService", () => {
     };
     auditLogService = {
       recordCommodityDelete: jest.fn(),
+      recordCommodityStatusChange: jest.fn(),
       recordCommodityUpdate: jest.fn()
     };
     service = new CommodityService(
@@ -174,6 +176,78 @@ describe("CommodityService", () => {
       before,
       after,
       "trace-update"
+    );
+  });
+
+  it("records before-after status audit log with reason", async () => {
+    const before = {
+      ...commodity,
+      deletedAt: null,
+      deletedBy: null,
+      status: "pending" as const
+    };
+    const after = {
+      ...before,
+      status: "on_sale" as const
+    };
+
+    apiClientService.request.mockResolvedValue({ after, before });
+    auditLogService.recordCommodityStatusChange.mockResolvedValue({
+      action: "status_change",
+      after: {
+        status: "on_sale"
+      },
+      before: {
+        status: "pending"
+      },
+      operator: user.id,
+      reason: "审核通过",
+      target: {
+        id: commodity.id,
+        type: "commodity"
+      },
+      traceId: "trace-status"
+    });
+
+    await expect(
+      service.updateCommodityStatus({ traceId: "trace-status" } as never, user, commodity.id, {
+        reason: "审核通过",
+        status: "on_sale"
+      })
+    ).resolves.toMatchObject({
+      auditLog: {
+        action: "status_change",
+        after: {
+          status: "on_sale"
+        },
+        before: {
+          status: "pending"
+        },
+        reason: "审核通过"
+      },
+      commodity: after
+    });
+    expect(apiClientService.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-status"
+      }),
+      "/api/commodity/10099/status",
+      {
+        body: {
+          reason: "审核通过",
+          status: "on_sale"
+        },
+        method: "PATCH",
+        userId: user.id
+      }
+    );
+    expect(auditLogService.recordCommodityStatusChange).toHaveBeenCalledWith(
+      user.id,
+      commodity.id,
+      "pending",
+      "on_sale",
+      "审核通过",
+      "trace-status"
     );
   });
 });

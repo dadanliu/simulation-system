@@ -2,6 +2,7 @@ import { Injectable, type OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { isCommodityStatus, validateCommodityStatusTransition } from "./commodity-status-rules";
 import { mockBusinessError, mockSuccess } from "./mock-response";
 import { Commodity, type CommodityDocument } from "./schemas/commodity.schema";
 
@@ -253,7 +254,7 @@ export class CommodityService implements OnModuleInit {
       return mockBusinessError(20004, "commodity stock must be a non-negative integer");
     }
 
-    if (!status || !this.isCommodityStatus(status)) {
+    if (!status || !isCommodityStatus(status)) {
       return mockBusinessError(20005, "commodity status is invalid");
     }
 
@@ -375,20 +376,14 @@ export class CommodityService implements OnModuleInit {
       return mockBusinessError(20009, "status change reason is required");
     }
 
-    if (body.status !== "on_sale" && body.status !== "offline") {
+    if (!isCommodityStatus(body.status)) {
       return mockBusinessError(20010, "target status is invalid");
     }
 
-    if (commodity.status === "pending" && body.status !== "on_sale") {
-      return mockBusinessError(20011, "pending commodity can only be approved to on_sale");
-    }
+    const transitionResult = validateCommodityStatusTransition(commodity.status, body.status);
 
-    if (commodity.status === "on_sale" && body.status !== "offline") {
-      return mockBusinessError(20012, "on_sale commodity can only be taken offline");
-    }
-
-    if (commodity.status === "offline") {
-      return mockBusinessError(20013, "offline commodity cannot change status directly");
+    if (!transitionResult.ok) {
+      return mockBusinessError(transitionResult.code, transitionResult.message);
     }
 
     const before = this.toCommodityView(commodity.toObject());
@@ -429,10 +424,6 @@ export class CommodityService implements OnModuleInit {
 
     const parsedValue = Number(value);
     return Number.isFinite(parsedValue) ? parsedValue : undefined;
-  }
-
-  private isCommodityStatus(value: string): value is MockCommodity["status"] {
-    return value === "on_sale" || value === "pending" || value === "offline";
   }
 
   private async nextCommodityId() {

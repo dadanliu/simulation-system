@@ -359,4 +359,28 @@ describe("CommodityController e2e", () => {
     });
     expect(mocks.commodityService.updateCommodity).not.toHaveBeenCalled();
   });
+
+  it("rejects status update without reason before entering service", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .patch("/api/commodity/10099/status")
+      .set("Cookie", ["next_bff_session=session-operator", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-status-missing-reason")
+      .send({
+        reason: "",
+        status: "on_sale"
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      path: "/api/commodity/10099/status",
+      statusCode: 400,
+      success: false,
+      traceId: "trace-status-missing-reason"
+    });
+    expect(mocks.commodityService.updateCommodityStatus).not.toHaveBeenCalled();
+  });
 });

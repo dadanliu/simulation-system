@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { updateCommodityStatus } from "@/src/features/commodity/client";
+import { getNextCommodityStatusOptions } from "@/src/features/commodity/status-rules";
 import type { CommodityStatus } from "@/src/features/commodity/types";
 
 type CommodityStatusFormProps = {
@@ -11,15 +12,9 @@ type CommodityStatusFormProps = {
   currentStatus: CommodityStatus;
 };
 
-const nextStatusOptions: Record<CommodityStatus, Array<{ label: string; value: CommodityStatus }>> = {
-  offline: [],
-  on_sale: [{ label: "下架商品", value: "offline" }],
-  pending: [{ label: "审核通过并上架", value: "on_sale" }]
-};
-
 export function CommodityStatusForm({ commodityId, currentStatus }: CommodityStatusFormProps) {
   const router = useRouter();
-  const options = nextStatusOptions[currentStatus];
+  const options = getNextCommodityStatusOptions(currentStatus);
   const [status, setStatus] = useState<CommodityStatus>(options[0]?.value ?? currentStatus);
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
