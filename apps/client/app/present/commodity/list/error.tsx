@@ -8,16 +8,23 @@ type CommodityListErrorProps = {
 };
 
 export default function CommodityListError({ error, reset }: CommodityListErrorProps) {
+  const isQueryError = error.message.includes("must be") || error.message.includes("should not") || error.message.includes("valid");
+
   return (
     <section className="panel stack">
       <p className="badge">Error</p>
-      <h2>商品列表加载失败</h2>
+      <h2>{isQueryError ? "筛选条件不合法" : "商品列表加载失败"}</h2>
       <p className="form-error">{error.message || "当前无法获取商品列表，请稍后重试。"}</p>
-      <p className="form-hint">可以先重试当前请求，或返回登录页确认会话状态是否正常。</p>
+      <p className="form-hint">
+        {isQueryError ? "请检查 URL query 中的状态、页码、每页数量、排序字段或时间格式。" : "可以先重试当前请求，或返回登录页确认会话状态是否正常。"}
+      </p>
       <div className="inline-actions">
         <button className="button" onClick={reset} type="button">
           重新加载
         </button>
+        <Link className="button button--secondary" href="/present/commodity/list">
+          清空筛选
+        </Link>
         <Link className="button button--secondary" href="/login">
           返回登录页
         </Link>

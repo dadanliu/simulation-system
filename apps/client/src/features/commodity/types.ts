@@ -23,11 +23,23 @@ export type CommodityListData = {
 };
 
 export type CommodityListFilters = {
+  createdFrom: string;
+  createdTo: string;
   keyword: string;
+  maxPrice: string;
+  maxStock: string;
+  minPrice: string;
+  minStock: string;
   page: number;
   pageSize: number;
+  sortBy: CommodityListSortBy;
+  sortOrder: CommodityListSortOrder;
   status: CommodityStatus | "";
 };
+
+export type CommodityListSortBy = "createdAt" | "name" | "price" | "status" | "stock";
+
+export type CommodityListSortOrder = "asc" | "desc";
 
 export type CommodityListPageData = CommodityListData & {
   filters: CommodityListFilters;

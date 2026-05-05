@@ -116,6 +116,51 @@ describe("CommodityController e2e", () => {
     expect(mocks.commodityService.createCommodity).not.toHaveBeenCalled();
   });
 
+  it("rejects invalid commodity list query before entering service", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/list")
+      .query({
+        page: "0",
+        sortBy: "deletedAt",
+        status: "unknown"
+      })
+      .set("Cookie", "next_bff_session=session-admin")
+      .set("x-trace-id", "trace-list-invalid")
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      path: "/api/commodity/list?page=0&sortBy=deletedAt&status=unknown",
+      statusCode: 400,
+      success: false,
+      traceId: "trace-list-invalid"
+    });
+    expect(mocks.commodityService.listCommodities).not.toHaveBeenCalled();
+  });
+
+  it("rejects commodity list pageSize over the configured limit", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/list")
+      .query({
+        pageSize: "101"
+      })
+      .set("Cookie", "next_bff_session=session-admin")
+      .set("x-trace-id", "trace-list-pagesize")
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      path: "/api/commodity/list?pageSize=101",
+      statusCode: 400,
+      success: false,
+      traceId: "trace-list-pagesize"
+    });
+    expect(response.body.message).toContain("pageSize must not be greater than 100");
+    expect(mocks.commodityService.listCommodities).not.toHaveBeenCalled();
+  });
+
   it("rejects commodity creation when the logged-in user lacks permission", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
     mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(false);

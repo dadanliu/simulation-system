@@ -16,6 +16,16 @@ const statusLabel: Record<CommodityStatus, string> = {
   offline: "已下架"
 };
 
+const sortLabel = {
+  asc: "升序",
+  createdAt: "创建时间",
+  desc: "降序",
+  name: "商品名",
+  price: "价格",
+  status: "状态",
+  stock: "库存"
+};
+
 export async function CommodityListContent({ searchParams }: CommodityListContentProps) {
   const { filters, list, pagination, totalPages } = await getCommodityListPageData(searchParams);
 
@@ -33,6 +43,12 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
         <article className="card">
           <p className="card__label">每页数量</p>
           <p className="card__value">{pagination.pageSize}</p>
+        </article>
+        <article className="card">
+          <p className="card__label">当前排序</p>
+          <p className="card__value">
+            {sortLabel[filters.sortBy]} {sortLabel[filters.sortOrder]}
+          </p>
         </article>
       </div>
 
@@ -56,7 +72,7 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
         {list.length === 0 ? (
           <div className="empty-state">
             <p className="card__label">暂无商品</p>
-            <p>换一个关键词或状态重新筛选。</p>
+            <p>当前筛选条件没有匹配结果，可以放宽关键词、状态、价格、库存或时间范围。</p>
           </div>
         ) : (
           <table className="data-table">

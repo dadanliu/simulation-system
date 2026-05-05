@@ -7,7 +7,7 @@ import type {
   CommodityListPageData
 } from "@/src/features/commodity/types";
 import {
-  buildCommodityListSearchParams,
+  buildCommodityListRequestSearchParams,
   readCommodityListFilters,
   type CommoditySearchParams
 } from "@/src/features/commodity/query";
@@ -53,7 +53,7 @@ export async function getCommodityListPageData(
 ): Promise<CommodityListPageData> {
   const filters = readCommodityListFilters(searchParams);
   const cookie = await getCookieHeader();
-  const query = buildCommodityListSearchParams(filters);
+  const query = buildCommodityListRequestSearchParams(searchParams);
   const nextPath = query.toString() ? `/present/commodity/list?${query.toString()}` : "/present/commodity/list";
   const response = await fetch(`${internalOrigin}/api/commodity/list?${query.toString()}`, {
     cache: "no-store",

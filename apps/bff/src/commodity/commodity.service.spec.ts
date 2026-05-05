@@ -56,6 +56,51 @@ describe("CommodityService", () => {
     );
   });
 
+  it("forwards combined list filters with stable sort query", async () => {
+    apiClientService.request.mockResolvedValue({
+      list: [commodity],
+      pagination: {
+        page: 2,
+        pageSize: 20,
+        total: 21
+      }
+    });
+
+    await expect(
+      service.listCommodities({ traceId: "trace-list" } as never, user, {
+        createdFrom: "2026-04-01T00:00:00.000Z",
+        createdTo: "2026-04-30T23:59:59.999Z",
+        keyword: "键盘",
+        maxPrice: 1000,
+        maxStock: 200,
+        minPrice: 100,
+        minStock: 1,
+        page: 2,
+        pageSize: 20,
+        sortBy: "price" as never,
+        sortOrder: "asc" as never,
+        status: "on_sale"
+      })
+    ).resolves.toEqual({
+      list: [commodity],
+      pagination: {
+        page: 2,
+        pageSize: 20,
+        total: 21
+      }
+    });
+
+    expect(apiClientService.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-list"
+      }),
+      "/api/commodity/list?createdAtFrom=2026-04-01T00%3A00%3A00.000Z&createdAtTo=2026-04-30T23%3A59%3A59.999Z&keyword=%E9%94%AE%E7%9B%98&limit=20&offset=20&priceMax=1000&priceMin=100&sortDirection=asc&sortField=price&status=on_sale&stockMax=200&stockMin=1",
+      {
+        userId: user.id
+      }
+    );
+  });
+
   it("soft deletes commodity through backend and records audit log", async () => {
     const before = {
       ...commodity,

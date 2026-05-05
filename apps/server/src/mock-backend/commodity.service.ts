@@ -111,6 +111,16 @@ const defaultCommodities: MockCommodity[] = [
   }
 ];
 
+const COMMODITY_LIST_MAX_PAGE_SIZE = 100;
+const DEFAULT_SORT_FIELD: NonNullable<ListCommoditiesQuery["sortField"]> = "createdAt";
+const SORT_FIELD_WHITELIST = new Set<NonNullable<ListCommoditiesQuery["sortField"]>>([
+  "createdAt",
+  "name",
+  "price",
+  "status",
+  "stock"
+]);
+
 @Injectable()
 export class CommodityService implements OnModuleInit {
   constructor(
@@ -156,7 +166,7 @@ export class CommodityService implements OnModuleInit {
 
   async listCommodities(query: ListCommoditiesQuery = {}) {
     const offset = this.toNonNegativeInteger(query.offset, 0);
-    const limit = this.toPositiveInteger(query.limit, 10);
+    const limit = this.toPageSize(query.limit, 10);
     const keyword = query.keyword?.trim();
     const priceMin = this.toOptionalNumber(query.priceMin);
     const priceMax = this.toOptionalNumber(query.priceMax);
@@ -203,7 +213,7 @@ export class CommodityService implements OnModuleInit {
     // 旧页和新页之间可能出现抖动、重复或漏读。
     // 后续如果列表规模明显扩大，或者需要“按时间稳定向后翻页”，这里应升级为 cursor 分页：
     // 例如把 { createdAt, id } 作为 cursor，避免高 offset 扫描和翻页漂移。
-    const sortField = query.sortField ?? "createdAt";
+    const sortField = this.toSortField(query.sortField);
     const sortDirection = query.sortDirection === "asc" ? 1 : -1;
     const sort = this.buildSort(sortField, sortDirection);
 
@@ -421,6 +431,10 @@ export class CommodityService implements OnModuleInit {
     return parsedValue;
   }
 
+  private toPageSize(value: string | undefined, fallback: number) {
+    return Math.min(this.toPositiveInteger(value, fallback), COMMODITY_LIST_MAX_PAGE_SIZE);
+  }
+
   private toNonNegativeInteger(value: string | undefined, fallback: number) {
     const parsedValue = Number(value);
 
@@ -456,6 +470,10 @@ export class CommodityService implements OnModuleInit {
       [sortField]: sortDirection,
       id: sortDirection
     };
+  }
+
+  private toSortField(value: ListCommoditiesQuery["sortField"]): NonNullable<ListCommoditiesQuery["sortField"]> {
+    return value && SORT_FIELD_WHITELIST.has(value) ? value : DEFAULT_SORT_FIELD;
   }
 
   private toCommodityView(commodity: {
