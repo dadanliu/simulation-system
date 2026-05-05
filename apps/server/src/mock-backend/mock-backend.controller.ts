@@ -73,6 +73,11 @@ export class MockBackendController {
     return this.commodityService.updateCommodity(id, body);
   }
 
+  @Patch("commodity/:id/restore")
+  restoreCommodity(@Param("id") id: string) {
+    return this.commodityService.restoreCommodity(id);
+  }
+
   @Patch("commodity/:id/status")
   updateCommodityStatus(@Param("id") id: string, @Body() body: UpdateCommodityStatusBody) {
     return this.commodityService.updateCommodityStatus(id, body);

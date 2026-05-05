@@ -99,6 +99,19 @@ export class CommodityController {
     return this.commodityService.deleteCommodity(request, user, id);
   }
 
+  @Patch(":id/restore")
+  @RequirePermissions("commodity:delete")
+  @ApiOperation({ summary: "恢复已删除商品" })
+  @ApiCookieAuth("next_bff_session")
+  @ApiParam({ name: "id", description: "商品ID", example: "10001" })
+  @ApiResponse({ status: 200, description: "商品恢复成功" })
+  @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: "无商品删除/恢复权限", type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: "商品不存在或未删除", type: ErrorResponseDto })
+  async restoreCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {
+    return this.commodityService.restoreCommodity(request, user, id);
+  }
+
   @Patch(":id")
   @RequirePermissions("commodity:update")
   @ApiOperation({ summary: "编辑商品基础信息" })

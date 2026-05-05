@@ -86,3 +86,16 @@ export async function deleteCommodity(id: string) {
 
   return payload.data;
 }
+
+export async function restoreCommodity(id: string) {
+  const response = await fetchWithCsrf(`/api/commodity/${encodeURIComponent(id)}/restore`, {
+    method: "PATCH"
+  });
+  const payload = (await response.json().catch(() => null)) as ApiResponse<{ commodity: Commodity }> | null;
+
+  if (!response.ok || !payload?.success || !payload.data?.commodity) {
+    throw new Error(payload?.message ?? "商品恢复失败");
+  }
+
+  return payload.data;
+}

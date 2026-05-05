@@ -290,27 +290,22 @@ export class CommodityService implements OnModuleInit {
 
   async deleteCommodity(id: string, deletedBy = "") {
     const deletedAt = new Date();
-    const commodity = await this.commodityModel
-      .findOneAndUpdate(
-        { id, deletedAt: null },
-        {
-          $set: {
-            deletedAt,
-            deletedBy: deletedBy.trim() || null,
-            updatedAt: deletedAt
-          }
-        },
-        {
-          new: true
-        }
-      )
-      .lean();
+    const commodity = await this.commodityModel.findOne({ id, deletedAt: null });
 
     if (!commodity) {
       return mockBusinessError(20001, "commodity not found");
     }
 
-    return mockSuccess(this.toCommodityView(commodity));
+    const before = this.toCommodityView(commodity.toObject());
+    commodity.deletedAt = deletedAt;
+    commodity.deletedBy = deletedBy.trim() || null;
+    commodity.updatedAt = deletedAt;
+    await commodity.save();
+
+    return mockSuccess({
+      after: this.toCommodityView(commodity.toObject()),
+      before
+    });
   }
 
   async updateCommodity(id: string, body: UpdateCommodityBody = {}) {
@@ -355,6 +350,25 @@ export class CommodityService implements OnModuleInit {
     commodity.name = name;
     commodity.price = price;
     commodity.stock = stock;
+    commodity.updatedAt = new Date();
+    await commodity.save();
+
+    return mockSuccess({
+      after: this.toCommodityView(commodity.toObject()),
+      before
+    });
+  }
+
+  async restoreCommodity(id: string) {
+    const commodity = await this.commodityModel.findOne({ id, deletedAt: { $ne: null } });
+
+    if (!commodity) {
+      return mockBusinessError(20001, "commodity not found");
+    }
+
+    const before = this.toCommodityView(commodity.toObject());
+    commodity.deletedAt = null;
+    commodity.deletedBy = null;
     commodity.updatedAt = new Date();
     await commodity.save();
 

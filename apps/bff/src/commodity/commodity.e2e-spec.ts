@@ -383,4 +383,72 @@ describe("CommodityController e2e", () => {
     });
     expect(mocks.commodityService.updateCommodityStatus).not.toHaveBeenCalled();
   });
+
+  it("restores a soft deleted commodity with admin permission", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    mocks.commodityService.restoreCommodity.mockResolvedValue({
+      auditLog: {
+        action: "restore",
+        after: {
+          deletedAt: null,
+          deletedBy: null
+        },
+        before: {
+          deletedAt: "2026-04-29T01:00:00.000Z",
+          deletedBy: adminUser.id
+        },
+        operator: adminUser.id,
+        target: {
+          id: commodity.id,
+          type: "commodity"
+        },
+        traceId: "trace-restore"
+      },
+      commodity: {
+        ...commodity,
+        deletedAt: null,
+        deletedBy: null
+      }
+    });
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .patch("/api/commodity/10099/restore")
+      .set("Cookie", ["next_bff_session=session-admin", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-restore")
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      data: {
+        auditLog: {
+          action: "restore",
+          after: {
+            deletedAt: null,
+            deletedBy: null
+          },
+          before: {
+            deletedAt: "2026-04-29T01:00:00.000Z",
+            deletedBy: adminUser.id
+          }
+        },
+        commodity: {
+          deletedAt: null,
+          deletedBy: null,
+          id: "10099"
+        }
+      },
+      message: "ok",
+      success: true,
+      traceId: "trace-restore"
+    });
+    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["admin"], ["commodity:delete"]);
+    expect(mocks.commodityService.restoreCommodity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-restore"
+      }),
+      adminUser,
+      "10099"
+    );
+  });
 });

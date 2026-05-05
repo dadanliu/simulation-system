@@ -40,13 +40,23 @@ export class AuditLogService {
     });
   }
 
-  recordCommodityDelete(operator: string, commodityId: string, traceId: string) {
+  recordCommodityDelete(operator: string, commodityId: string, before: Commodity, after: Commodity, traceId: string) {
     return this.createAuditLog({
       action: "delete",
-      after: {
-        deletedBy: operator
-      },
-      before: null,
+      after: this.pickDeletionFields(after),
+      before: this.pickDeletionFields(before),
+      operator,
+      resourceId: commodityId,
+      reason: null,
+      traceId
+    });
+  }
+
+  recordCommodityRestore(operator: string, commodityId: string, before: Commodity, after: Commodity, traceId: string) {
+    return this.createAuditLog({
+      action: "restore",
+      after: this.pickDeletionFields(after),
+      before: this.pickDeletionFields(before),
       operator,
       resourceId: commodityId,
       reason: null,
@@ -175,6 +185,15 @@ export class AuditLogService {
       name: commodity.name,
       price: commodity.price,
       stock: commodity.stock
+    };
+  }
+
+  private pickDeletionFields(commodity: Commodity) {
+    return {
+      deletedAt: commodity.deletedAt,
+      deletedBy: commodity.deletedBy,
+      name: commodity.name,
+      status: commodity.status
     };
   }
 

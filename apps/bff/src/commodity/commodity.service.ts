@@ -88,16 +88,23 @@ export class CommodityService {
   }
 
   async deleteCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string) {
-    let data: Commodity;
+    let data: {
+      after: Commodity;
+      before: Commodity;
+    };
 
     try {
-      data = await this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
-        body: {
-          deletedBy: user.id
-        },
-        method: "DELETE",
-        userId: user.id
-      });
+      data = await this.apiClientService.request<{ after: Commodity; before: Commodity }>(
+        request,
+        `/api/commodity/${encodeURIComponent(id)}`,
+        {
+          body: {
+            deletedBy: user.id
+          },
+          method: "DELETE",
+          userId: user.id
+        }
+      );
     } catch (error) {
       if (error instanceof BffBusinessException && error.code === 20001) {
         throw new NotFoundException("commodity not found");
@@ -106,11 +113,54 @@ export class CommodityService {
       throw error;
     }
 
-    const auditLog = await this.auditLogService.recordCommodityDelete(user.id, id, request.traceId ?? "");
+    const auditLog = await this.auditLogService.recordCommodityDelete(
+      user.id,
+      id,
+      data.before,
+      data.after,
+      request.traceId ?? ""
+    );
 
     return {
       auditLog,
-      commodity: data
+      commodity: data.after
+    };
+  }
+
+  async restoreCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string) {
+    let data: {
+      after: Commodity;
+      before: Commodity;
+    };
+
+    try {
+      data = await this.apiClientService.request<{ after: Commodity; before: Commodity }>(
+        request,
+        `/api/commodity/${encodeURIComponent(id)}/restore`,
+        {
+          method: "PATCH",
+          userId: user.id
+        }
+      );
+    } catch (error) {
+      if (error instanceof BffBusinessException && error.code === 20001) {
+        throw new NotFoundException("commodity not found");
+      }
+
+      throw error;
+    }
+
+    const auditLog = await this.auditLogService.recordCommodityRestore(
+      user.id,
+      id,
+      data.before,
+      data.after,
+      request.traceId ?? ""
+    );
+
+  return {
+      auditLog,
+      commodity: data.after
     };
   }
 

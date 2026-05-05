@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getCurrentUser } from "@/src/features/auth/server";
 import { getCommodityAuditLogs } from "@/src/features/commodity/server";
 import type { AuditLogAction } from "@/src/features/commodity/types";
+import { CommodityRestoreButton } from "./commodity-restore-button";
 
 type AuditLogPageProps = {
   searchParams: Promise<{
@@ -15,6 +16,7 @@ type AuditLogPageProps = {
 const actionLabel: Record<AuditLogAction, string> = {
   create: "创建商品",
   delete: "删除商品",
+  restore: "恢复商品",
   update: "编辑商品",
   status_change: "状态变更"
 };
@@ -91,6 +93,7 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
               <th>修改后</th>
               <th>原因</th>
               <th>traceId</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -108,6 +111,7 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
                 <td className="mono-cell">{formatDiff(log.after)}</td>
                 <td>{log.reason ?? "-"}</td>
                 <td className="mono-cell">{log.traceId}</td>
+                <td>{log.action === "delete" ? <CommodityRestoreButton commodityId={log.target.id} /> : "-"}</td>
               </tr>
             ))}
           </tbody>

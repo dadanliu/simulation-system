@@ -12,6 +12,7 @@ describe("CommodityService", () => {
   };
   let auditLogService: {
     recordCommodityDelete: jest.Mock;
+    recordCommodityRestore: jest.Mock;
     recordCommodityStatusChange: jest.Mock;
     recordCommodityUpdate: jest.Mock;
   };
@@ -45,6 +46,7 @@ describe("CommodityService", () => {
     };
     auditLogService = {
       recordCommodityDelete: jest.fn(),
+      recordCommodityRestore: jest.fn(),
       recordCommodityStatusChange: jest.fn(),
       recordCommodityUpdate: jest.fn()
     };
@@ -55,9 +57,24 @@ describe("CommodityService", () => {
   });
 
   it("soft deletes commodity through backend and records audit log", async () => {
-    apiClientService.request.mockResolvedValue(commodity);
+    const before = {
+      ...commodity,
+      deletedAt: null,
+      deletedBy: null
+    };
+    const after = commodity;
+
+    apiClientService.request.mockResolvedValue({ after, before });
     auditLogService.recordCommodityDelete.mockResolvedValue({
       action: "delete",
+      after: {
+        deletedAt: commodity.deletedAt,
+        deletedBy: user.id
+      },
+      before: {
+        deletedAt: null,
+        deletedBy: null
+      },
       operator: user.id,
       target: {
         id: commodity.id,
@@ -69,6 +86,14 @@ describe("CommodityService", () => {
     await expect(service.deleteCommodity({ traceId: "trace-delete" } as never, user, commodity.id)).resolves.toEqual({
       auditLog: {
         action: "delete",
+        after: {
+          deletedAt: commodity.deletedAt,
+          deletedBy: user.id
+        },
+        before: {
+          deletedAt: null,
+          deletedBy: null
+        },
         operator: user.id,
         target: {
           id: commodity.id,
@@ -76,7 +101,7 @@ describe("CommodityService", () => {
         },
         traceId: "trace-delete"
       },
-      commodity
+      commodity: after
     });
     expect(apiClientService.request).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -91,7 +116,13 @@ describe("CommodityService", () => {
         userId: user.id
       }
     );
-    expect(auditLogService.recordCommodityDelete).toHaveBeenCalledWith(user.id, commodity.id, "trace-delete");
+    expect(auditLogService.recordCommodityDelete).toHaveBeenCalledWith(
+      user.id,
+      commodity.id,
+      before,
+      after,
+      "trace-delete"
+    );
   });
 
   it("maps backend commodity-not-found error to Nest NotFoundException", async () => {
@@ -101,6 +132,72 @@ describe("CommodityService", () => {
       NotFoundException
     );
     expect(auditLogService.recordCommodityDelete).not.toHaveBeenCalled();
+  });
+
+  it("restores soft deleted commodity through backend and records audit log", async () => {
+    const before = commodity;
+    const after = {
+      ...commodity,
+      deletedAt: null,
+      deletedBy: null
+    };
+
+    apiClientService.request.mockResolvedValue({ after, before });
+    auditLogService.recordCommodityRestore.mockResolvedValue({
+      action: "restore",
+      after: {
+        deletedAt: null,
+        deletedBy: null
+      },
+      before: {
+        deletedAt: commodity.deletedAt,
+        deletedBy: commodity.deletedBy
+      },
+      operator: user.id,
+      target: {
+        id: commodity.id,
+        type: "commodity"
+      },
+      traceId: "trace-restore"
+    });
+
+    await expect(service.restoreCommodity({ traceId: "trace-restore" } as never, user, commodity.id)).resolves.toEqual({
+      auditLog: {
+        action: "restore",
+        after: {
+          deletedAt: null,
+          deletedBy: null
+        },
+        before: {
+          deletedAt: commodity.deletedAt,
+          deletedBy: commodity.deletedBy
+        },
+        operator: user.id,
+        target: {
+          id: commodity.id,
+          type: "commodity"
+        },
+        traceId: "trace-restore"
+      },
+      commodity: after
+    });
+    expect(apiClientService.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-restore"
+      }),
+      "/api/commodity/10099/restore",
+      {
+        method: "PATCH",
+        userId: user.id
+      }
+    );
+    expect(auditLogService.recordCommodityRestore).toHaveBeenCalledWith(
+      user.id,
+      commodity.id,
+      before,
+      after,
+      "trace-restore"
+    );
   });
 
   it("updates commodity through backend and records before-after audit log", async () => {

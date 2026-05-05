@@ -53,7 +53,7 @@ export type UpdateCommodityInput = {
   stock: number;
 };
 
-export type AuditLogAction = "create" | "delete" | "update" | "status_change";
+export type AuditLogAction = "create" | "delete" | "restore" | "update" | "status_change";
 
 export type AuditLog = {
   action: AuditLogAction;

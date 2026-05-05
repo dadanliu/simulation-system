@@ -7,6 +7,7 @@ export const AUDIT_LOG_MAX_PAGE_SIZE = 100;
 enum AuditLogAction {
   Create = "create",
   Delete = "delete",
+  Restore = "restore",
   Update = "update",
   StatusChange = "status_change"
 }
