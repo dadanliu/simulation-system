@@ -38,6 +38,134 @@
 pnpm install
 ```
 
+## 本地一键启动
+
+新人本地启动优先使用：
+
+```bash
+pnpm dev:all
+```
+
+这个脚本会按顺序处理：
+
+```text
+MongoDB -> Redis -> client -> BFF -> backend
+```
+
+启动成功后会打印：
+
+```text
+Dev services are ready:
+- client: http://localhost:3000
+- bff:    http://localhost:3001
+- server: http://localhost:3002
+- mongo:  mongodb://127.0.0.1:27017/next-bff
+- redis:  redis://127.0.0.1:6379
+```
+
+访问：
+
+```text
+http://localhost:3000
+```
+
+默认测试账号：
+
+```text
+admin / admin123
+```
+
+一键停止本地服务：
+
+```bash
+pnpm stop:all
+```
+
+重新启动：
+
+```bash
+pnpm restart:devall
+```
+
+### 本地依赖
+
+`pnpm dev:all` 会尽量复用或启动本地依赖：
+
+- MongoDB：优先复用 `127.0.0.1:27017`，否则尝试本机 `mongod`。
+- Redis：优先复用 `127.0.0.1:6379`，否则尝试本机 `redis-server`，再尝试 Docker Redis。
+
+如果缺少 MongoDB，会看到类似提示：
+
+```text
+Install MongoDB, start MongoDB at 127.0.0.1:27017, or set MONGODB_URI for BFF/server.
+```
+
+如果缺少 Redis 或 Docker Desktop 没启动，会看到类似提示：
+
+```text
+Redis is required for BFF sessions...
+If you want dev:redis to manage Redis with Docker, start Docker Desktop and rerun pnpm dev:redis.
+```
+
+### Ready 规则
+
+`pnpm dev:all` 不只看进程是否启动，还会做 ready/health 检查：
+
+- MongoDB 端口可连接
+- Redis 端口可连接
+- client `/login` 可访问
+- BFF `/` 可访问
+- backend `/` 可访问
+
+只有五个服务都 ready 后，脚本才会打印 `Dev services are ready`。如果 backend 挂掉或健康检查超时，不会误报 ready，脚本会退出并停止已启动的子进程。
+
+### 进程清理
+
+`dev:all` 会把托管进程写入：
+
+```text
+.dev/dev-all.json
+```
+
+`pnpm stop:all` 会优先读取这个文件清理 `dev:all` 拉起的进程，然后兜底清理 `3000 / 3001 / 3002` 端口。这样重复启动不应该留下 client、BFF、backend 的僵尸进程。
+
+MongoDB 和 Redis 如果是你机器上已经存在的共享实例，`stop:all` 不会按端口强杀它们；如果它们是 `dev:all` 通过包装脚本拉起的，会通过托管进程一起停止。
+
+### 故障排查
+
+如果访问页面报 `/api/auth/me 500`，先检查 BFF 是否启动：
+
+```bash
+lsof -nP -iTCP:3001 -sTCP:LISTEN
+```
+
+如果没有进程监听 `3001`，请使用：
+
+```bash
+pnpm dev:all
+```
+
+如果端口被旧进程占用：
+
+```bash
+pnpm stop:all
+pnpm dev:all
+```
+
+如果配置缺失导致启动失败，先参考：
+
+```text
+.env.example
+```
+
+本地开发配置在：
+
+```text
+.env.local
+```
+
+`.env.local` 已被 `.gitignore` 忽略，不应该提交真实密钥。
+
 ## 常用启动
 
 前端开发：
@@ -51,6 +179,8 @@ pnpm dev
 ```text
 http://localhost:3000
 ```
+
+注意：`pnpm dev` 只启动 client。完整链路请使用 `pnpm dev:all`。
 
 ## 根目录脚本
 
