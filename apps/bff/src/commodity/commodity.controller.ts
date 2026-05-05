@@ -18,6 +18,7 @@ import { CommodityService } from "./commodity.service";
 import { CreateCommodityDto } from "./dto/create-commodity.dto";
 import { QueryAuditLogDto } from "./dto/query-audit-log.dto";
 import { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
+import { UpdateCommodityDto } from "./dto/update-commodity.dto";
 import { UpdateCommodityStatusDto } from "./dto/update-commodity-status.dto";
 import { ParseCommodityIdPipe as CommodityIdPipe } from "./pipes/parse-commodity-id.pipe";
 
@@ -96,6 +97,26 @@ export class CommodityController {
   @ApiResponse({ status: 404, description: "商品不存在", type: ErrorResponseDto })
   async deleteCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {
     return this.commodityService.deleteCommodity(request, user, id);
+  }
+
+  @Patch(":id")
+  @RequirePermissions("commodity:update")
+  @ApiOperation({ summary: "编辑商品基础信息" })
+  @ApiCookieAuth("next_bff_session")
+  @ApiParam({ name: "id", description: "商品ID", example: "10001" })
+  @ApiBody({ type: UpdateCommodityDto })
+  @ApiResponse({ status: 200, description: "商品编辑成功" })
+  @ApiResponse({ status: 400, description: "参数错误或业务校验失败", type: ErrorResponseDto })
+  @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
+  @ApiResponse({ status: 403, description: "无商品更新权限", type: ErrorResponseDto })
+  @ApiResponse({ status: 404, description: "商品不存在", type: ErrorResponseDto })
+  async updateCommodity(
+    @Req() request: Request,
+    @CurrentUser() user: AuthUser,
+    @Param("id", CommodityIdPipe) id: string,
+    @Body() body: UpdateCommodityDto
+  ) {
+    return this.commodityService.updateCommodity(request, user, id, body);
   }
 
   @Patch(":id/status")

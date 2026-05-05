@@ -229,4 +229,134 @@ describe("CommodityController e2e", () => {
     expect(response.body.message).toContain("property extra should not exist");
     expect(mocks.commodityService.createCommodity).not.toHaveBeenCalled();
   });
+
+  it("rejects commodity update when the logged-in user lacks permission", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(false);
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .patch("/api/commodity/10099")
+      .set("Cookie", ["next_bff_session=session-operator", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-update-forbidden")
+      .send({
+        description: "更新描述",
+        name: "测试键盘 Pro",
+        price: 399,
+        stock: 12
+      })
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: "permission denied",
+      path: "/api/commodity/10099",
+      statusCode: 403,
+      success: false,
+      traceId: "trace-update-forbidden"
+    });
+    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["operator"], ["commodity:update"]);
+    expect(mocks.commodityService.updateCommodity).not.toHaveBeenCalled();
+  });
+
+  it("updates commodity successfully through Guard, DTO validation and response envelope", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
+    mocks.commodityService.updateCommodity.mockResolvedValue({
+      auditLog: {
+        action: "update",
+        after: {
+          name: "测试键盘 Pro",
+          price: 399,
+          stock: 12
+        },
+        before: {
+          name: "测试键盘",
+          price: 299,
+          stock: 10
+        },
+        operator: operatorUser.id,
+        target: {
+          id: commodity.id,
+          type: "commodity"
+        },
+        traceId: "trace-update"
+      },
+      commodity: {
+        ...commodity,
+        name: "测试键盘 Pro",
+        price: 399,
+        stock: 12
+      }
+    });
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .patch("/api/commodity/10099")
+      .set("Cookie", ["next_bff_session=session-operator", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-update")
+      .send({
+        description: "更新描述",
+        imageFileId: "file_1",
+        imageUrl: "/uploads/commodity/file_1.png",
+        name: "测试键盘 Pro",
+        price: 399,
+        stock: 12
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      data: {
+        commodity: {
+          id: "10099",
+          name: "测试键盘 Pro",
+          price: 399,
+          stock: 12
+        }
+      },
+      message: "ok",
+      success: true,
+      traceId: "trace-update"
+    });
+    expect(mocks.commodityService.updateCommodity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-update"
+      }),
+      operatorUser,
+      "10099",
+      expect.objectContaining({
+        imageFileId: "file_1",
+        imageUrl: "/uploads/commodity/file_1.png",
+        name: "测试键盘 Pro",
+        price: 399,
+        stock: 12
+      })
+    );
+  });
+
+  it("rejects invalid commodity update params before entering service", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .patch("/api/commodity/10099")
+      .set("Cookie", ["next_bff_session=session-admin", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-update-invalid")
+      .send({
+        description: "更新描述",
+        name: "测试键盘",
+        price: -1,
+        stock: -1
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      path: "/api/commodity/10099",
+      statusCode: 400,
+      success: false,
+      traceId: "trace-update-invalid"
+    });
+    expect(mocks.commodityService.updateCommodity).not.toHaveBeenCalled();
+  });
 });

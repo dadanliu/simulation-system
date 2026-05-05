@@ -30,6 +30,7 @@ export type TestAppMocks = {
     getCommodity: jest.Mock;
     listAuditLogs: jest.Mock;
     listCommodities: jest.Mock;
+    updateCommodity: jest.Mock;
     updateCommodityStatus: jest.Mock;
   };
   getCurrentUserService: {
@@ -55,6 +56,7 @@ export function createTestAppMocks(): TestAppMocks {
       getCommodity: jest.fn(),
       listAuditLogs: jest.fn(),
       listCommodities: jest.fn(),
+      updateCommodity: jest.fn(),
       updateCommodityStatus: jest.fn()
     },
     getCurrentUserService: {

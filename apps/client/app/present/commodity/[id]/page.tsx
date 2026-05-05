@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/src/features/auth/server";
 import { getCommodityDetail } from "@/src/features/commodity/server";
 import type { CommodityStatus } from "@/src/features/commodity/types";
 import { CommodityDeleteForm } from "./commodity-delete-form";
+import { CommodityEditForm } from "./commodity-edit-form";
 import { CommodityStatusForm } from "./commodity-status-form";
 
 type CommodityDetailPageProps = {
@@ -81,6 +82,17 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
         </p>
         {commodity.description ? <p>{commodity.description}</p> : null}
       </article>
+
+      {canUpdateCommodity ? (
+        <section className="panel stack">
+          <div>
+            <p className="badge">Editable</p>
+            <h3>编辑商品基础信息</h3>
+            <p>admin 和 operator 可以编辑名称、价格、库存、描述和商品图片，提交后会写入审计日志。</p>
+          </div>
+          <CommodityEditForm commodity={commodity} />
+        </section>
+      ) : null}
 
       {canUpdateCommodity ? (
         <section className="panel stack">

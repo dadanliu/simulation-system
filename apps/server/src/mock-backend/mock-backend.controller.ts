@@ -4,6 +4,7 @@ import {
   CommodityService,
   type CreateCommodityBody,
   type ListCommoditiesQuery,
+  type UpdateCommodityBody,
   type UpdateCommodityStatusBody
 } from "./commodity.service";
 import { MockBackendService } from "./mock-backend.service";
@@ -65,6 +66,11 @@ export class MockBackendController {
   @Delete("commodity/:id")
   deleteCommodity(@Param("id") id: string, @Body() body: DeleteCommodityBody) {
     return this.commodityService.deleteCommodity(id, body.deletedBy);
+  }
+
+  @Patch("commodity/:id")
+  updateCommodity(@Param("id") id: string, @Body() body: UpdateCommodityBody) {
+    return this.commodityService.updateCommodity(id, body);
   }
 
   @Patch("commodity/:id/status")

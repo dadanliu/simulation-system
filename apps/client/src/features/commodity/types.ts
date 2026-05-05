@@ -44,7 +44,16 @@ export type CreateCommodityInput = {
   stock: number;
 };
 
-export type AuditLogAction = "create" | "delete" | "status_change";
+export type UpdateCommodityInput = {
+  description: string;
+  imageFileId?: string;
+  imageUrl?: string;
+  name: string;
+  price: number;
+  stock: number;
+};
+
+export type AuditLogAction = "create" | "delete" | "update" | "status_change";
 
 export type AuditLog = {
   action: AuditLogAction;

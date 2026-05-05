@@ -1,5 +1,5 @@
 import { fetchWithCsrf } from "@/src/features/auth/client";
-import type { Commodity, CommodityStatus, CreateCommodityInput } from "@/src/features/commodity/types";
+import type { Commodity, CommodityStatus, CreateCommodityInput, UpdateCommodityInput } from "@/src/features/commodity/types";
 
 type CreateCommodityResponse = {
   commodity: {
@@ -47,6 +47,28 @@ export async function updateCommodityStatus(id: string, input: { reason: string;
 
   if (!response.ok || !payload?.success || !payload.data?.commodity) {
     throw new Error(payload?.message ?? "商品状态变更失败");
+  }
+
+  return payload.data;
+}
+
+type UpdateCommodityResponse = {
+  auditLog: unknown;
+  commodity: Commodity;
+};
+
+export async function updateCommodity(id: string, input: UpdateCommodityInput) {
+  const response = await fetchWithCsrf(`/api/commodity/${encodeURIComponent(id)}`, {
+    body: JSON.stringify(input),
+    headers: {
+      "Content-Type": "application/json"
+    },
+    method: "PATCH"
+  });
+  const payload = (await response.json().catch(() => null)) as ApiResponse<UpdateCommodityResponse> | null;
+
+  if (!response.ok || !payload?.success || !payload.data?.commodity) {
+    throw new Error(payload?.message ?? "商品编辑失败");
   }
 
   return payload.data;

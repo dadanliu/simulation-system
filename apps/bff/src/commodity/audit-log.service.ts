@@ -54,6 +54,18 @@ export class AuditLogService {
     });
   }
 
+  recordCommodityUpdate(operator: string, commodityId: string, before: Commodity, after: Commodity, traceId: string) {
+    return this.createAuditLog({
+      action: "update",
+      after: this.pickEditableFields(after),
+      before: this.pickEditableFields(before),
+      operator,
+      reason: null,
+      resourceId: commodityId,
+      traceId
+    });
+  }
+
   recordCommodityStatusChange(
     operator: string,
     commodityId: string,
@@ -153,6 +165,17 @@ export class AuditLogService {
     });
 
     return this.toRecord(log.toObject());
+  }
+
+  private pickEditableFields(commodity: Commodity) {
+    return {
+      description: commodity.description,
+      imageFileId: commodity.imageFileId,
+      imageUrl: commodity.imageUrl,
+      name: commodity.name,
+      price: commodity.price,
+      stock: commodity.stock
+    };
   }
 
   private toRecord(log: {

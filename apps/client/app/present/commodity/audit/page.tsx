@@ -15,8 +15,19 @@ type AuditLogPageProps = {
 const actionLabel: Record<AuditLogAction, string> = {
   create: "创建商品",
   delete: "删除商品",
+  update: "编辑商品",
   status_change: "状态变更"
 };
+
+function formatDiff(value: Record<string, unknown> | null) {
+  if (!value) {
+    return "-";
+  }
+
+  return Object.entries(value)
+    .map(([key, item]) => `${key}: ${String(item || "-")}`)
+    .join("\n");
+}
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +87,8 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
               <th>操作人</th>
               <th>动作</th>
               <th>商品</th>
+              <th>修改前</th>
+              <th>修改后</th>
               <th>原因</th>
               <th>traceId</th>
             </tr>
@@ -91,6 +104,8 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
                     {log.target.id}
                   </Link>
                 </td>
+                <td className="mono-cell">{formatDiff(log.before)}</td>
+                <td className="mono-cell">{formatDiff(log.after)}</td>
                 <td>{log.reason ?? "-"}</td>
                 <td className="mono-cell">{log.traceId}</td>
               </tr>

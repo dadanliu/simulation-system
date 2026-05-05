@@ -8,6 +8,7 @@ import { AuditLogService } from "./audit-log.service";
 import type { CreateCommodityDto } from "./dto/create-commodity.dto";
 import type { QueryAuditLogDto } from "./dto/query-audit-log.dto";
 import type { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
+import type { UpdateCommodityDto } from "./dto/update-commodity.dto";
 import type { UpdateCommodityStatusDto } from "./dto/update-commodity-status.dto";
 
 @Injectable()
@@ -110,6 +111,47 @@ export class CommodityService {
     return {
       auditLog,
       commodity: data
+    };
+  }
+
+  async updateCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string, body: UpdateCommodityDto) {
+    let data: {
+      after: Commodity;
+      before: Commodity;
+    };
+
+    try {
+      data = await this.apiClientService.request<{ after: Commodity; before: Commodity }>(
+        request,
+        `/api/commodity/${encodeURIComponent(id)}`,
+        {
+          body: {
+            ...body,
+            updatedBy: user.id
+          },
+          method: "PATCH",
+          userId: user.id
+        }
+      );
+    } catch (error) {
+      if (error instanceof BffBusinessException && error.code === 20001) {
+        throw new NotFoundException("commodity not found");
+      }
+
+      throw error;
+    }
+
+    const auditLog = await this.auditLogService.recordCommodityUpdate(
+      user.id,
+      id,
+      data.before,
+      data.after,
+      request.traceId ?? ""
+    );
+
+    return {
+      auditLog,
+      commodity: data.after
     };
   }
 

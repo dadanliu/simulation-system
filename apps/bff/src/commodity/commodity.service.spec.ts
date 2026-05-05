@@ -12,6 +12,7 @@ describe("CommodityService", () => {
   };
   let auditLogService: {
     recordCommodityDelete: jest.Mock;
+    recordCommodityUpdate: jest.Mock;
   };
   let service: CommodityService;
 
@@ -42,7 +43,8 @@ describe("CommodityService", () => {
       request: jest.fn()
     };
     auditLogService = {
-      recordCommodityDelete: jest.fn()
+      recordCommodityDelete: jest.fn(),
+      recordCommodityUpdate: jest.fn()
     };
     service = new CommodityService(
       apiClientService as unknown as ApiClientService,
@@ -97,5 +99,81 @@ describe("CommodityService", () => {
       NotFoundException
     );
     expect(auditLogService.recordCommodityDelete).not.toHaveBeenCalled();
+  });
+
+  it("updates commodity through backend and records before-after audit log", async () => {
+    const before = {
+      ...commodity,
+      name: "旧商品",
+      price: 199,
+      stock: 3
+    };
+    const after = {
+      ...commodity,
+      deletedAt: null,
+      deletedBy: null,
+      name: "新商品",
+      price: 299,
+      stock: 8
+    };
+
+    apiClientService.request.mockResolvedValue({ after, before });
+    auditLogService.recordCommodityUpdate.mockResolvedValue({
+      action: "update",
+      operator: user.id,
+      target: {
+        id: commodity.id,
+        type: "commodity"
+      },
+      traceId: "trace-update"
+    });
+
+    await expect(
+      service.updateCommodity({ traceId: "trace-update" } as never, user, commodity.id, {
+        description: "更新描述",
+        imageFileId: "file_1",
+        imageUrl: "/uploads/commodity/file_1.png",
+        name: "新商品",
+        price: 299,
+        stock: 8
+      })
+    ).resolves.toEqual({
+      auditLog: {
+        action: "update",
+        operator: user.id,
+        target: {
+          id: commodity.id,
+          type: "commodity"
+        },
+        traceId: "trace-update"
+      },
+      commodity: after
+    });
+    expect(apiClientService.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-update"
+      }),
+      "/api/commodity/10099",
+      {
+        body: {
+          description: "更新描述",
+          imageFileId: "file_1",
+          imageUrl: "/uploads/commodity/file_1.png",
+          name: "新商品",
+          price: 299,
+          stock: 8,
+          updatedBy: user.id
+        },
+        method: "PATCH",
+        userId: user.id
+      }
+    );
+    expect(auditLogService.recordCommodityUpdate).toHaveBeenCalledWith(
+      user.id,
+      commodity.id,
+      before,
+      after,
+      "trace-update"
+    );
   });
 });

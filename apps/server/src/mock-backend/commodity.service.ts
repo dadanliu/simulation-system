@@ -52,6 +52,16 @@ export type UpdateCommodityStatusBody = {
   status?: MockCommodity["status"];
 };
 
+export type UpdateCommodityBody = {
+  description?: string;
+  imageFileId?: string;
+  imageUrl?: string;
+  name?: string;
+  price?: number | string;
+  stock?: number | string;
+  updatedBy?: string;
+};
+
 const defaultCommodities: MockCommodity[] = [
   {
     createdAt: "2026-04-01T10:00:00.000Z",
@@ -300,6 +310,57 @@ export class CommodityService implements OnModuleInit {
     }
 
     return mockSuccess(this.toCommodityView(commodity));
+  }
+
+  async updateCommodity(id: string, body: UpdateCommodityBody = {}) {
+    const commodity = await this.commodityModel.findOne({ id, deletedAt: null });
+    const name = body.name?.trim();
+    const description = body.description?.trim() ?? "";
+    const imageFileId = body.imageFileId?.trim() ?? "";
+    const imageUrl = body.imageUrl?.trim() ?? "";
+    const price = Number(body.price);
+    const stock = Number(body.stock);
+
+    if (!commodity) {
+      return mockBusinessError(20001, "commodity not found");
+    }
+
+    if (!name) {
+      return mockBusinessError(20002, "commodity name is required");
+    }
+
+    if (!Number.isFinite(price) || price <= 0) {
+      return mockBusinessError(20003, "commodity price must be greater than 0");
+    }
+
+    if (!Number.isInteger(stock) || stock < 0) {
+      return mockBusinessError(20004, "commodity stock must be a non-negative integer");
+    }
+
+    const duplicatedCommodity = await this.commodityModel.exists({
+      id: { $ne: id },
+      name
+    });
+
+    if (duplicatedCommodity) {
+      return mockBusinessError(20006, "commodity name already exists");
+    }
+
+    const before = this.toCommodityView(commodity.toObject());
+
+    commodity.description = description;
+    commodity.imageFileId = imageFileId;
+    commodity.imageUrl = imageUrl;
+    commodity.name = name;
+    commodity.price = price;
+    commodity.stock = stock;
+    commodity.updatedAt = new Date();
+    await commodity.save();
+
+    return mockSuccess({
+      after: this.toCommodityView(commodity.toObject()),
+      before
+    });
   }
 
   async updateCommodityStatus(id: string, body: UpdateCommodityStatusBody = {}) {
