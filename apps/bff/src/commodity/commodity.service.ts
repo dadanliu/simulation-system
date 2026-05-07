@@ -18,7 +18,7 @@ export class CommodityService {
     private readonly auditLogService: AuditLogService
   ) {}
 
-  listCommodities(request: Request, user: AuthUser, query: QueryCommodityListDto) {
+  async listCommodities(request: Request, user: AuthUser, query: QueryCommodityListDto) {
     const searchParams = new URLSearchParams();
 
     // BFF 对外暴露 minPrice / maxPrice / page / pageSize 等前端友好的字段；
@@ -46,19 +46,27 @@ export class CommodityService {
 
     const backendPath = searchParams.size ? `/api/commodity/list?${searchParams.toString()}` : "/api/commodity/list";
 
-    return this.apiClientService.request<CommodityListData>(request, backendPath, {
+    const data = await this.apiClientService.request<CommodityListData>(request, backendPath, {
       // BFF 将已登录用户上下文注入到后端请求里。
       userId: user.id
     });
+
+    return data;
   }
 
   async getCommodity(request: Request, user: AuthUser, id: string) {
     // id 来自动态路由，编码后再拼接到后端路径，避免特殊字符破坏 URL。
     try {
-      return await this.apiClientService.request<Commodity>(request, `/api/commodity/${encodeURIComponent(id)}`, {
-        // 详情接口同样由 BFF 统一注入登录用户上下文。
-        userId: user.id
-      });
+      const commodity = await this.apiClientService.request<Commodity>(
+        request,
+        `/api/commodity/${encodeURIComponent(id)}`,
+        {
+          // 详情接口同样由 BFF 统一注入登录用户上下文。
+          userId: user.id
+        }
+      );
+
+      return commodity;
     } catch (error) {
       if (error instanceof BffBusinessException && error.code === 20001) {
         throw new NotFoundException("commodity not found");
@@ -158,7 +166,7 @@ export class CommodityService {
       request.traceId ?? ""
     );
 
-  return {
+    return {
       auditLog,
       commodity: data.after
     };
@@ -209,7 +217,12 @@ export class CommodityService {
     return this.auditLogService.listCommodityLogs(query);
   }
 
-  async updateCommodityStatus(request: Request & { traceId?: string }, user: AuthUser, id: string, body: UpdateCommodityStatusDto) {
+  async updateCommodityStatus(
+    request: Request & { traceId?: string },
+    user: AuthUser,
+    id: string,
+    body: UpdateCommodityStatusDto
+  ) {
     let data: {
       after: Commodity;
       before: Commodity;

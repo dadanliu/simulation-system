@@ -318,6 +318,14 @@ textarea {
   border-style: dashed;
 }
 
+.commodity-image-fallback {
+  border-style: dashed;
+  background:
+    linear-gradient(135deg, rgba(224, 231, 255, 0.92), rgba(255, 255, 255, 0.98)),
+    var(--surface-muted);
+  color: var(--text-muted);
+}
+
 .mono-cell {
   max-width: 240px;
   overflow-wrap: anywhere;
@@ -450,6 +458,7 @@ textarea {
 
 .commodity-cover {
   width: min(100%, 420px);
+  aspect-ratio: 21 / 13;
   max-height: 260px;
   margin-bottom: 18px;
   border: 1px solid var(--line);

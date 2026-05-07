@@ -11,6 +11,7 @@ describe("CommodityService", () => {
     request: jest.Mock;
   };
   let auditLogService: {
+    recordCommodityCreate: jest.Mock;
     recordCommodityDelete: jest.Mock;
     recordCommodityRestore: jest.Mock;
     recordCommodityStatusChange: jest.Mock;
@@ -45,6 +46,7 @@ describe("CommodityService", () => {
       request: jest.fn()
     };
     auditLogService = {
+      recordCommodityCreate: jest.fn(),
       recordCommodityDelete: jest.fn(),
       recordCommodityRestore: jest.fn(),
       recordCommodityStatusChange: jest.fn(),
@@ -173,9 +175,9 @@ describe("CommodityService", () => {
   it("maps backend commodity-not-found error to Nest NotFoundException", async () => {
     apiClientService.request.mockRejectedValue(new BffBusinessException("commodity not found", 20001));
 
-    await expect(service.deleteCommodity({ traceId: "trace-delete" } as never, user, "missing-id")).rejects.toBeInstanceOf(
-      NotFoundException
-    );
+    await expect(
+      service.deleteCommodity({ traceId: "trace-delete" } as never, user, "missing-id")
+    ).rejects.toBeInstanceOf(NotFoundException);
     expect(auditLogService.recordCommodityDelete).not.toHaveBeenCalled();
   });
 

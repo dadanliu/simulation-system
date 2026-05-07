@@ -48,9 +48,7 @@ async function readApiResponse<T>(response: Response, nextPathOnUnauthorized: st
   return payload.data;
 }
 
-export async function getCommodityListPageData(
-  searchParams: CommoditySearchParams
-): Promise<CommodityListPageData> {
+export async function getCommodityListPageData(searchParams: CommoditySearchParams): Promise<CommodityListPageData> {
   const filters = readCommodityListFilters(searchParams);
   const cookie = await getCookieHeader();
   const query = buildCommodityListRequestSearchParams(searchParams);

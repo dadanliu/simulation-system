@@ -57,14 +57,14 @@ export class UploadService {
       scanStatus: result.scanStatus,
       scene: result.scene,
       size: result.size ?? result.fileSize,
-      url: `/api/files/${result.fileId ?? result.uploadId}`
+      url: result.url
     } satisfies ProductImageUploadResult;
   }
 
-  async getFile(request: Request, user: AuthUser, fileId: string) {
+  async getFile(request: Request, fileId: string, userId?: string) {
     return this.apiClientService.requestRaw(request, `/api/files/${fileId}`, {
       method: "GET",
-      userId: user.id
+      userId
     });
   }
 }

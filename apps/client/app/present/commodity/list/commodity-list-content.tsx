@@ -1,7 +1,8 @@
 import Link from "next/link";
-import Image from "next/image";
 import { CommodityListFiltersPanel } from "./commodity-list-filters";
 import { CommodityListPagination } from "./commodity-list-pagination";
+import { CommodityImage } from "@/src/components/commodity-image";
+import { getCommodityImageSizes } from "@/src/features/commodity/media";
 import type { CommoditySearchParams } from "@/src/features/commodity/query";
 import { getCommodityListPageData } from "@/src/features/commodity/server";
 import type { CommodityStatus } from "@/src/features/commodity/types";
@@ -90,18 +91,14 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
               {list.map((commodity) => (
                 <tr key={commodity.id}>
                   <td>
-                    {commodity.imageUrl ? (
-                      <Image
-                        alt={commodity.name}
-                        className="commodity-thumb"
-                        height={56}
-                        src={commodity.imageUrl}
-                        unoptimized
-                        width={56}
-                      />
-                    ) : (
-                      <span className="commodity-thumb commodity-thumb--empty">无图</span>
-                    )}
+                    <CommodityImage
+                      alt={commodity.name}
+                      className={`commodity-thumb${commodity.imageUrl ? "" : " commodity-thumb--empty"}`}
+                      height={56}
+                      sizes={getCommodityImageSizes("thumb")}
+                      src={commodity.imageUrl}
+                      width={56}
+                    />
                   </td>
                   <td>{commodity.id}</td>
                   <td>

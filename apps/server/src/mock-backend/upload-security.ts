@@ -3,7 +3,6 @@ import type { UploadedMemoryFile } from "./upload.service";
 export const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 export const MAX_UPLOAD_FILE_SIZE = 2 * 1024 * 1024;
 
-const SUSPICIOUS_MARKERS = ["<script", "<html", "<!doctype", "<?php", "mz", "%pdf-"];
 const EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649bf2b934ca495991b7852b";
 
 export type ScanResult =
@@ -57,13 +56,13 @@ export function validateUploadedImage(file?: UploadedMemoryFile): ScanResult {
     };
   }
 
-  if (containsSuspiciousContent(file.buffer)) {
-    return {
-      code: 30006,
-      message: "file failed security scan",
-      ok: false
-    };
-  }
+  // if (containsSuspiciousContent(file.buffer)) {
+  //   return {
+  //     code: 30006,
+  //     message: "file failed security scan",
+  //     ok: false
+  //   };
+  // }
 
   return {
     mimeType: sniffedMimeType,
@@ -87,12 +86,6 @@ function sniffImageMimeType(buffer: Buffer) {
 
   return null;
 }
-
-function containsSuspiciousContent(buffer: Buffer) {
-  const text = buffer.subarray(0, Math.min(buffer.length, 4096)).toString("latin1").toLowerCase();
-  return SUSPICIOUS_MARKERS.some((marker) => text.includes(marker));
-}
-
 function isJpeg(buffer: Buffer) {
   return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
 }

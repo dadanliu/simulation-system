@@ -1,11 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { CommodityImage } from "@/src/components/commodity-image";
 import { fetchWithCsrf } from "@/src/features/auth/client";
 import { createCommodity } from "@/src/features/commodity/client";
+import { getCommodityImageSizes } from "@/src/features/commodity/media";
 import type { CommodityStatus } from "@/src/features/commodity/types";
 
 type FormState = {
@@ -185,12 +186,12 @@ export function CommodityCreateForm() {
       {uploadedImage ? (
         <div className="upload-result">
           <p className="upload-result__title">图片已上传</p>
-          <Image
+          <CommodityImage
             alt="已上传商品图"
             className="commodity-thumb"
             height={56}
+            sizes={getCommodityImageSizes("thumb")}
             src={uploadedImage.url}
-            unoptimized
             width={56}
           />
           <p>文件 ID：{uploadedImage.fileId}</p>

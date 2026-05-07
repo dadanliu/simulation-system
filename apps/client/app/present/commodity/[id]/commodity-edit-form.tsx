@@ -1,10 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { CommodityImage } from "@/src/components/commodity-image";
 import { fetchWithCsrf } from "@/src/features/auth/client";
+import { getCommodityImageSizes } from "@/src/features/commodity/media";
 import { updateCommodity } from "@/src/features/commodity/client";
 import type { Commodity } from "@/src/features/commodity/types";
 
@@ -195,7 +196,14 @@ export function CommodityEditForm({ commodity }: CommodityEditFormProps) {
       {imageUrl ? (
         <div className="upload-result">
           <p className="upload-result__title">{uploadedImage ? "新图片已上传" : "当前商品图片"}</p>
-          <Image alt={form.name || commodity.name} className="commodity-thumb" height={56} src={imageUrl} unoptimized width={56} />
+          <CommodityImage
+            alt={form.name || commodity.name}
+            className="commodity-thumb"
+            height={56}
+            sizes={getCommodityImageSizes("thumb")}
+            src={imageUrl}
+            width={56}
+          />
           <p>文件 ID：{imageFileId || "-"}</p>
           {uploadedImage ? (
             <>

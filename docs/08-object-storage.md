@@ -65,14 +65,28 @@ BFF 对前端暴露稳定字段：
 ```json
 {
   "fileId": "local_xxx",
-  "url": "/api/files/local_xxx",
+  "url": "/api/files/local_xxx?variant=preview&v=1746600000000&expires=1747204800&signature=...",
   "mimeType": "image/png",
   "size": 12345,
   "scene": "commodity"
 }
 ```
 
-商品创建和编辑只保存 `imageFileId`、`imageUrl`，不保存图片二进制。`imageUrl` 统一指向 BFF 的 `/api/files/:fileId`，访问时必须带登录态。
+商品创建和编辑只保存 `imageFileId`、`imageUrl`，不保存图片二进制。`imageUrl` 统一指向 BFF 的签名文件地址，支持 `thumb`、`detail`、`preview` 三种展示语义。
+
+## 图片展示性能
+
+- 列表页使用 `thumb` 语义 URL，再交给 Next/Image 输出 56px 缩略图，浏览器不再直接加载原始大图。
+- 详情页使用 `detail` 语义 URL，并带 `priority` 和稳定尺寸，避免 LCP 抖动。
+- 上传预览使用 `preview` 语义 URL。
+- 图片 URL 带 `v=<updatedAt>`，商品换图后缓存键会变，不会长期命中旧图。
+- 已签名 URL 会返回长期缓存头，适合放在 CDN 前面做缓存。
+
+## 私有访问
+
+- 浏览器直接访问图片时，可以依赖登录态 cookie。
+- Next/Image 优化器抓取源图时，不依赖 cookie，而是依赖 URL 上的签名参数。
+- BFF 校验 `fileId + variant + version + expires + signature`，通过后才代理真实文件。
 
 ## 图例
 
@@ -87,7 +101,7 @@ flowchart LR
   S3 --> Meta
   OSS --> Meta
   Meta --> Registry[upload registry]
-  Registry --> BFFFile[BFF /api/files/:fileId]
+  Registry --> BFFFile[BFF /api/files/:fileId?variant+v+signature]
   BFF --> Client
   BFFFile --> Client
   Client -->|imageFileId/imageUrl| Commodity[商品创建/编辑]

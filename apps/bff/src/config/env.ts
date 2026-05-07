@@ -4,12 +4,22 @@ const ENV_FILE_PATHS = [".env.local", ".env", "../../.env.local", "../../.env"];
 const DEFAULTS = {
   APP_ENV: "development",
   BFF_PORT: "3001",
+  BFF_PUBLIC_BASE_URL: "http://localhost:3001",
   COOKIE_SECURE: undefined,
   CSRF_ALLOWED_ORIGINS: "http://localhost:3000",
+  FILE_CACHE_DETAIL_MAX_AGE_SECONDS: "31536000",
+  FILE_CACHE_DETAIL_STALE_WHILE_REVALIDATE_SECONDS: "86400",
+  FILE_CACHE_PREVIEW_MAX_AGE_SECONDS: "300",
+  FILE_CACHE_PREVIEW_STALE_WHILE_REVALIDATE_SECONDS: "60",
+  FILE_CACHE_THUMB_MAX_AGE_SECONDS: "31536000",
+  FILE_CACHE_THUMB_STALE_WHILE_REVALIDATE_SECONDS: "86400",
+  FILE_URL_TTL_SECONDS: "604800",
+  FILE_PREVIEW_URL_TTL_SECONDS: "3600",
   LOGIN_FAILURE_WINDOW_SECONDS: "900",
   LOGIN_LOCK_SECONDS: "600",
   LOGIN_MAX_FAILURES_PER_IP: "20",
   LOGIN_MAX_FAILURES_PER_USER: "5",
+  FILE_URL_SIGNING_SECRET: "next-bff-dev-file-secret",
   LOG_LEVEL: "log,warn,error",
   MOCK_SEED_ENABLED: undefined,
   NODE_ENV: "development",
@@ -120,9 +130,18 @@ export function validateBffEnv(input: RawConfig) {
 
   requireNonEmpty(config, "MONGODB_URI", errors);
   requireUrl(config, "BACKEND_BASE_URL", errors);
+  requireUrl(config, "BFF_PUBLIC_BASE_URL", errors);
   requireUrl(config, "REDIS_URL", errors);
   requirePositiveInteger(config, "BFF_PORT", errors);
   requirePositiveInteger(config, "SESSION_TTL_SECONDS", errors);
+  requirePositiveInteger(config, "FILE_CACHE_DETAIL_MAX_AGE_SECONDS", errors);
+  requirePositiveInteger(config, "FILE_CACHE_DETAIL_STALE_WHILE_REVALIDATE_SECONDS", errors);
+  requirePositiveInteger(config, "FILE_CACHE_PREVIEW_MAX_AGE_SECONDS", errors);
+  requirePositiveInteger(config, "FILE_CACHE_PREVIEW_STALE_WHILE_REVALIDATE_SECONDS", errors);
+  requirePositiveInteger(config, "FILE_CACHE_THUMB_MAX_AGE_SECONDS", errors);
+  requirePositiveInteger(config, "FILE_CACHE_THUMB_STALE_WHILE_REVALIDATE_SECONDS", errors);
+  requirePositiveInteger(config, "FILE_PREVIEW_URL_TTL_SECONDS", errors);
+  requirePositiveInteger(config, "FILE_URL_TTL_SECONDS", errors);
   requirePositiveInteger(config, "LOGIN_MAX_FAILURES_PER_USER", errors);
   requirePositiveInteger(config, "LOGIN_MAX_FAILURES_PER_IP", errors);
   requirePositiveInteger(config, "LOGIN_FAILURE_WINDOW_SECONDS", errors);
@@ -133,6 +152,10 @@ export function validateBffEnv(input: RawConfig) {
 
   if (config.APP_ENV === "production" && config.MOCK_SEED_ENABLED === "true") {
     errors.push("MOCK_SEED_ENABLED=true is not allowed when APP_ENV=production");
+  }
+
+  if (config.APP_ENV === "production" && config.FILE_URL_SIGNING_SECRET === DEFAULTS.FILE_URL_SIGNING_SECRET) {
+    errors.push("FILE_URL_SIGNING_SECRET must be overridden when APP_ENV=production");
   }
 
   if (errors.length) {

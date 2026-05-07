@@ -5,6 +5,7 @@ const REDIS_PORT = Number(process.env.REDIS_PORT ?? 6379);
 const REDIS_HOST = process.env.REDIS_HOST ?? "127.0.0.1";
 const DOCKER_CONTAINER_NAME = process.env.REDIS_DOCKER_CONTAINER_NAME ?? "next-bff-redis";
 const DOCKER_IMAGE = process.env.REDIS_DOCKER_IMAGE ?? "redis:7-alpine";
+const DOCKER_READY_TIMEOUT_MS = Number(process.env.DOCKER_READY_TIMEOUT_MS ?? 90_000);
 
 let child;
 let startedDocker = false;
@@ -21,6 +22,14 @@ function commandExists(command) {
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function dockerDaemonReady() {
+  const result = spawnSync("docker", ["info"], {
+    stdio: "ignore"
+  });
+
+  return result.status === 0;
 }
 
 function canConnect() {
@@ -95,6 +104,34 @@ function startDockerRedis() {
   );
 }
 
+async function ensureDockerDaemon() {
+  if (dockerDaemonReady()) {
+    return;
+  }
+
+  if (process.platform === "darwin" && commandExists("open")) {
+    console.log("Docker daemon is not ready. Opening Docker Desktop...");
+    spawnSync("open", ["-a", "Docker"], {
+      stdio: "ignore"
+    });
+
+    const startedAt = Date.now();
+
+    while (Date.now() - startedAt < DOCKER_READY_TIMEOUT_MS) {
+      if (dockerDaemonReady()) {
+        console.log("Docker Desktop is ready.");
+        return;
+      }
+
+      await wait(1_000);
+    }
+
+    throw new Error(`Docker Desktop did not become ready within ${DOCKER_READY_TIMEOUT_MS}ms`);
+  }
+
+  throw new Error("Docker is installed, but the Docker daemon is not running.");
+}
+
 function pipeOutput(childProcess) {
   childProcess.stdout.on("data", (chunk) => {
     process.stdout.write(chunk);
@@ -125,6 +162,7 @@ async function main() {
   if (commandExists("redis-server")) {
     child = startLocalRedisServer();
   } else if (commandExists("docker")) {
+    await ensureDockerDaemon();
     child = startDockerRedis();
   } else {
     console.error("Redis is required for BFF sessions, but neither redis-server nor docker was found.");

@@ -1,6 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { getCurrentUser } from "@/src/features/auth/server";
+import { CommodityImage } from "@/src/components/commodity-image";
+import { getCommodityImageSizes } from "@/src/features/commodity/media";
 import { getCommodityDetail } from "@/src/features/commodity/server";
 import type { CommodityStatus } from "@/src/features/commodity/types";
 import { CommodityDeleteForm } from "./commodity-delete-form";
@@ -66,16 +67,15 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
 
       <article className="detail-card">
         <p className="card__label">商品名称</p>
-        {commodity.imageUrl ? (
-          <Image
-            alt={commodity.name}
-            className="commodity-cover"
-            height={260}
-            src={commodity.imageUrl}
-            unoptimized
-            width={420}
-          />
-        ) : null}
+        <CommodityImage
+          alt={commodity.name}
+          className={`commodity-cover${commodity.imageUrl ? "" : " commodity-thumb--empty"}`}
+          height={260}
+          priority
+          sizes={getCommodityImageSizes("detail")}
+          src={commodity.imageUrl}
+          width={420}
+        />
         <h3>{commodity.name}</h3>
         <p>
           当前商品处于「{statusLabel[commodity.status]}」状态，库存数量为 {commodity.stock}。

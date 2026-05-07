@@ -2,8 +2,25 @@ import type { NextConfig } from "next";
 import { loadClientConfig } from "./src/config/env";
 
 const clientConfig = loadClientConfig();
+const bffUrl = new URL(clientConfig.bffBaseUrl);
+const bffProtocol = bffUrl.protocol.replace(":", "") as "http" | "https";
 
 const nextConfig: NextConfig = {
+  images: {
+    localPatterns: [
+      {
+        pathname: "/api/files/**"
+      }
+    ],
+    remotePatterns: [
+      {
+        hostname: bffUrl.hostname,
+        pathname: "/api/files/**",
+        port: bffUrl.port,
+        protocol: bffProtocol
+      }
+    ]
+  },
   reactStrictMode: true,
   async rewrites() {
     const bffBaseUrl = clientConfig.bffBaseUrl;

@@ -170,6 +170,12 @@ docs/07-environment-isolation.md
 docs/08-object-storage.md
 ```
 
+图片展示性能设计见：
+
+```text
+docs/09-image-performance.md
+```
+
 本地开发配置在：
 
 ```text
