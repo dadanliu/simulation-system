@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { createAppError } from "@/src/lib/app-error";
 import type {
   AuditLogListData,
   Commodity,
@@ -16,7 +17,10 @@ import { loadClientConfig } from "@/src/config/env";
 type ApiResponse<T> = {
   data?: T;
   message?: string;
+  path?: string;
   success: boolean;
+  statusCode?: number;
+  traceId?: string;
 };
 
 const { internalOrigin } = loadClientConfig();
@@ -34,15 +38,30 @@ function redirectToLogin(nextPath: string) {
   redirect(`/login?${loginSearchParams.toString()}`);
 }
 
-async function readApiResponse<T>(response: Response, nextPathOnUnauthorized: string) {
+async function readApiResponse<T>(
+  response: Response,
+  nextPathOnUnauthorized: string,
+  options: {
+    onNotFound?: "notFound";
+  } = {}
+) {
   const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;
 
   if (response.status === 401) {
     redirectToLogin(nextPathOnUnauthorized);
   }
 
+  if (response.status === 404 && options.onNotFound === "notFound") {
+    notFound();
+  }
+
   if (!response.ok || !payload?.success || payload.data === undefined) {
-    throw new Error(payload?.message ?? `Request failed with status ${response.status}`);
+    throw createAppError({
+      message: payload?.message ?? `Request failed with status ${response.status}`,
+      path: payload?.path,
+      status: payload?.statusCode ?? response.status,
+      traceId: payload?.traceId
+    });
   }
 
   return payload.data;
@@ -77,7 +96,9 @@ export async function getCommodityDetail(id: string) {
     }
   });
 
-  return readApiResponse<Commodity>(response, `/present/commodity/${encodeURIComponent(id)}`);
+  return readApiResponse<Commodity>(response, `/present/commodity/${encodeURIComponent(id)}`, {
+    onNotFound: "notFound"
+  });
 }
 
 export async function getCommodityAuditLogs(searchParams: {

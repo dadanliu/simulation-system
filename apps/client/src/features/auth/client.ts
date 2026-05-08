@@ -29,6 +29,15 @@ function readCookie(name: string) {
   return decodeURIComponent(cookie.slice(name.length + 1));
 }
 
+function redirectToLogin() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const next = `${window.location.pathname}${window.location.search}`;
+  window.location.assign(`/login?next=${encodeURIComponent(next)}`);
+}
+
 export async function ensureCsrfToken() {
   const existingToken = readCookie(CSRF_COOKIE_NAME);
 
@@ -64,9 +73,15 @@ export async function fetchWithCsrf(input: RequestInfo | URL, init: RequestInit 
     headers.set(CSRF_HEADER_NAME, csrfToken);
   }
 
-  return fetch(input, {
+  const response = await fetch(input, {
     ...init,
     credentials: init.credentials ?? "same-origin",
     headers
   });
+
+  if (response.status === 401) {
+    redirectToLogin();
+  }
+
+  return response;
 }

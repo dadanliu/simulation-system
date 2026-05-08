@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { parseAppError } from "@/src/lib/app-error";
 
 type CommodityDetailErrorProps = {
   error: Error;
@@ -8,11 +9,14 @@ type CommodityDetailErrorProps = {
 };
 
 export default function CommodityDetailError({ error, reset }: CommodityDetailErrorProps) {
+  const appError = parseAppError(error);
+
   return (
     <section className="panel stack">
-      <p className="badge">Error</p>
+      <p className="badge badge--danger">System Error</p>
       <h2>商品详情加载失败</h2>
-      <p>{error.message}</p>
+      <p className="form-error">{appError?.message || error.message}</p>
+      {appError?.traceId ? <p className="form-hint">traceId: <span className="mono-cell">{appError.traceId}</span></p> : null}
       <div className="inline-actions">
         <button className="button" onClick={reset} type="button">
           重新加载

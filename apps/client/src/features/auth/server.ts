@@ -1,12 +1,16 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { createAppError } from "@/src/lib/app-error";
 import { loadClientConfig } from "@/src/config/env";
 import type { CurrentUser } from "./types";
 
 type ApiResponse<T> = {
   data?: T;
   message?: string;
+  path?: string;
   success: boolean;
+  statusCode?: number;
+  traceId?: string;
 };
 
 const { bffBaseUrl, internalOrigin } = loadClientConfig();
@@ -35,10 +39,14 @@ export async function getCurrentUser(nextPath = "/present/commodity/list"): Prom
   }
 
   if (!response.ok || !payload?.success || !payload.data?.user) {
-    throw new Error(
-      payload?.message ??
-        `Auth API request failed with status ${response.status}. Check BFF_BASE_URL=${bffBaseUrl} and BFF availability.`
-    );
+    throw createAppError({
+      message:
+        payload?.message ??
+        `Auth API request failed with status ${response.status}. Check BFF_BASE_URL=${bffBaseUrl} and BFF availability.`,
+      path: payload?.path,
+      status: payload?.statusCode ?? response.status,
+      traceId: payload?.traceId
+    });
   }
 
   return payload.data.user;
