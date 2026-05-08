@@ -39,22 +39,40 @@ export async function getCommodityDetail(id: string) {
 
 export async function getCommodityAuditLogs(searchParams: {
   action?: string | string[];
+  createdFrom?: string | string[];
+  createdTo?: string | string[];
   operator?: string | string[];
   page?: string | string[];
   pageSize?: string | string[];
+  targetId?: string | string[];
 }) {
   const query = new URLSearchParams();
   const operator = Array.isArray(searchParams.operator) ? searchParams.operator[0] : searchParams.operator;
   const action = Array.isArray(searchParams.action) ? searchParams.action[0] : searchParams.action;
+  const createdFrom = Array.isArray(searchParams.createdFrom) ? searchParams.createdFrom[0] : searchParams.createdFrom;
+  const createdTo = Array.isArray(searchParams.createdTo) ? searchParams.createdTo[0] : searchParams.createdTo;
   const page = Array.isArray(searchParams.page) ? searchParams.page[0] : searchParams.page;
   const pageSize = Array.isArray(searchParams.pageSize) ? searchParams.pageSize[0] : searchParams.pageSize;
+  const targetId = Array.isArray(searchParams.targetId) ? searchParams.targetId[0] : searchParams.targetId;
 
   if (operator) {
     query.set("operator", operator);
   }
 
+  if (targetId) {
+    query.set("targetId", targetId);
+  }
+
   if (action) {
     query.set("action", action);
+  }
+
+  if (createdFrom) {
+    query.set("createdFrom", createdFrom);
+  }
+
+  if (createdTo) {
+    query.set("createdTo", createdTo);
   }
 
   if (page) {

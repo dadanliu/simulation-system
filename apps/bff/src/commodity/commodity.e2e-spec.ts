@@ -172,6 +172,179 @@ describe("CommodityController e2e", () => {
     expect(mocks.commodityService.listCommodities).not.toHaveBeenCalled();
   });
 
+  it("lists audit logs with operator, action, target and time filters", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    mocks.commodityService.listAuditLogs.mockResolvedValue({
+      list: [
+        {
+          action: "update",
+          after: {
+            price: 399
+          },
+          before: {
+            price: 299
+          },
+          createdAt: "2026-04-29T01:30:00.000Z",
+          operator: adminUser.id,
+          reason: null,
+          target: {
+            id: commodity.id,
+            type: "commodity"
+          },
+          traceId: "trace-audit-list"
+        }
+      ],
+      pagination: {
+        page: 2,
+        pageSize: 5,
+        total: 7
+      }
+    });
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/audit-logs")
+      .query({
+        action: "update",
+        createdFrom: "2026-04-29T00:00:00.000Z",
+        createdTo: "2026-04-29T23:59:59.999Z",
+        operator: adminUser.id,
+        page: "2",
+        pageSize: "5",
+        targetId: commodity.id
+      })
+      .set("Cookie", "next_bff_session=session-admin")
+      .set("x-trace-id", "trace-audit-list")
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      data: {
+        list: [
+          {
+            action: "update",
+            operator: adminUser.id,
+            target: {
+              id: commodity.id,
+              type: "commodity"
+            },
+            traceId: "trace-audit-list"
+          }
+        ],
+        pagination: {
+          page: 2,
+          pageSize: 5,
+          total: 7
+        }
+      },
+      message: "ok",
+      success: true,
+      traceId: "trace-audit-list"
+    });
+    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["admin"], ["audit:read"]);
+    expect(mocks.commodityService.listAuditLogs).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "update",
+        createdFrom: "2026-04-29T00:00:00.000Z",
+        createdTo: "2026-04-29T23:59:59.999Z",
+        operator: adminUser.id,
+        page: 2,
+        pageSize: 5,
+        targetId: commodity.id
+      })
+    );
+  });
+
+  it("rejects audit log access when the logged-in user lacks audit permission", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(false);
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/audit-logs")
+      .set("Cookie", "next_bff_session=session-operator")
+      .set("x-trace-id", "trace-audit-forbidden")
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: "permission denied",
+      path: "/api/commodity/audit-logs",
+      statusCode: 403,
+      success: false,
+      traceId: "trace-audit-forbidden"
+    });
+    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["operator"], ["audit:read"]);
+    expect(mocks.commodityService.listAuditLogs).not.toHaveBeenCalled();
+  });
+
+  it("rejects audit log access for non-admin users even if audit permission passes", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue({
+      ...operatorUser,
+      permissions: [...operatorUser.permissions, "audit:read"]
+    });
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(true);
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/audit-logs")
+      .set("Cookie", "next_bff_session=session-operator")
+      .set("x-trace-id", "trace-audit-admin-only")
+      .expect(403);
+
+    expect(response.body).toMatchObject({
+      message: "permission denied",
+      path: "/api/commodity/audit-logs",
+      statusCode: 403,
+      success: false,
+      traceId: "trace-audit-admin-only"
+    });
+    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["operator"], ["audit:read"]);
+    expect(mocks.commodityService.listAuditLogs).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid audit log query params before entering service", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/audit-logs")
+      .query({
+        action: "ship",
+        createdFrom: "not-a-date",
+        page: "0",
+        pageSize: "101"
+      })
+      .set("Cookie", "next_bff_session=session-admin")
+      .set("x-trace-id", "trace-audit-invalid")
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      path: "/api/commodity/audit-logs?action=ship&createdFrom=not-a-date&page=0&pageSize=101",
+      statusCode: 400,
+      success: false,
+      traceId: "trace-audit-invalid"
+    });
+    expect(mocks.commodityService.listAuditLogs).not.toHaveBeenCalled();
+  });
+
+  it("rejects audit log query when createdFrom is after createdTo", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/audit-logs")
+      .query({
+        createdFrom: "2026-04-30T00:00:00.000Z",
+        createdTo: "2026-04-29T00:00:00.000Z"
+      })
+      .set("Cookie", "next_bff_session=session-admin")
+      .set("x-trace-id", "trace-audit-invalid-range")
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      message: "createdFrom must be before or equal to createdTo",
+      path: "/api/commodity/audit-logs?createdFrom=2026-04-30T00%3A00%3A00.000Z&createdTo=2026-04-29T00%3A00%3A00.000Z",
+      statusCode: 400,
+      success: false,
+      traceId: "trace-audit-invalid-range"
+    });
+    expect(mocks.commodityService.listAuditLogs).not.toHaveBeenCalled();
+  });
+
   it("rejects commodity creation when the logged-in user lacks permission", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
     mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(false);

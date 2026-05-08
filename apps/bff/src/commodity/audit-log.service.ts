@@ -119,6 +119,10 @@ export class AuditLogService {
       filters.action = query.action;
     }
 
+    if (query.targetId?.trim()) {
+      filters.resourceId = query.targetId.trim();
+    }
+
     if (query.createdFrom || query.createdTo) {
       const createdAt: Record<string, Date> = {};
 

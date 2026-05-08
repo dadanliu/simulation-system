@@ -1,4 +1,17 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards
+} from "@nestjs/common";
 import {
   ApiBody,
   ApiCookieAuth,
@@ -52,7 +65,15 @@ export class CommodityController {
   @ApiResponse({ status: 400, description: "查询参数错误", type: ErrorResponseDto })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
   @ApiResponse({ status: 403, description: "无审计日志查看权限", type: ErrorResponseDto })
-  listAuditLogs(@Query() query: QueryAuditLogDto) {
+  listAuditLogs(@CurrentUser() user: AuthUser, @Query() query: QueryAuditLogDto) {
+    if (!user.roles.includes("admin")) {
+      throw new ForbiddenException("permission denied");
+    }
+
+    if (query.createdFrom && query.createdTo && new Date(query.createdFrom) > new Date(query.createdTo)) {
+      throw new BadRequestException("createdFrom must be before or equal to createdTo");
+    }
+
     return this.commodityService.listAuditLogs(query);
   }
 

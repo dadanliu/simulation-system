@@ -26,6 +26,11 @@ export class QueryAuditLogDto {
   @IsString()
   operator?: string;
 
+  @ApiPropertyOptional({ description: "按对象 ID 筛选", example: "10001" })
+  @IsOptional()
+  @IsString()
+  targetId?: string;
+
   @ApiPropertyOptional({ description: "按操作类型筛选", enum: AuditLogAction, example: AuditLogAction.Create })
   @IsOptional()
   @IsEnum(AuditLogAction)

@@ -39,6 +39,9 @@ export class AuditLogEntity {
 export const AuditLogSchema = SchemaFactory.createForClass(AuditLogEntity);
 
 AuditLogSchema.index({ resourceType: 1, createdAt: -1 });
+AuditLogSchema.index({ resourceType: 1, action: 1, createdAt: -1 });
+AuditLogSchema.index({ resourceType: 1, operator: 1, createdAt: -1 });
+AuditLogSchema.index({ resourceType: 1, resourceId: 1, createdAt: -1 });
 AuditLogSchema.index({ resourceId: 1, createdAt: -1 });
 AuditLogSchema.index({ operator: 1, createdAt: -1 });
 AuditLogSchema.index({ traceId: 1 });
