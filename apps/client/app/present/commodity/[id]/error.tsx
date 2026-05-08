@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { parseAppError } from "@/src/lib/app-error";
+import { reportFrontendError } from "@/src/lib/client-error-report";
 
 type CommodityDetailErrorProps = {
   error: Error;
@@ -10,6 +12,17 @@ type CommodityDetailErrorProps = {
 
 export default function CommodityDetailError({ error, reset }: CommodityDetailErrorProps) {
   const appError = parseAppError(error);
+
+  useEffect(() => {
+    void reportFrontendError({
+      category: "boundary",
+      message: appError?.message || error.message,
+      source: "commodity/detail/error",
+      stack: error.stack,
+      status: appError?.status,
+      traceId: appError?.traceId
+    });
+  }, [appError?.message, appError?.status, appError?.traceId, error.message, error.stack]);
 
   return (
     <section className="panel stack">

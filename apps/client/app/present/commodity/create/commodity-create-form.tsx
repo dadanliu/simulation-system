@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { CommodityImage } from "@/src/components/commodity-image";
-import { fetchWithCsrf } from "@/src/features/auth/client";
+import { clientUploadRequest } from "@/src/features/auth/client";
 import { createCommodity } from "@/src/features/commodity/client";
 import { getCommodityImageSizes } from "@/src/features/commodity/media";
 import type { CommodityStatus } from "@/src/features/commodity/types";
@@ -32,12 +32,6 @@ type UploadResult = {
   scene: string;
   size: number;
   url: string;
-};
-
-type UploadResponse = {
-  data?: UploadResult;
-  message?: string;
-  success: boolean;
 };
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
@@ -117,20 +111,22 @@ export function CommodityCreateForm() {
       formData.append("file", file);
       formData.append("scene", "commodity");
 
-      const response = await fetchWithCsrf("/api/upload", {
-        body: formData,
-        method: "POST"
-      });
-      const payload = (await response.json()) as UploadResponse;
+      const { data } = await clientUploadRequest<UploadResult>(
+        "/api/upload",
+        {
+          body: formData,
+          method: "POST"
+        },
+        {
+          fallbackMessage: "图片上传失败，请稍后重试",
+          source: "commodityCreateUpload",
+          timeoutMs: 15_000
+        }
+      );
 
-      if (!response.ok || !payload.success || !payload.data) {
-        setErrorMessage(payload.message ?? "上传失败");
-        return;
-      }
-
-      setUploadedImage(payload.data);
-    } catch {
-      setErrorMessage("图片上传失败，请稍后重试");
+      setUploadedImage(data);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "图片上传失败，请稍后重试");
     } finally {
       setIsUploading(false);
     }

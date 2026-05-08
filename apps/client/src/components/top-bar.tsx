@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
-import { fetchWithCsrf } from "../features/auth/client";
+import { clientApiRequest } from "../features/auth/client";
 import type { CurrentUser } from "../features/auth/types";
 import { getActiveRoute } from "../lib/routes";
 
@@ -22,13 +22,16 @@ export function TopBar({ appEnv, currentUser, showEnvBadge }: TopBarProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetchWithCsrf("/api/auth/logout", {
-        method: "POST"
-      });
-
-      if (!response.ok) {
-        throw new Error("logout failed");
-      }
+      await clientApiRequest(
+        "/api/auth/logout",
+        {
+          method: "POST"
+        },
+        {
+          fallbackMessage: "退出登录失败",
+          source: "logout"
+        }
+      );
 
       router.push("/login");
       router.refresh();

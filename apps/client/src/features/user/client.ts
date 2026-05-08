@@ -1,25 +1,21 @@
-import { fetchWithCsrf } from "../auth/client";
+import { clientApiRequest } from "../auth/client";
 import type { CreateUserInput, User } from "./types";
 
-type ApiResponse<T> = {
-  data?: T;
-  message?: string;
-  success: boolean;
-};
-
 export async function createUser(input: CreateUserInput) {
-  const response = await fetchWithCsrf("/api/users", {
-    body: JSON.stringify(input),
-    headers: {
-      "Content-Type": "application/json"
+  const { data } = await clientApiRequest<User>(
+    "/api/users",
+    {
+      body: JSON.stringify(input),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST"
     },
-    method: "POST"
-  });
-  const payload = (await response.json().catch(() => null)) as ApiResponse<User> | null;
+    {
+      fallbackMessage: "创建用户失败",
+      source: "createUser"
+    }
+  );
 
-  if (!response.ok || !payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? "创建用户失败");
-  }
-
-  return payload.data;
+  return data;
 }

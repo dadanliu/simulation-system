@@ -1,4 +1,4 @@
-import { fetchWithCsrf } from "@/src/features/auth/client";
+import { clientApiRequest } from "@/src/features/auth/client";
 import type { Commodity, CommodityStatus, CreateCommodityInput, UpdateCommodityInput } from "@/src/features/commodity/types";
 
 type CreateCommodityResponse = {
@@ -7,27 +7,23 @@ type CreateCommodityResponse = {
   };
 };
 
-type ApiResponse<T> = {
-  data?: T;
-  message?: string;
-  success: boolean;
-};
-
 export async function createCommodity(input: CreateCommodityInput) {
-  const response = await fetchWithCsrf("/api/commodity/create", {
-    body: JSON.stringify(input),
-    headers: {
-      "Content-Type": "application/json"
+  const { data } = await clientApiRequest<CreateCommodityResponse>(
+    "/api/commodity/create",
+    {
+      body: JSON.stringify(input),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "POST"
     },
-    method: "POST"
-  });
-  const payload = (await response.json().catch(() => null)) as ApiResponse<CreateCommodityResponse> | null;
+    {
+      fallbackMessage: "创建商品失败",
+      source: "createCommodity"
+    }
+  );
 
-  if (!response.ok || !payload?.success || !payload.data) {
-    throw new Error(payload?.message ?? "创建商品失败");
-  }
-
-  return payload.data.commodity;
+  return data.commodity;
 }
 
 type UpdateCommodityStatusResponse = {
@@ -36,20 +32,22 @@ type UpdateCommodityStatusResponse = {
 };
 
 export async function updateCommodityStatus(id: string, input: { reason: string; status: CommodityStatus }) {
-  const response = await fetchWithCsrf(`/api/commodity/${encodeURIComponent(id)}/status`, {
-    body: JSON.stringify(input),
-    headers: {
-      "Content-Type": "application/json"
+  const { data } = await clientApiRequest<UpdateCommodityStatusResponse>(
+    `/api/commodity/${encodeURIComponent(id)}/status`,
+    {
+      body: JSON.stringify(input),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "PATCH"
     },
-    method: "PATCH"
-  });
-  const payload = (await response.json().catch(() => null)) as ApiResponse<UpdateCommodityStatusResponse> | null;
+    {
+      fallbackMessage: "商品状态变更失败",
+      source: "updateCommodityStatus"
+    }
+  );
 
-  if (!response.ok || !payload?.success || !payload.data?.commodity) {
-    throw new Error(payload?.message ?? "商品状态变更失败");
-  }
-
-  return payload.data;
+  return data;
 }
 
 type UpdateCommodityResponse = {
@@ -58,44 +56,50 @@ type UpdateCommodityResponse = {
 };
 
 export async function updateCommodity(id: string, input: UpdateCommodityInput) {
-  const response = await fetchWithCsrf(`/api/commodity/${encodeURIComponent(id)}`, {
-    body: JSON.stringify(input),
-    headers: {
-      "Content-Type": "application/json"
+  const { data } = await clientApiRequest<UpdateCommodityResponse>(
+    `/api/commodity/${encodeURIComponent(id)}`,
+    {
+      body: JSON.stringify(input),
+      headers: {
+        "Content-Type": "application/json"
+      },
+      method: "PATCH"
     },
-    method: "PATCH"
-  });
-  const payload = (await response.json().catch(() => null)) as ApiResponse<UpdateCommodityResponse> | null;
+    {
+      fallbackMessage: "商品编辑失败",
+      source: "updateCommodity"
+    }
+  );
 
-  if (!response.ok || !payload?.success || !payload.data?.commodity) {
-    throw new Error(payload?.message ?? "商品编辑失败");
-  }
-
-  return payload.data;
+  return data;
 }
 
 export async function deleteCommodity(id: string) {
-  const response = await fetchWithCsrf(`/api/commodity/${encodeURIComponent(id)}`, {
-    method: "DELETE"
-  });
-  const payload = (await response.json().catch(() => null)) as ApiResponse<{ commodity: Commodity }> | null;
+  const { data } = await clientApiRequest<{ commodity: Commodity }>(
+    `/api/commodity/${encodeURIComponent(id)}`,
+    {
+      method: "DELETE"
+    },
+    {
+      fallbackMessage: "商品删除失败",
+      source: "deleteCommodity"
+    }
+  );
 
-  if (!response.ok || !payload?.success || !payload.data?.commodity) {
-    throw new Error(payload?.message ?? "商品删除失败");
-  }
-
-  return payload.data;
+  return data;
 }
 
 export async function restoreCommodity(id: string) {
-  const response = await fetchWithCsrf(`/api/commodity/${encodeURIComponent(id)}/restore`, {
-    method: "PATCH"
-  });
-  const payload = (await response.json().catch(() => null)) as ApiResponse<{ commodity: Commodity }> | null;
+  const { data } = await clientApiRequest<{ commodity: Commodity }>(
+    `/api/commodity/${encodeURIComponent(id)}/restore`,
+    {
+      method: "PATCH"
+    },
+    {
+      fallbackMessage: "商品恢复失败",
+      source: "restoreCommodity"
+    }
+  );
 
-  if (!response.ok || !payload?.success || !payload.data?.commodity) {
-    throw new Error(payload?.message ?? "商品恢复失败");
-  }
-
-  return payload.data;
+  return data;
 }

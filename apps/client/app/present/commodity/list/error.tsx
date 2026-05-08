@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { parseAppError } from "@/src/lib/app-error";
+import { reportFrontendError } from "@/src/lib/client-error-report";
 
 type CommodityListErrorProps = {
   error: Error;
@@ -16,6 +18,17 @@ export default function CommodityListError({ error, reset }: CommodityListErrorP
     displayMessage.includes("must be") ||
     displayMessage.includes("should not") ||
     displayMessage.includes("valid");
+
+  useEffect(() => {
+    void reportFrontendError({
+      category: "boundary",
+      message: displayMessage,
+      source: "commodity/list/error",
+      stack: error.stack,
+      status: appError?.status,
+      traceId: appError?.traceId
+    });
+  }, [appError?.status, appError?.traceId, displayMessage, error.stack]);
 
   return (
     <section className="panel stack">

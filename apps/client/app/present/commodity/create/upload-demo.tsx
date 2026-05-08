@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { fetchWithCsrf } from "@/src/features/auth/client";
+import { clientUploadRequest } from "@/src/features/auth/client";
 
 type UploadResult = {
   fileId: string;
@@ -11,12 +11,6 @@ type UploadResult = {
   scene: string;
   size: number;
   url: string;
-};
-
-type UploadResponse = {
-  data?: UploadResult;
-  message?: string;
-  success: boolean;
 };
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
@@ -84,21 +78,22 @@ export function UploadDemo() {
       formData.append("file", file);
       formData.append("scene", "commodity");
 
-      const response = await fetchWithCsrf("/api/upload", {
-        body: formData,
-        method: "POST"
-      });
+      const { data } = await clientUploadRequest<UploadResult>(
+        "/api/upload",
+        {
+          body: formData,
+          method: "POST"
+        },
+        {
+          fallbackMessage: "上传失败",
+          source: "uploadDemo",
+          timeoutMs: 15_000
+        }
+      );
 
-      const payload = (await response.json()) as UploadResponse;
-
-      if (!response.ok || !payload.success || !payload.data) {
-        setErrorMessage(payload.message ?? "上传失败");
-        return;
-      }
-
-      setUploaded(payload.data);
-    } catch {
-      setErrorMessage("网络异常，请稍后重试");
+      setUploaded(data);
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "网络异常，请稍后重试");
     } finally {
       setIsUploading(false);
     }

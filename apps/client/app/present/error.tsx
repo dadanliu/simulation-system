@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { parseAppError } from "@/src/lib/app-error";
+import { reportFrontendError } from "@/src/lib/client-error-report";
 
 type PresentErrorProps = {
   error: Error;
@@ -12,6 +14,17 @@ export default function PresentError({ error, reset }: PresentErrorProps) {
   const appError = parseAppError(error);
   const isForbidden = appError?.status === 403;
   const traceId = appError?.traceId ?? "";
+
+  useEffect(() => {
+    void reportFrontendError({
+      category: "boundary",
+      message: appError?.message || error.message,
+      source: "present/error",
+      stack: error.stack,
+      status: appError?.status,
+      traceId
+    });
+  }, [appError?.message, appError?.status, error.message, error.stack, traceId]);
 
   return (
     <section className="panel stack">

@@ -1,6 +1,4 @@
-import { cookies } from "next/headers";
-import { notFound, redirect } from "next/navigation";
-import { createAppError } from "@/src/lib/app-error";
+import { serverApiRequest } from "@/src/lib/server-api";
 import type {
   AuditLogListData,
   Commodity,
@@ -12,73 +10,15 @@ import {
   readCommodityListFilters,
   type CommoditySearchParams
 } from "@/src/features/commodity/query";
-import { loadClientConfig } from "@/src/config/env";
-
-type ApiResponse<T> = {
-  data?: T;
-  message?: string;
-  path?: string;
-  success: boolean;
-  statusCode?: number;
-  traceId?: string;
-};
-
-const { internalOrigin } = loadClientConfig();
-
-async function getCookieHeader() {
-  const cookieStore = await cookies();
-  return cookieStore.toString();
-}
-
-function redirectToLogin(nextPath: string) {
-  const loginSearchParams = new URLSearchParams({
-    next: nextPath
-  });
-
-  redirect(`/login?${loginSearchParams.toString()}`);
-}
-
-async function readApiResponse<T>(
-  response: Response,
-  nextPathOnUnauthorized: string,
-  options: {
-    onNotFound?: "notFound";
-  } = {}
-) {
-  const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;
-
-  if (response.status === 401) {
-    redirectToLogin(nextPathOnUnauthorized);
-  }
-
-  if (response.status === 404 && options.onNotFound === "notFound") {
-    notFound();
-  }
-
-  if (!response.ok || !payload?.success || payload.data === undefined) {
-    throw createAppError({
-      message: payload?.message ?? `Request failed with status ${response.status}`,
-      path: payload?.path,
-      status: payload?.statusCode ?? response.status,
-      traceId: payload?.traceId
-    });
-  }
-
-  return payload.data;
-}
 
 export async function getCommodityListPageData(searchParams: CommoditySearchParams): Promise<CommodityListPageData> {
   const filters = readCommodityListFilters(searchParams);
-  const cookie = await getCookieHeader();
   const query = buildCommodityListRequestSearchParams(searchParams);
   const nextPath = query.toString() ? `/present/commodity/list?${query.toString()}` : "/present/commodity/list";
-  const response = await fetch(`${internalOrigin}/api/commodity/list?${query.toString()}`, {
-    cache: "no-store",
-    headers: {
-      cookie
-    }
+  const { data } = await serverApiRequest<CommodityListData>(`/api/commodity/list?${query.toString()}`, {
+    fallbackMessage: "商品列表加载失败",
+    nextPathOnUnauthorized: nextPath
   });
-  const data = await readApiResponse<CommodityListData>(response, nextPath);
 
   return {
     ...data,
@@ -88,17 +28,13 @@ export async function getCommodityListPageData(searchParams: CommoditySearchPara
 }
 
 export async function getCommodityDetail(id: string) {
-  const cookie = await getCookieHeader();
-  const response = await fetch(`${internalOrigin}/api/commodity/${encodeURIComponent(id)}`, {
-    cache: "no-store",
-    headers: {
-      cookie
-    }
-  });
-
-  return readApiResponse<Commodity>(response, `/present/commodity/${encodeURIComponent(id)}`, {
+  const { data } = await serverApiRequest<Commodity>(`/api/commodity/${encodeURIComponent(id)}`, {
+    fallbackMessage: "商品详情加载失败",
+    nextPathOnUnauthorized: `/present/commodity/${encodeURIComponent(id)}`,
     onNotFound: "notFound"
   });
+
+  return data;
 }
 
 export async function getCommodityAuditLogs(searchParams: {
@@ -107,7 +43,6 @@ export async function getCommodityAuditLogs(searchParams: {
   page?: string | string[];
   pageSize?: string | string[];
 }) {
-  const cookie = await getCookieHeader();
   const query = new URLSearchParams();
   const operator = Array.isArray(searchParams.operator) ? searchParams.operator[0] : searchParams.operator;
   const action = Array.isArray(searchParams.action) ? searchParams.action[0] : searchParams.action;
@@ -130,15 +65,11 @@ export async function getCommodityAuditLogs(searchParams: {
     query.set("pageSize", pageSize);
   }
 
-  const response = await fetch(`${internalOrigin}/api/commodity/audit-logs?${query.toString()}`, {
-    cache: "no-store",
-    headers: {
-      cookie
-    }
+  const nextPath = query.toString() ? `/present/commodity/audit?${query.toString()}` : "/present/commodity/audit";
+  const { data } = await serverApiRequest<AuditLogListData>(`/api/commodity/audit-logs?${query.toString()}`, {
+    fallbackMessage: "审计日志加载失败",
+    nextPathOnUnauthorized: nextPath
   });
 
-  return readApiResponse<AuditLogListData>(
-    response,
-    query.toString() ? `/present/commodity/audit?${query.toString()}` : "/present/commodity/audit"
-  );
+  return data;
 }

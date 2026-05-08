@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchWithCsrf } from "@/src/features/auth/client";
+import { ClientApiError, clientApiRequest } from "@/src/features/auth/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,22 +25,25 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetchWithCsrf("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
+      await clientApiRequest(
+        "/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            username,
+            password
+          })
         },
-        body: JSON.stringify({
-          username,
-          password
-        })
-      });
-
-      if (!response.ok) {
-        const message = getLoginErrorMessage(response.status);
-        setError(message);
-        return;
-      }
+        {
+          fallbackMessage: "登录失败",
+          redirectOnUnauthorized: false,
+          retries: 0,
+          source: "login"
+        }
+      );
 
       // Middleware redirects protected pages to /login?next=..., so after login we return to that original page.
       const nextPath = new URLSearchParams(window.location.search).get("next");
@@ -49,6 +52,13 @@ export default function LoginPage() {
 
       router.push(redirectPath);
       router.refresh();
+    } catch (error) {
+      if (error instanceof ClientApiError) {
+        setError(getLoginErrorMessage(error.status));
+        return;
+      }
+
+      setError("登录失败，请稍后重试");
     } finally {
       setIsSubmitting(false);
     }
