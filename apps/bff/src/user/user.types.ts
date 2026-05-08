@@ -1,12 +1,16 @@
 export type AuthUser = {
   id: string;
-  username: string;
+  permissions: string[];
   roles: string[];
+  username: string;
 };
 
-export type User = AuthUser & {
+export type User = {
   displayName: string;
   enabled: boolean;
+  id: string;
+  roles: string[];
+  username: string;
 };
 
 export type UserRecord = User & {

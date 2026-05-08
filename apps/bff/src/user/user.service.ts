@@ -83,8 +83,9 @@ export class UserService {
     return safeUser;
   }
 
-  private toAuthUser(user: UserRecord): AuthUser {
+  private async toAuthUser(user: UserRecord): Promise<AuthUser> {
     const { id, username, roles } = user;
-    return { id, username, roles };
+    const permissions = await this.roleService.getPermissionCodesByRoleCodes(roles);
+    return { id, permissions, username, roles };
   }
 }

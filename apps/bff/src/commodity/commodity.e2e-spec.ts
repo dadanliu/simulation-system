@@ -11,12 +11,23 @@ describe("CommodityController e2e", () => {
 
   const adminUser: AuthUser = {
     id: "u_admin_001",
+    permissions: [
+      "audit:read",
+      "commodity:create",
+      "commodity:delete",
+      "commodity:read",
+      "commodity:update",
+      "permission:manage",
+      "role:manage",
+      "user:manage"
+    ],
     roles: ["admin"],
     username: "admin"
   };
 
   const operatorUser: AuthUser = {
     id: "u_operator_001",
+    permissions: ["commodity:create", "commodity:read", "commodity:update"],
     roles: ["operator"],
     username: "operator"
   };

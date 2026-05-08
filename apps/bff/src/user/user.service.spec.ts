@@ -4,7 +4,8 @@ import type { UserRecord } from "./user.types";
 
 describe("UserService", () => {
   const roleService = {
-    assertRoleCodes: jest.fn()
+    assertRoleCodes: jest.fn(),
+    getPermissionCodesByRoleCodes: jest.fn()
   };
 
   function createService(userModel: Record<string, jest.Mock>) {
@@ -13,6 +14,26 @@ describe("UserService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    roleService.getPermissionCodesByRoleCodes.mockImplementation(async (roles: string[]) => {
+      if (roles.includes("admin")) {
+        return [
+          "audit:read",
+          "commodity:create",
+          "commodity:delete",
+          "commodity:read",
+          "commodity:update",
+          "permission:manage",
+          "role:manage",
+          "user:manage"
+        ];
+      }
+
+      if (roles.includes("operator")) {
+        return ["commodity:create", "commodity:read", "commodity:update"];
+      }
+
+      return ["commodity:read"];
+    });
   });
 
   it("authenticates with a password hash", async () => {
@@ -36,6 +57,16 @@ describe("UserService", () => {
     expect(userModel.findOne).toHaveBeenCalledWith({ enabled: true, username: "admin" });
     expect(result).toEqual({
       id: "u_admin_001",
+      permissions: [
+        "audit:read",
+        "commodity:create",
+        "commodity:delete",
+        "commodity:read",
+        "commodity:update",
+        "permission:manage",
+        "role:manage",
+        "user:manage"
+      ],
       roles: ["admin"],
       username: "admin"
     });

@@ -3,6 +3,7 @@ export type NavRoute = {
   href: string;
   label: string;
   matchPrefixes: string[];
+  requiredPermissions?: string[];
   title: string;
   description: string;
 };
@@ -29,6 +30,14 @@ export const routes: NavRoute[] = [
     adminOnly: true,
     title: "审计日志",
     description: "查看商品写操作记录，确认操作人、动作、对象和 traceId。"
+  },
+  {
+    href: "/present/access-control",
+    label: "权限管理",
+    matchPrefixes: ["/present/access-control"],
+    requiredPermissions: ["user:manage", "role:manage", "permission:manage"],
+    title: "权限管理",
+    description: "查看用户列表、绑定角色并维护角色权限矩阵。"
   },
   {
     href: "/present/user/create",

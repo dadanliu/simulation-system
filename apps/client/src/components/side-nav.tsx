@@ -12,7 +12,17 @@ type SideNavProps = {
 export function SideNav({ currentUser }: SideNavProps) {
   const pathname = usePathname();
   const activeRoute = getActiveRoute(pathname);
-  const visibleRoutes = routes.filter((route) => !route.adminOnly || currentUser.roles.includes("admin"));
+  const visibleRoutes = routes.filter((route) => {
+    if (route.adminOnly && !currentUser.roles.includes("admin")) {
+      return false;
+    }
+
+    if (route.requiredPermissions?.length) {
+      return route.requiredPermissions.every((permission) => currentUser.permissions?.includes(permission));
+    }
+
+    return true;
+  });
 
   return (
     <aside className="side-nav">
