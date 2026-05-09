@@ -8,3 +8,11 @@ dist
 .env.local
 .env.*.local
 !.env.example
+*.swp
+*.swo
+*.swn
+*.swm
+.*.swp
+.*.swo
+.*.swn
+.*.swm

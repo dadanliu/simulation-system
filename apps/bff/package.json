@@ -6,6 +6,8 @@
     "dev": "nest start --watch",
     "build": "nest build",
     "start": "node dist/main.js",
+    "test": "jest --config ./jest.config.js --runInBand",
+    "test:e2e": "jest --config ./jest.config.js --runInBand --testMatch '**/*.e2e-spec.ts'",
     "lint": "pnpm --dir ../.. exec eslint apps/bff --max-warnings=0",
     "format": "pnpm --dir ../.. exec prettier apps/bff --write",
     "format:check": "pnpm --dir ../.. exec prettier apps/bff --check"

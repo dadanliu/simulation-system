@@ -86,8 +86,8 @@ MVP 业务建议用“商品管理”：
 ### 工程能力
 
 - 清晰目录结构
-- `README.md`
-- `ARCHITECTURE.md`
+- `客户端说明.md`
+- `架构说明.md`
 - 基础测试
 - 面试讲解稿
 
@@ -205,8 +205,8 @@ next-bff/
           commodity.service.ts
           users.service.ts
           upload.service.ts
-  README.md
-  ARCHITECTURE.md
+  客户端说明.md
+  架构说明.md
 ```
 
 ---
@@ -343,7 +343,7 @@ apps/client/src/features/commodity/**
 - 完成 `/login`
 - 完成 `/present/commodity/list`
 - 完成基础 layout
-- 写第一版 `README.md`
+- 写第一版 `客户端说明.md`
 
 验收：
 
@@ -425,9 +425,9 @@ apps/client/src/features/commodity/**
 - `apps/client`：Next.js 页面骨架
 - `apps/bff`：NestJS 登录与会话
 - `apps/server`：NestJS mock backend 基础骨架
-- `README.md`
-- `ARCHITECTURE.md`
-- `CHANGELOG.md`
+- `客户端说明.md`
+- `架构说明.md`
+- `更新日志.md`
 
 接下来最该继续补的是：
 

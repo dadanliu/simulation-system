@@ -1,4 +1,4 @@
-import type { INestApplication } from "@nestjs/common";
+import { NotFoundException, type INestApplication } from "@nestjs/common";
 import request = require("supertest");
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "../common/http/csrf-token";
 import type { AuthUser } from "../user/user.types";
@@ -174,6 +174,32 @@ describe("CommodityController e2e", () => {
     });
     expect(response.body.message).toContain("pageSize must not be greater than 100");
     expect(mocks.commodityService.listCommodities).not.toHaveBeenCalled();
+  });
+
+  it("returns a unified 404 response when commodity detail is missing", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    mocks.commodityService.getCommodity.mockRejectedValue(new NotFoundException("commodity not found"));
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/99999")
+      .set("Cookie", "next_bff_session=session-admin")
+      .set("x-trace-id", "trace-detail-missing")
+      .expect(404);
+
+    expect(response.body).toMatchObject({
+      message: "commodity not found",
+      path: "/api/commodity/99999",
+      statusCode: 404,
+      success: false,
+      traceId: "trace-detail-missing"
+    });
+    expect(mocks.commodityService.getCommodity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-detail-missing"
+      }),
+      adminUser,
+      "99999"
+    );
   });
 
   it("lists audit logs with operator, action, target and time filters", async () => {
@@ -615,6 +641,78 @@ describe("CommodityController e2e", () => {
       traceId: "trace-status-missing-reason"
     });
     expect(mocks.commodityService.updateCommodityStatus).not.toHaveBeenCalled();
+  });
+
+  it("updates commodity status successfully through Guard, DTO validation and response envelope", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
+    mocks.commodityService.updateCommodityStatus.mockResolvedValue({
+      auditLog: {
+        action: "status_change",
+        after: {
+          status: "on_sale"
+        },
+        before: {
+          status: "pending"
+        },
+        operator: operatorUser.id,
+        reason: "审核通过",
+        target: {
+          id: commodity.id,
+          type: "commodity"
+        },
+        traceId: "trace-status"
+      },
+      commodity: {
+        ...commodity,
+        status: "on_sale"
+      }
+    });
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .patch("/api/commodity/10099/status")
+      .set("Cookie", ["next_bff_session=session-operator", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-status")
+      .send({
+        reason: "审核通过",
+        status: "on_sale"
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      data: {
+        auditLog: {
+          action: "status_change",
+          after: {
+            status: "on_sale"
+          },
+          before: {
+            status: "pending"
+          },
+          operator: operatorUser.id,
+          reason: "审核通过"
+        },
+        commodity: {
+          id: "10099",
+          status: "on_sale"
+        }
+      },
+      message: "ok",
+      success: true,
+      traceId: "trace-status"
+    });
+    expect(mocks.commodityService.updateCommodityStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-status"
+      }),
+      operatorUser,
+      "10099",
+      {
+        reason: "审核通过",
+        status: "on_sale"
+      }
+    );
   });
 
   it("rejects commodity delete without reason before entering service", async () => {
