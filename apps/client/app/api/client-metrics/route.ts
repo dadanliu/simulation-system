@@ -1,21 +1,21 @@
 import { cookies } from "next/headers";
 import { loadClientConfig } from "@/src/config/env";
-import type { ApiEnvelope } from "@/src/lib/api-envelope";
 import type { CurrentUser } from "@/src/features/auth/types";
+import type { ApiEnvelope } from "@/src/lib/api-envelope";
 
 const { appVersion: serverAppVersion, internalOrigin } = loadClientConfig();
 
-type ClientErrorPayload = {
+type ClientMetricPayload = {
   appVersion?: string;
-  category?: string;
-  message?: string;
+  delta?: number;
+  id?: string;
+  name?: string;
+  navigationType?: string;
   page?: string;
-  source?: string;
-  stack?: string;
-  status?: number;
-  traceId?: string;
+  rating?: string;
   url?: string;
   userAgent?: string;
+  value?: number;
 };
 
 async function readCurrentUser() {
@@ -37,27 +37,32 @@ async function readCurrentUser() {
   return payload?.success && payload.data?.user ? payload.data.user : null;
 }
 
+function readNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
 export async function POST(request: Request) {
   const payload = (await request
     .json()
-    .catch(() => null)) as ClientErrorPayload | null;
+    .catch(() => null)) as ClientMetricPayload | null;
   const currentUser = await readCurrentUser();
+  const metricName = payload?.name ?? "unknown";
 
-  console.error(
+  console.log(
     JSON.stringify({
       timestamp: new Date().toISOString(),
-      level: "error",
+      level: "info",
       service: "client",
-      context: "ClientErrors",
-      event: "frontend_error_reported",
+      context: "ClientMetrics",
+      event: "web_vital_metric",
       appVersion: payload?.appVersion ?? serverAppVersion,
-      category: payload?.category ?? "runtime",
-      message: payload?.message ?? "frontend error",
+      metricId: payload?.id ?? "",
+      metricName,
+      metricValue: readNumber(payload?.value),
+      metricDelta: readNumber(payload?.delta),
+      metricRating: payload?.rating ?? "",
+      navigationType: payload?.navigationType ?? "",
       page: payload?.page ?? "",
-      source: payload?.source ?? "unknown",
-      stack: payload?.stack ?? "",
-      status: payload?.status ?? 0,
-      traceId: payload?.traceId ?? "",
       url: payload?.url ?? "",
       userAgent: payload?.userAgent ?? "",
       user: currentUser

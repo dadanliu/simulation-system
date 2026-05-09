@@ -2,6 +2,7 @@ type ClientRuntimeEnvironment = "development" | "production" | "test";
 
 type ClientConfig = {
   appEnv: ClientRuntimeEnvironment;
+  appVersion: string;
   bffBaseUrl: string;
   internalOrigin: string;
   nodeEnv: ClientRuntimeEnvironment;
@@ -36,6 +37,7 @@ export function loadClientConfig(
   const appEnv = readEnvironment(
     env.NEXT_PUBLIC_APP_ENV ?? env.APP_ENV ?? env.NODE_ENV
   );
+  const appVersion = env.NEXT_PUBLIC_APP_VERSION ?? env.APP_VERSION ?? "local";
   const bffBaseUrl = env.BFF_BASE_URL ?? "http://localhost:3001";
   const internalOrigin = env.NEXT_INTERNAL_ORIGIN ?? "http://127.0.0.1:3000";
   const showEnvBadge =
@@ -51,6 +53,7 @@ export function loadClientConfig(
 
   return {
     appEnv,
+    appVersion,
     bffBaseUrl,
     internalOrigin,
     nodeEnv,

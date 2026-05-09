@@ -1,13 +1,12 @@
 "use client";
 
-type FrontendErrorReportInput = {
-  category: "boundary" | "http" | "network" | "parse" | "runtime" | "timeout";
-  message: string;
-  source: string;
-  stack?: string;
-  status?: number;
-  traceId?: string;
-  url?: string;
+type FrontendMetricReportInput = {
+  delta?: number;
+  id: string;
+  name: string;
+  navigationType?: string;
+  rating?: string;
+  value: number;
 };
 
 const appVersion = process.env.NEXT_PUBLIC_APP_VERSION ?? "local";
@@ -20,15 +19,15 @@ function readPage(url: string) {
   }
 }
 
-export async function reportFrontendError(input: FrontendErrorReportInput) {
+export async function reportFrontendMetric(input: FrontendMetricReportInput) {
   if (typeof window === "undefined") {
     return;
   }
 
-  const url = input.url ?? window.location.href;
+  const url = window.location.href;
 
   try {
-    await fetch("/api/client-errors", {
+    await fetch("/api/client-metrics", {
       body: JSON.stringify({
         ...input,
         appVersion,
@@ -44,6 +43,6 @@ export async function reportFrontendError(input: FrontendErrorReportInput) {
       method: "POST"
     });
   } catch {
-    // Reporting should never break the current UI flow.
+    // Metrics reporting must not affect the current page.
   }
 }

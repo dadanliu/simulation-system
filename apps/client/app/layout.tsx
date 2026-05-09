@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClientErrorReporter } from "@/src/components/client-error-reporter";
+import { WebVitalsReporter } from "@/src/components/web-vitals-reporter";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         <ClientErrorReporter />
+        <WebVitalsReporter />
         {children}
       </body>
     </html>
