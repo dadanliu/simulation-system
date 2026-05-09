@@ -1,5 +1,10 @@
 import { clientApiRequest } from "@/src/features/auth/client";
-import type { Commodity, CommodityStatus, CreateCommodityInput, UpdateCommodityInput } from "@/src/features/commodity/types";
+import type {
+  Commodity,
+  CommodityStatus,
+  CreateCommodityInput,
+  UpdateCommodityInput
+} from "@/src/features/commodity/types";
 
 type CreateCommodityResponse = {
   commodity: {
@@ -74,10 +79,14 @@ export async function updateCommodity(id: string, input: UpdateCommodityInput) {
   return data;
 }
 
-export async function deleteCommodity(id: string) {
+export async function deleteCommodity(id: string, input: { reason: string }) {
   const { data } = await clientApiRequest<{ commodity: Commodity }>(
     `/api/commodity/${encodeURIComponent(id)}`,
     {
+      body: JSON.stringify(input),
+      headers: {
+        "Content-Type": "application/json"
+      },
       method: "DELETE"
     },
     {
@@ -89,10 +98,14 @@ export async function deleteCommodity(id: string) {
   return data;
 }
 
-export async function restoreCommodity(id: string) {
+export async function restoreCommodity(id: string, input: { reason: string }) {
   const { data } = await clientApiRequest<{ commodity: Commodity }>(
     `/api/commodity/${encodeURIComponent(id)}/restore`,
     {
+      body: JSON.stringify(input),
+      headers: {
+        "Content-Type": "application/json"
+      },
       method: "PATCH"
     },
     {

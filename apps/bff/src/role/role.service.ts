@@ -33,7 +33,6 @@ export class RoleService {
   }
 
   async updateRole(code: string, body: Partial<Omit<Role, "code">>) {
-
     if (body.permissions) {
       await this.assertPermissionCodes(body.permissions);
     }
@@ -47,7 +46,7 @@ export class RoleService {
     return role;
   }
 
-  bindPermissions(code: string, permissions: PermissionCode[]) {
+  bindPermissions(code: string, permissions: PermissionCode[], _reason: string) {
     return this.updateRole(code, { permissions });
   }
 

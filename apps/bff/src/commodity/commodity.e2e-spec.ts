@@ -85,6 +85,10 @@ describe("CommodityController e2e", () => {
     };
   }
 
+  function expectPermissionCheck(roleCodes: string[], permissionCodes: string[]) {
+    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(roleCodes, permissionCodes);
+  }
+
   it("rejects anonymous commodity access with a unified 401 response", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(null);
 
@@ -239,7 +243,7 @@ describe("CommodityController e2e", () => {
       success: true,
       traceId: "trace-audit-list"
     });
-    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["admin"], ["audit:read"]);
+    expectPermissionCheck(["admin"], ["audit:read"]);
     expect(mocks.commodityService.listAuditLogs).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "update",
@@ -270,7 +274,7 @@ describe("CommodityController e2e", () => {
       success: false,
       traceId: "trace-audit-forbidden"
     });
-    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["operator"], ["audit:read"]);
+    expectPermissionCheck(["operator"], ["audit:read"]);
     expect(mocks.commodityService.listAuditLogs).not.toHaveBeenCalled();
   });
 
@@ -294,7 +298,7 @@ describe("CommodityController e2e", () => {
       success: false,
       traceId: "trace-audit-admin-only"
     });
-    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["operator"], ["audit:read"]);
+    expectPermissionCheck(["operator"], ["audit:read"]);
     expect(mocks.commodityService.listAuditLogs).not.toHaveBeenCalled();
   });
 
@@ -371,7 +375,7 @@ describe("CommodityController e2e", () => {
       success: false,
       traceId: "trace-forbidden"
     });
-    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["operator"], ["commodity:create"]);
+    expectPermissionCheck(["operator"], ["commodity:create"]);
     expect(mocks.commodityService.createCommodity).not.toHaveBeenCalled();
   });
 
@@ -484,7 +488,7 @@ describe("CommodityController e2e", () => {
       success: false,
       traceId: "trace-update-forbidden"
     });
-    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["operator"], ["commodity:update"]);
+    expectPermissionCheck(["operator"], ["commodity:update"]);
     expect(mocks.commodityService.updateCommodity).not.toHaveBeenCalled();
   });
 
@@ -613,6 +617,113 @@ describe("CommodityController e2e", () => {
     expect(mocks.commodityService.updateCommodityStatus).not.toHaveBeenCalled();
   });
 
+  it("rejects commodity delete without reason before entering service", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .delete("/api/commodity/10099")
+      .set("Cookie", ["next_bff_session=session-admin", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-delete-missing-reason")
+      .send({
+        reason: ""
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      path: "/api/commodity/10099",
+      statusCode: 400,
+      success: false,
+      traceId: "trace-delete-missing-reason"
+    });
+    expect(mocks.commodityService.deleteCommodity).not.toHaveBeenCalled();
+  });
+
+  it("deletes a commodity with server-side operator and reason", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    mocks.commodityService.deleteCommodity.mockResolvedValue({
+      auditLog: {
+        action: "delete",
+        operator: adminUser.id,
+        reason: "重复创建",
+        target: {
+          id: commodity.id,
+          type: "commodity"
+        },
+        traceId: "trace-delete"
+      },
+      commodity: {
+        ...commodity,
+        deletedAt: "2026-04-29T01:00:00.000Z",
+        deletedBy: adminUser.id
+      }
+    });
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .delete("/api/commodity/10099")
+      .set("Cookie", ["next_bff_session=session-admin", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-delete")
+      .send({
+        reason: "重复创建"
+      })
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      data: {
+        auditLog: {
+          action: "delete",
+          operator: adminUser.id,
+          reason: "重复创建"
+        },
+        commodity: {
+          deletedBy: adminUser.id,
+          id: "10099"
+        }
+      },
+      message: "ok",
+      success: true,
+      traceId: "trace-delete"
+    });
+    expect(mocks.commodityService.deleteCommodity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-delete"
+      }),
+      adminUser,
+      "10099",
+      {
+        reason: "重复创建"
+      }
+    );
+  });
+
+  it("rejects forged audit operator fields on commodity delete", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    const csrf = await issueCsrfToken();
+
+    const response = await request(app.getHttpServer())
+      .delete("/api/commodity/10099")
+      .set("Cookie", ["next_bff_session=session-admin", csrf.cookie])
+      .set(CSRF_HEADER_NAME, csrf.token)
+      .set("x-trace-id", "trace-delete-forged-operator")
+      .send({
+        operator: "u_attacker",
+        reason: "重复创建"
+      })
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      path: "/api/commodity/10099",
+      statusCode: 400,
+      success: false,
+      traceId: "trace-delete-forged-operator"
+    });
+    expect(response.body.message).toContain("property operator should not exist");
+    expect(mocks.commodityService.deleteCommodity).not.toHaveBeenCalled();
+  });
+
   it("restores a soft deleted commodity with admin permission", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
     mocks.commodityService.restoreCommodity.mockResolvedValue({
@@ -646,6 +757,9 @@ describe("CommodityController e2e", () => {
       .set("Cookie", ["next_bff_session=session-admin", csrf.cookie])
       .set(CSRF_HEADER_NAME, csrf.token)
       .set("x-trace-id", "trace-restore")
+      .send({
+        reason: "误删恢复"
+      })
       .expect(200);
 
     expect(response.body).toMatchObject({
@@ -671,13 +785,16 @@ describe("CommodityController e2e", () => {
       success: true,
       traceId: "trace-restore"
     });
-    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(["admin"], ["commodity:delete"]);
+    expectPermissionCheck(["admin"], ["commodity:delete"]);
     expect(mocks.commodityService.restoreCommodity).toHaveBeenCalledWith(
       expect.objectContaining({
         traceId: "trace-restore"
       }),
       adminUser,
-      "10099"
+      "10099",
+      {
+        reason: "误删恢复"
+      }
     );
   });
 });

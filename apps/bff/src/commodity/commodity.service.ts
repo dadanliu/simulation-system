@@ -6,8 +6,10 @@ import type { AuthUser } from "../user/user.types";
 import type { Commodity, CommodityListData } from "./commodity.types";
 import { AuditLogService } from "./audit-log.service";
 import type { CreateCommodityDto } from "./dto/create-commodity.dto";
+import type { DeleteCommodityDto } from "./dto/delete-commodity.dto";
 import type { QueryAuditLogDto } from "./dto/query-audit-log.dto";
 import type { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
+import type { RestoreCommodityDto } from "./dto/restore-commodity.dto";
 import type { UpdateCommodityDto } from "./dto/update-commodity.dto";
 import type { UpdateCommodityStatusDto } from "./dto/update-commodity-status.dto";
 
@@ -95,7 +97,7 @@ export class CommodityService {
     };
   }
 
-  async deleteCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string) {
+  async deleteCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string, body: DeleteCommodityDto) {
     let data: {
       after: Commodity;
       before: Commodity;
@@ -126,6 +128,7 @@ export class CommodityService {
       id,
       data.before,
       data.after,
+      body.reason.trim(),
       request.traceId ?? ""
     );
 
@@ -135,7 +138,12 @@ export class CommodityService {
     };
   }
 
-  async restoreCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string) {
+  async restoreCommodity(
+    request: Request & { traceId?: string },
+    user: AuthUser,
+    id: string,
+    body: RestoreCommodityDto
+  ) {
     let data: {
       after: Commodity;
       before: Commodity;
@@ -163,6 +171,7 @@ export class CommodityService {
       id,
       data.before,
       data.after,
+      body.reason.trim(),
       request.traceId ?? ""
     );
 

@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/comm
 import { AuthGuard } from "../auth/auth.guard";
 import { RequirePermissions } from "../permission/permissions.decorator";
 import { PermissionsGuard } from "../permission/permissions.guard";
+import { BindRolePermissionsDto } from "./dto/bind-role-permissions.dto";
 import { RoleService } from "./role.service";
 import type { Role } from "./role.types";
 
@@ -30,7 +31,7 @@ export class RoleController {
 
   @Put(":code/permissions")
   @RequirePermissions("role:manage")
-  bindPermissions(@Param("code") code: string, @Body("permissions") permissions: Role["permissions"]) {
-    return this.roleService.bindPermissions(code, permissions);
+  bindPermissions(@Param("code") code: string, @Body() body: BindRolePermissionsDto) {
+    return this.roleService.bindPermissions(code, body.permissions, body.reason);
   }
 }

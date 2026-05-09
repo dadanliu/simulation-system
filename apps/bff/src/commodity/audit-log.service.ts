@@ -40,26 +40,40 @@ export class AuditLogService {
     });
   }
 
-  recordCommodityDelete(operator: string, commodityId: string, before: Commodity, after: Commodity, traceId: string) {
+  recordCommodityDelete(
+    operator: string,
+    commodityId: string,
+    before: Commodity,
+    after: Commodity,
+    reason: string,
+    traceId: string
+  ) {
     return this.createAuditLog({
       action: "delete",
       after: this.pickDeletionFields(after),
       before: this.pickDeletionFields(before),
       operator,
       resourceId: commodityId,
-      reason: null,
+      reason,
       traceId
     });
   }
 
-  recordCommodityRestore(operator: string, commodityId: string, before: Commodity, after: Commodity, traceId: string) {
+  recordCommodityRestore(
+    operator: string,
+    commodityId: string,
+    before: Commodity,
+    after: Commodity,
+    reason: string,
+    traceId: string
+  ) {
     return this.createAuditLog({
       action: "restore",
       after: this.pickDeletionFields(after),
       before: this.pickDeletionFields(before),
       operator,
       resourceId: commodityId,
-      reason: null,
+      reason,
       traceId
     });
   }

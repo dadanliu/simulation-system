@@ -12,6 +12,21 @@ type AccessControlClientProps = {
   users: User[];
 };
 
+function requestHighRiskReason(message: string) {
+  const reason = window.prompt("请输入变更原因");
+
+  if (reason === null) {
+    return null;
+  }
+
+  if (!reason.trim()) {
+    return "";
+  }
+
+  const confirmed = window.confirm(message);
+  return confirmed ? reason.trim() : null;
+}
+
 export function AccessControlClient({ currentUserId, permissions, roles, users }: AccessControlClientProps) {
   const router = useRouter();
   const roleOptions = roles.map((role) => ({
@@ -57,9 +72,21 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
 
   async function handleSaveUserRoles(userId: string) {
     const roles = userDrafts[userId] ?? [];
+    const user = users.find((item) => item.id === userId);
 
     if (roles.length === 0) {
       setErrorMessage("每个用户至少需要保留一个角色");
+      return;
+    }
+
+    const reason = requestHighRiskReason(`确认更新用户「${user?.username ?? userId}」的角色为：${roles.join(", ")}？`);
+
+    if (reason === null) {
+      return;
+    }
+
+    if (!reason) {
+      setErrorMessage("请输入角色变更原因");
       return;
     }
 
@@ -68,7 +95,7 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
     setPendingUserId(userId);
 
     try {
-      await bindUserRoles(userId, roles);
+      await bindUserRoles(userId, roles, reason);
       setMessage(userId === currentUserId ? "当前用户角色已更新，正在刷新页面权限。" : "用户角色已更新");
       router.refresh();
     } catch (error) {
@@ -80,13 +107,25 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
 
   async function handleSaveRolePermissions(roleCode: string) {
     const draft = roleDrafts[roleCode] ?? [];
+    const role = roles.find((item) => item.code === roleCode);
+
+    const reason = requestHighRiskReason(`确认更新角色「${role?.name ?? roleCode}」的权限，共 ${draft.length} 项？`);
+
+    if (reason === null) {
+      return;
+    }
+
+    if (!reason) {
+      setErrorMessage("请输入权限变更原因");
+      return;
+    }
 
     setErrorMessage("");
     setMessage("");
     setPendingRoleCode(roleCode);
 
     try {
-      await bindRolePermissions(roleCode, draft);
+      await bindRolePermissions(roleCode, draft, reason);
       setMessage("角色权限已更新，当前登录用户能力将重新校验。");
       setEditingRoleCode(null);
       router.refresh();
@@ -103,7 +142,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
         <div>
           <p className="badge">RBAC</p>
           <h2>权限管理</h2>
-          <p>集中查看用户、角色和权限矩阵。用户角色变更与角色权限变更都会落到持久化数据，并在刷新后更新当前会话能力。</p>
+          <p>
+            集中查看用户、角色和权限矩阵。用户角色变更与角色权限变更都会落到持久化数据，并在刷新后更新当前会话能力。
+          </p>
         </div>
 
         {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
@@ -114,7 +155,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
         <div>
           <p className="badge">Users</p>
           <h3>用户列表与角色绑定</h3>
-          <p className="form-hint">admin 可以直接为用户绑定角色。若修改的是当前登录用户，刷新后菜单入口会按最新权限重新计算。</p>
+          <p className="form-hint">
+            admin 可以直接为用户绑定角色。若修改的是当前登录用户，刷新后菜单入口会按最新权限重新计算。
+          </p>
         </div>
 
         <table className="data-table">
@@ -171,7 +214,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
         <div>
           <p className="badge">Matrix</p>
           <h3>角色权限矩阵</h3>
-          <p className="form-hint">上方矩阵用于只读查看角色与权限的绑定关系。进入编辑模式后，可以针对单个角色提交权限变更。</p>
+          <p className="form-hint">
+            上方矩阵用于只读查看角色与权限的绑定关系。进入编辑模式后，可以针对单个角色提交权限变更。
+          </p>
         </div>
 
         <table className="data-table">
@@ -191,7 +236,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
                   <div className="form-hint mono-cell">{permission.code}</div>
                 </td>
                 {roles.map((role) => (
-                  <td key={`${permission.code}-${role.code}`}>{role.permissions.includes(permission.code) ? "✓" : "-"}</td>
+                  <td key={`${permission.code}-${role.code}`}>
+                    {role.permissions.includes(permission.code) ? "✓" : "-"}
+                  </td>
                 ))}
               </tr>
             ))}

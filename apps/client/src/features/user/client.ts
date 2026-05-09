@@ -20,11 +20,11 @@ export async function createUser(input: CreateUserInput) {
   return data;
 }
 
-export async function bindUserRoles(id: string, roles: UserRole[]) {
+export async function bindUserRoles(id: string, roles: UserRole[], reason: string) {
   const { data } = await clientApiRequest<User>(
     `/api/users/${encodeURIComponent(id)}/roles`,
     {
-      body: JSON.stringify({ roles }),
+      body: JSON.stringify({ reason, roles }),
       headers: {
         "Content-Type": "application/json"
       },
@@ -39,11 +39,11 @@ export async function bindUserRoles(id: string, roles: UserRole[]) {
   return data;
 }
 
-export async function bindRolePermissions(code: string, permissions: RolePermissionCode[]) {
+export async function bindRolePermissions(code: string, permissions: RolePermissionCode[], reason: string) {
   const { data } = await clientApiRequest<RoleView>(
     `/api/roles/${encodeURIComponent(code)}/permissions`,
     {
-      body: JSON.stringify({ permissions }),
+      body: JSON.stringify({ permissions, reason }),
       headers: {
         "Content-Type": "application/json"
       },

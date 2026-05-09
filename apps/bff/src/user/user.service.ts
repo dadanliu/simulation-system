@@ -19,11 +19,18 @@ export class UserService {
   ) {}
 
   listUsers() {
-    return this.userModel.find().sort({ id: 1 }).lean().then((users) => users.map((user) => this.toSafeUser(user)));
+    return this.userModel
+      .find()
+      .sort({ id: 1 })
+      .lean()
+      .then((users) => users.map((user) => this.toSafeUser(user)));
   }
 
   getUser(id: string) {
-    return this.userModel.findOne({ id }).lean().then((user) => (user ? this.toSafeUser(user) : null));
+    return this.userModel
+      .findOne({ id })
+      .lean()
+      .then((user) => (user ? this.toSafeUser(user) : null));
   }
 
   async createUser(body: CreateUserInput) {
@@ -54,7 +61,7 @@ export class UserService {
     return this.toSafeUser(user);
   }
 
-  bindRoles(id: string, roles: string[]) {
+  bindRoles(id: string, roles: string[], _reason: string) {
     return this.updateUser(id, { roles });
   }
 

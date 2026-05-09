@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/comm
 import { AuthGuard } from "../auth/auth.guard";
 import { RequirePermissions } from "../permission/permissions.decorator";
 import { PermissionsGuard } from "../permission/permissions.guard";
+import { BindUserRolesDto } from "./dto/bind-user-roles.dto";
 import { UserService } from "./user.service";
 import type { CreateUserInput, UpdateUserInput } from "./user.types";
 
@@ -27,7 +28,7 @@ export class UserController {
   }
 
   @Put(":id/roles")
-  bindRoles(@Param("id") id: string, @Body("roles") roles: string[]) {
-    return this.userService.bindRoles(id, roles);
+  bindRoles(@Param("id") id: string, @Body() body: BindUserRolesDto) {
+    return this.userService.bindRoles(id, body.roles, body.reason);
   }
 }

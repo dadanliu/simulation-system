@@ -133,6 +133,7 @@ describe("CommodityService", () => {
         deletedBy: null
       },
       operator: user.id,
+      reason: "重复创建",
       target: {
         id: commodity.id,
         type: "commodity"
@@ -140,7 +141,11 @@ describe("CommodityService", () => {
       traceId: "trace-delete"
     });
 
-    await expect(service.deleteCommodity({ traceId: "trace-delete" } as never, user, commodity.id)).resolves.toEqual({
+    await expect(
+      service.deleteCommodity({ traceId: "trace-delete" } as never, user, commodity.id, {
+        reason: "重复创建"
+      })
+    ).resolves.toEqual({
       auditLog: {
         action: "delete",
         after: {
@@ -152,6 +157,7 @@ describe("CommodityService", () => {
           deletedBy: null
         },
         operator: user.id,
+        reason: "重复创建",
         target: {
           id: commodity.id,
           type: "commodity"
@@ -178,6 +184,7 @@ describe("CommodityService", () => {
       commodity.id,
       before,
       after,
+      "重复创建",
       "trace-delete"
     );
   });
@@ -186,7 +193,9 @@ describe("CommodityService", () => {
     apiClientService.request.mockRejectedValue(new BffBusinessException("commodity not found", 20001));
 
     await expect(
-      service.deleteCommodity({ traceId: "trace-delete" } as never, user, "missing-id")
+      service.deleteCommodity({ traceId: "trace-delete" } as never, user, "missing-id", {
+        reason: "重复创建"
+      })
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(auditLogService.recordCommodityDelete).not.toHaveBeenCalled();
   });
@@ -211,6 +220,7 @@ describe("CommodityService", () => {
         deletedBy: commodity.deletedBy
       },
       operator: user.id,
+      reason: "误删恢复",
       target: {
         id: commodity.id,
         type: "commodity"
@@ -218,7 +228,11 @@ describe("CommodityService", () => {
       traceId: "trace-restore"
     });
 
-    await expect(service.restoreCommodity({ traceId: "trace-restore" } as never, user, commodity.id)).resolves.toEqual({
+    await expect(
+      service.restoreCommodity({ traceId: "trace-restore" } as never, user, commodity.id, {
+        reason: "误删恢复"
+      })
+    ).resolves.toEqual({
       auditLog: {
         action: "restore",
         after: {
@@ -230,6 +244,7 @@ describe("CommodityService", () => {
           deletedBy: commodity.deletedBy
         },
         operator: user.id,
+        reason: "误删恢复",
         target: {
           id: commodity.id,
           type: "commodity"
@@ -253,6 +268,7 @@ describe("CommodityService", () => {
       commodity.id,
       before,
       after,
+      "误删恢复",
       "trace-restore"
     );
   });
