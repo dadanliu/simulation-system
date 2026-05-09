@@ -1,3 +1,4 @@
+import "./common/tracing/open-telemetry";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";

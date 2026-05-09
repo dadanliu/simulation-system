@@ -1,3 +1,4 @@
+import { SpanKind } from "@opentelemetry/api";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { Request } from "express";
@@ -5,6 +6,10 @@ import {
   getErrorLogFields,
   writeStructuredLog
 } from "../common/logging/structured-log";
+import {
+  injectActiveTraceHeaders,
+  runObservedSpan
+} from "../common/tracing/observed-span";
 import { BackendRequestException } from "./errors";
 import { RequestHeadersService } from "./request-headers.service";
 import { ResponseHandlerService } from "./response-handler.service";
@@ -40,68 +45,86 @@ export class ApiClientService {
     path: string,
     options: RequestOptions = {}
   ) {
-    const headers = this.requestHeadersService.build(request, {
-      traceId: options.traceId,
-      userId: options.userId
-    });
     const method = options.method ?? "GET";
     const backendBaseUrl =
       this.configService.getOrThrow<string>("BACKEND_BASE_URL");
     const url = this.buildUrl(path);
-    const traceId = headers["x-trace-id"] ?? "";
-    const startedAt = Date.now();
 
-    writeStructuredLog({
-      context: ApiClientService.name,
-      event: "backend_request_started",
-      fields: {
-        backendBaseUrl,
-        method,
-        path,
-        traceId
+    return runObservedSpan(
+      "BFF -> backend",
+      {
+        "http.request.method": method,
+        "server.address": backendBaseUrl,
+        "url.path": path
       },
-      level: "info"
-    });
+      async (span) => {
+        const headers = injectActiveTraceHeaders(
+          this.requestHeadersService.build(request, {
+            traceId: options.traceId,
+            userId: options.userId
+          })
+        );
+        const traceId = headers["x-trace-id"] ?? "";
+        const startedAt = Date.now();
 
-    const response = await this.fetchBackend(
-      url,
-      {
-        method,
-        headers: {
-          ...headers,
-          ...options.headers,
-          ...(options.body === undefined
-            ? {}
-            : { "Content-Type": "application/json" })
-        },
-        body:
-          options.formData ??
-          (options.body === undefined
-            ? undefined
-            : JSON.stringify(options.body))
+        span.setAttribute("app.trace_id", traceId);
+
+        writeStructuredLog({
+          context: ApiClientService.name,
+          event: "backend_request_started",
+          fields: {
+            backendBaseUrl,
+            method,
+            path,
+            traceId
+          },
+          level: "info"
+        });
+
+        const response = await this.fetchBackend(
+          url,
+          {
+            method,
+            headers: {
+              ...headers,
+              ...options.headers,
+              ...(options.body === undefined
+                ? {}
+                : { "Content-Type": "application/json" })
+            },
+            body:
+              options.formData ??
+              (options.body === undefined
+                ? undefined
+                : JSON.stringify(options.body))
+          },
+          {
+            backendBaseUrl,
+            method,
+            path,
+            traceId
+          }
+        );
+
+        span.setAttribute("http.response.status_code", response.status);
+
+        writeStructuredLog({
+          context: ApiClientService.name,
+          event: "backend_request_completed",
+          fields: {
+            durationMs: Date.now() - startedAt,
+            method,
+            path,
+            status: response.status,
+            traceId
+          },
+          level: "info"
+        });
+
+        return response;
       },
-      {
-        backendBaseUrl,
-        method,
-        path,
-        traceId
-      }
+      SpanKind.CLIENT
     );
-
-    writeStructuredLog({
-      context: ApiClientService.name,
-      event: "backend_request_completed",
-      fields: {
-        durationMs: Date.now() - startedAt,
-        method,
-        path,
-        status: response.status,
-        traceId
-      },
-      level: "info"
-    });
-
-    return response;
   }
 
   private buildUrl(path: string) {

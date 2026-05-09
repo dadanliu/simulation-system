@@ -1,7 +1,9 @@
+import { SpanKind } from "@opentelemetry/api";
 import { Injectable, type OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { runObservedSpan } from "../common/tracing/observed-span";
 import {
   isCommodityStatus,
   validateCommodityStatusTransition
@@ -245,15 +247,29 @@ export class CommodityService implements OnModuleInit {
     const sortDirection = query.sortDirection === "asc" ? 1 : -1;
     const sort = this.buildSort(sortField, sortDirection);
 
-    const [commodities, total] = await Promise.all([
-      this.commodityModel
-        .find(filters)
-        .sort(sort)
-        .skip(offset)
-        .limit(limit)
-        .lean(),
-      this.commodityModel.countDocuments(filters)
-    ]);
+    const [commodities, total] = await runObservedSpan(
+      "MongoDB commodities list",
+      {
+        "db.collection.name": "commodities",
+        "db.operation.name": "find_and_count",
+        "db.system.name": "mongodb",
+        "next_bff.commodity.limit": limit,
+        "next_bff.commodity.offset": offset,
+        "next_bff.commodity.sort_direction": sortDirection,
+        "next_bff.commodity.sort_field": sortField
+      },
+      () =>
+        Promise.all([
+          this.commodityModel
+            .find(filters)
+            .sort(sort)
+            .skip(offset)
+            .limit(limit)
+            .lean(),
+          this.commodityModel.countDocuments(filters)
+        ]),
+      SpanKind.CLIENT
+    );
 
     return mockSuccess({
       list: commodities.map((commodity) => this.toCommodityView(commodity)),

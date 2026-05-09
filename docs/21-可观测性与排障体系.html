@@ -1,0 +1,1111 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>可观测性与排障体系</title>
+    <style>
+      :root {
+        --bg: #f7f8fa;
+        --panel: #ffffff;
+        --ink: #17202a;
+        --muted: #667085;
+        --line: #cfd6df;
+        --blue: #1f77b4;
+        --green: #238636;
+        --orange: #b86200;
+        --red: #c2410c;
+        --purple: #6f42c1;
+        --shadow: 0 10px 28px rgba(16, 24, 40, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          15px/1.6 -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          "PingFang SC",
+          "Hiragino Sans GB",
+          "Microsoft YaHei",
+          sans-serif;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 36px 0 64px;
+      }
+
+      header {
+        margin-bottom: 24px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.25;
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 34px;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        font-size: 24px;
+        margin-bottom: 14px;
+      }
+
+      h3 {
+        font-size: 18px;
+        margin-bottom: 8px;
+      }
+
+      p {
+        margin: 8px 0;
+      }
+
+      code,
+      pre {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+      }
+
+      pre {
+        overflow: auto;
+        margin: 12px 0 0;
+        padding: 14px;
+        background: #101828;
+        color: #e4e7ec;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+
+      section {
+        margin-top: 24px;
+        padding: 24px;
+        background: var(--panel);
+        border: 1px solid #e4e7ec;
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+      }
+
+      .lead {
+        max-width: 920px;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .card {
+        padding: 16px;
+        border: 1px solid #e4e7ec;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 16px;
+      }
+
+      .tag {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #eef4ff;
+        color: #1849a9;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+      }
+
+      .dot-blue {
+        background: var(--blue);
+      }
+
+      .dot-green {
+        background: var(--green);
+      }
+
+      .dot-orange {
+        background: var(--orange);
+      }
+
+      .dot-purple {
+        background: var(--purple);
+      }
+
+      .dot-red {
+        background: var(--red);
+      }
+
+      .diagram {
+        width: 100%;
+        margin-top: 12px;
+        border: 1px solid #e4e7ec;
+        border-radius: 8px;
+        background: #fcfcfd;
+      }
+
+      .diagram svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .node {
+        fill: #fff;
+        stroke: #98a2b3;
+        stroke-width: 1.5;
+      }
+
+      .node-title {
+        font-size: 16px;
+        font-weight: 700;
+        fill: #17202a;
+      }
+
+      .node-text {
+        font-size: 12px;
+        fill: #475467;
+      }
+
+      .arrow {
+        stroke: #667085;
+        stroke-width: 2;
+        fill: none;
+        marker-end: url(#arrow);
+      }
+
+      .arrow-blue {
+        stroke: var(--blue);
+      }
+
+      .arrow-green {
+        stroke: var(--green);
+      }
+
+      .arrow-orange {
+        stroke: var(--orange);
+      }
+
+      .arrow-purple {
+        stroke: var(--purple);
+      }
+
+      .swimlane {
+        fill: #f2f4f7;
+        stroke: #d0d5dd;
+      }
+
+      .swimlane-label {
+        font-size: 13px;
+        font-weight: 700;
+        fill: #344054;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+        overflow: hidden;
+        border-radius: 8px;
+      }
+
+      .table th,
+      .table td {
+        padding: 12px;
+        border: 1px solid #e4e7ec;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .table th {
+        background: #f2f4f7;
+      }
+
+      .path {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .step {
+        position: relative;
+        padding: 12px 12px 12px 42px;
+        border: 1px solid #e4e7ec;
+        border-radius: 8px;
+        background: #fff;
+      }
+
+      .step::before {
+        content: attr(data-step);
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #1849a9;
+        color: #fff;
+        text-align: center;
+        line-height: 22px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .note {
+        border-left: 4px solid var(--blue);
+        padding: 12px 14px;
+        background: #eff8ff;
+        color: #18415f;
+        border-radius: 6px;
+      }
+
+      .case {
+        border: 1px solid #e4e7ec;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+      }
+
+      .case-head {
+        padding: 14px 16px;
+        border-bottom: 1px solid #e4e7ec;
+        background: #f9fafb;
+      }
+
+      .case-body {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr);
+        gap: 16px;
+        padding: 16px;
+      }
+
+      .symptom {
+        padding: 12px;
+        border-radius: 8px;
+        background: #fff7ed;
+        color: #7c2d12;
+        border: 1px solid #fed7aa;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 10px;
+      }
+
+      .timeline-item {
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr);
+        gap: 12px;
+        align-items: start;
+        padding: 10px;
+        border: 1px solid #e4e7ec;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      .timeline-item strong {
+        color: #344054;
+      }
+
+      .finding {
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #ecfdf3;
+        border: 1px solid #abefc6;
+        color: #14532d;
+      }
+
+      @media (max-width: 860px) {
+        main {
+          width: min(100% - 24px, 1180px);
+          padding-top: 24px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .grid-2,
+        .grid-3,
+        .grid-4 {
+          grid-template-columns: 1fr;
+        }
+
+        .case-body,
+        .timeline-item {
+          grid-template-columns: 1fr;
+        }
+
+        section {
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="tag">Observability</span>
+        <h1>8. 可观测性与排障体系</h1>
+        <p class="lead">
+          真实系统上线后，必须能定位问题在哪一层，而不是只看到“页面报错”。当前系统用结构化日志、Metrics、Tracing
+          和前端上报组合成一套排障链路。
+        </p>
+      </header>
+
+      <section>
+        <h2>一、四类信号各自回答什么</h2>
+        <div class="grid grid-4">
+          <div class="card">
+            <strong>结构化日志</strong>
+            <p>回答：发生了什么？</p>
+            <p><code>event / traceId / status / stack</code></p>
+          </div>
+          <div class="card">
+            <strong>Metrics 指标</strong>
+            <p>回答：整体健康吗？</p>
+            <p><code>requestCount / errorRate / p95 / p99</code></p>
+          </div>
+          <div class="card">
+            <strong>Tracing 链路</strong>
+            <p>回答：这一次请求慢在哪里？</p>
+            <p><code>BFF -> backend -> MongoDB</code></p>
+          </div>
+          <div class="card">
+            <strong>前端上报</strong>
+            <p>回答：用户在哪个页面、哪个版本遇到问题？</p>
+            <p><code>page / appVersion / user / stack</code></p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>二、当前系统总架构图</h2>
+        <p>
+          用户的一次请求会经过 Browser、Next Client、BFF、Backend 和
+          MongoDB。每一层都会产生不同观测信号。
+        </p>
+        <div class="diagram">
+          <svg viewBox="0 0 1120 560" role="img" aria-label="可观测性总架构图">
+            <defs>
+              <marker
+                id="arrow"
+                markerWidth="10"
+                markerHeight="10"
+                refX="8"
+                refY="3"
+                orient="auto"
+              >
+                <path d="M0,0 L0,6 L9,3 z" fill="#667085"></path>
+              </marker>
+            </defs>
+
+            <rect
+              class="swimlane"
+              x="30"
+              y="35"
+              width="1060"
+              height="88"
+              rx="8"
+            />
+            <rect
+              class="swimlane"
+              x="30"
+              y="143"
+              width="1060"
+              height="88"
+              rx="8"
+            />
+            <rect
+              class="swimlane"
+              x="30"
+              y="251"
+              width="1060"
+              height="104"
+              rx="8"
+            />
+            <rect
+              class="swimlane"
+              x="30"
+              y="375"
+              width="1060"
+              height="88"
+              rx="8"
+            />
+            <rect
+              class="swimlane"
+              x="30"
+              y="483"
+              width="1060"
+              height="52"
+              rx="8"
+            />
+
+            <text class="swimlane-label" x="50" y="65">Browser</text>
+            <text class="swimlane-label" x="50" y="173">Next Client</text>
+            <text class="swimlane-label" x="50" y="281">BFF</text>
+            <text class="swimlane-label" x="50" y="405">Backend</text>
+            <text class="swimlane-label" x="50" y="515">MongoDB</text>
+
+            <rect class="node" x="170" y="55" width="190" height="52" rx="8" />
+            <text class="node-title" x="190" y="80">用户页面</text>
+            <text class="node-text" x="190" y="99">白屏 / 性能 / 点击</text>
+
+            <rect class="node" x="430" y="48" width="260" height="66" rx="8" />
+            <text class="node-title" x="450" y="74">前端采集</text>
+            <text class="node-text" x="450" y="94">
+              Web Vitals: LCP / INP / CLS
+            </text>
+            <text class="node-text" x="450" y="109">
+              Error Boundary / onerror
+            </text>
+
+            <rect class="node" x="765" y="55" width="230" height="52" rx="8" />
+            <text class="node-title" x="785" y="80">前端上下文</text>
+            <text class="node-text" x="785" y="99">
+              page / appVersion / userAgent
+            </text>
+
+            <rect class="node" x="170" y="162" width="240" height="52" rx="8" />
+            <text class="node-title" x="190" y="187">/api/client-errors</text>
+            <text class="node-text" x="190" y="206">
+              frontend_error_reported
+            </text>
+
+            <rect class="node" x="490" y="162" width="250" height="52" rx="8" />
+            <text class="node-title" x="510" y="187">/api/client-metrics</text>
+            <text class="node-text" x="510" y="206">web_vital_metric</text>
+
+            <rect class="node" x="160" y="272" width="250" height="64" rx="8" />
+            <text class="node-title" x="180" y="298">
+              RequestLoggingInterceptor
+            </text>
+            <text class="node-text" x="180" y="318">
+              http_request_completed
+            </text>
+
+            <rect class="node" x="455" y="272" width="230" height="64" rx="8" />
+            <text class="node-title" x="475" y="298">HttpMetrics</text>
+            <text class="node-text" x="475" y="318">
+              p95 / errorRate / alert
+            </text>
+
+            <rect class="node" x="735" y="272" width="250" height="64" rx="8" />
+            <text class="node-title" x="755" y="298">ApiClientService</text>
+            <text class="node-text" x="755" y="318">span: BFF -> backend</text>
+
+            <rect class="node" x="210" y="394" width="260" height="52" rx="8" />
+            <text class="node-title" x="230" y="419">Backend HTTP</text>
+            <text class="node-text" x="230" y="438">traceparent 继续传播</text>
+
+            <rect class="node" x="600" y="394" width="300" height="52" rx="8" />
+            <text class="node-title" x="620" y="419">CommodityService</text>
+            <text class="node-text" x="620" y="438">
+              span: MongoDB commodities list
+            </text>
+
+            <rect class="node" x="420" y="493" width="300" height="34" rx="8" />
+            <text class="node-title" x="440" y="516">
+              find + countDocuments
+            </text>
+
+            <path class="arrow arrow-blue" d="M360 81 L430 81"></path>
+            <path class="arrow arrow-blue" d="M690 81 L765 81"></path>
+            <path
+              class="arrow arrow-purple"
+              d="M500 114 C390 135 310 145 290 162"
+            ></path>
+            <path
+              class="arrow arrow-green"
+              d="M590 114 C610 135 615 145 615 162"
+            ></path>
+            <path class="arrow" d="M290 214 C280 238 280 250 285 272"></path>
+            <path class="arrow" d="M615 214 C595 238 585 250 570 272"></path>
+            <path class="arrow-orange" d="M685 304 L735 304"></path>
+            <path
+              class="arrow-orange"
+              d="M860 336 C770 365 590 383 470 410"
+            ></path>
+            <path class="arrow-orange" d="M470 420 L600 420"></path>
+            <path
+              class="arrow-orange"
+              d="M750 446 C700 470 620 485 570 493"
+            ></path>
+          </svg>
+        </div>
+        <div class="legend">
+          <span><i class="dot dot-blue"></i>前端采集</span>
+          <span><i class="dot dot-green"></i>性能指标</span>
+          <span><i class="dot dot-orange"></i>Tracing 调用链</span>
+          <span><i class="dot dot-purple"></i>错误上报</span>
+        </div>
+      </section>
+
+      <section>
+        <h2>三、traceId 与 otelTraceId 如何串起来</h2>
+        <p>
+          当前系统保留两套 ID：<code>traceId</code>
+          用于业务日志和前端排查，<code>otelTraceId</code>
+          用于 tracing 平台调用树。
+        </p>
+        <div class="diagram">
+          <svg viewBox="0 0 1120 360" role="img" aria-label="traceId 关联图">
+            <defs>
+              <marker
+                id="arrow"
+                markerWidth="10"
+                markerHeight="10"
+                refX="8"
+                refY="3"
+                orient="auto"
+              >
+                <path d="M0,0 L0,6 L9,3 z" fill="#667085"></path>
+              </marker>
+            </defs>
+
+            <rect class="node" x="70" y="70" width="230" height="86" rx="8" />
+            <text class="node-title" x="92" y="98">前端错误日志</text>
+            <text class="node-text" x="92" y="120">
+              event=frontend_error_reported
+            </text>
+            <text class="node-text" x="92" y="140">traceId=trace_xxx</text>
+
+            <rect class="node" x="425" y="70" width="260" height="86" rx="8" />
+            <text class="node-title" x="447" y="98">BFF 结构化日志</text>
+            <text class="node-text" x="447" y="120">traceId=trace_xxx</text>
+            <text class="node-text" x="447" y="140">
+              otelTraceId=otel_trace_xxx
+            </text>
+
+            <rect class="node" x="820" y="70" width="230" height="86" rx="8" />
+            <text class="node-title" x="842" y="98">Tracing 平台</text>
+            <text class="node-text" x="842" y="120">
+              用 otelTraceId 查调用树
+            </text>
+            <text class="node-text" x="842" y="140">
+              BFF -> backend -> MongoDB
+            </text>
+
+            <path class="arrow arrow-purple" d="M300 113 L425 113"></path>
+            <path class="arrow arrow-orange" d="M685 113 L820 113"></path>
+
+            <rect class="node" x="260" y="230" width="600" height="62" rx="8" />
+            <text class="node-title" x="286" y="258">排障顺序</text>
+            <text class="node-text" x="286" y="278">
+              前端 traceId -> 查 BFF 日志 -> 拿 otelTraceId -> 打开 tracing
+              调用树
+            </text>
+          </svg>
+        </div>
+      </section>
+
+      <section>
+        <h2>四、三种典型排障路径</h2>
+        <div class="grid grid-3">
+          <div class="card">
+            <h3>页面报 500</h3>
+            <div class="path">
+              <div class="step" data-step="1">页面 error.tsx 显示 traceId</div>
+              <div class="step" data-step="2">查 BFF 日志的 status / stack</div>
+              <div class="step" data-step="3">用 otelTraceId 打开调用树</div>
+              <div class="step" data-step="4">
+                判断 BFF、backend、MongoDB 哪层报错
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>商品列表整体变慢</h3>
+            <div class="path">
+              <div class="step" data-step="1">Metrics 出现 p95Ms 升高</div>
+              <div class="step" data-step="2">
+                查 alert_core_api_latency_high
+              </div>
+              <div class="step" data-step="3">看 tracing span duration</div>
+              <div class="step" data-step="4">
+                定位慢在 BFF、backend 或数据库
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>某个前端版本白屏</h3>
+            <div class="path">
+              <div class="step" data-step="1">查 frontend_error_reported</div>
+              <div class="step" data-step="2">看 page / appVersion / stack</div>
+              <div class="step" data-step="3">用 source map 还原源码</div>
+              <div class="step" data-step="4">
+                如果有 traceId，再关联后端链路
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>五、慢请求调用树怎么读</h2>
+        <p>
+          调用树可以理解成“这一次请求的时间账本”。父 span 是外层动作，子 span
+          是里面发生的动作。父 span 的耗时通常包含子
+          span，所以排障时不是把所有耗时相加，而是看最长的子树在哪里。
+        </p>
+        <div class="note">
+          读调用树的核心规则：先看最外层总耗时，再向下找占比最高的子
+          span。哪个子 span 接近总耗时，瓶颈通常就在那个分支。
+        </div>
+        <div class="diagram">
+          <svg viewBox="0 0 1120 420" role="img" aria-label="慢请求调用树">
+            <defs>
+              <marker
+                id="arrow"
+                markerWidth="10"
+                markerHeight="10"
+                refX="8"
+                refY="3"
+                orient="auto"
+              >
+                <path d="M0,0 L0,6 L9,3 z" fill="#667085"></path>
+              </marker>
+            </defs>
+
+            <text class="node-title" x="60" y="50">情况一：慢在数据库</text>
+            <rect class="node" x="80" y="80" width="940" height="42" rx="6" />
+            <text class="node-text" x="100" y="106">
+              BFF HTTP server span = 1200ms，总请求耗时
+            </text>
+            <rect class="node" x="150" y="145" width="800" height="42" rx="6" />
+            <text class="node-text" x="170" y="171">
+              BFF -> backend = 1100ms，占总耗时 91%
+            </text>
+            <rect class="node" x="220" y="210" width="650" height="42" rx="6" />
+            <text class="node-text" x="240" y="236">
+              Backend HTTP server span = 1050ms，慢点继续向下
+            </text>
+            <rect class="node" x="290" y="275" width="540" height="42" rx="6" />
+            <text class="node-text" x="310" y="301">
+              MongoDB commodities list = 980ms，最大子 span
+            </text>
+            <path class="arrow arrow-orange" d="M540 122 L540 145"></path>
+            <path class="arrow arrow-orange" d="M540 187 L540 210"></path>
+            <path class="arrow arrow-orange" d="M540 252 L540 275"></path>
+
+            <rect
+              x="850"
+              y="275"
+              width="170"
+              height="42"
+              rx="6"
+              fill="#fff7ed"
+              stroke="#fdba74"
+            />
+            <text class="node-text" x="868" y="301">结论：查索引和查询</text>
+          </svg>
+        </div>
+        <div class="diagram">
+          <svg viewBox="0 0 1120 260" role="img" aria-label="慢在 BFF 的调用树">
+            <defs>
+              <marker
+                id="arrow"
+                markerWidth="10"
+                markerHeight="10"
+                refX="8"
+                refY="3"
+                orient="auto"
+              >
+                <path d="M0,0 L0,6 L9,3 z" fill="#667085"></path>
+              </marker>
+            </defs>
+            <text class="node-title" x="60" y="50">情况二：慢在 BFF 自身</text>
+            <rect class="node" x="80" y="80" width="940" height="42" rx="6" />
+            <text class="node-text" x="100" y="106">
+              BFF HTTP server span = 1200ms，总请求耗时
+            </text>
+            <rect class="node" x="150" y="145" width="220" height="42" rx="6" />
+            <text class="node-text" x="170" y="171">
+              BFF -> backend = 80ms，只占 6%
+            </text>
+            <path class="arrow arrow-orange" d="M260 122 L260 145"></path>
+            <rect
+              x="420"
+              y="145"
+              width="420"
+              height="42"
+              rx="6"
+              fill="#eff8ff"
+              stroke="#7dd3fc"
+            />
+            <text class="node-text" x="438" y="171">
+              结论：查 BFF 权限、审计、响应组装、等待或队列
+            </text>
+          </svg>
+        </div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>看到的调用树</th>
+              <th>怎么判断</th>
+              <th>下一步查什么</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>BFF -> backend</code> 接近总耗时</td>
+              <td>BFF 大部分时间在等 backend</td>
+              <td>继续看 backend 子 span、数据库 span、backend 错误日志</td>
+            </tr>
+            <tr>
+              <td><code>MongoDB commodities list</code> 接近 backend 耗时</td>
+              <td>慢点主要在数据库查询</td>
+              <td>查索引、查询条件、分页 offset、sort 字段</td>
+            </tr>
+            <tr>
+              <td><code>BFF -> backend</code> 很短，但 BFF 总耗时很长</td>
+              <td>慢点主要在 BFF 自己</td>
+              <td>查权限校验、审计写入、Redis、响应封装、同步阻塞逻辑</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>六、真实模拟案例</h2>
+        <div class="note">
+          读案例前先记住：<code>event</code> 是日志事件名，<code>traceId</code>
+          是业务排查 ID，<code>otelTraceId</code> 是 tracing 平台里的调用链
+          ID，<code>span</code> 是调用链中的一个步骤，<code>p95Ms</code>
+          是 95% 请求都不超过的耗时。
+        </div>
+        <div class="grid">
+          <div class="case">
+            <div class="case-head">
+              <h3>Case 1：商品列表页面突然变慢</h3>
+            </div>
+            <div class="case-body">
+              <div class="symptom">
+                <strong>用户现象</strong>
+                <p>运营反馈商品列表打开需要 2 秒以上，但页面最终能出来。</p>
+              </div>
+              <div>
+                <div class="timeline">
+                  <div class="timeline-item">
+                    <strong>前端指标</strong>
+                    <span
+                      ><code>web_vital_metric</code> 显示
+                      <code>page=/present/commodity/list</code> 的 LCP
+                      变高。这里的 LCP
+                      是最大内容绘制，用来衡量首屏主要内容多久出现。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>BFF metrics</strong>
+                    <span
+                      ><code>http_request_metric</code> 显示
+                      <code>route=GET /api/commodity/list</code>，
+                      <code>p95Ms=1800</code>。p95Ms=1800 表示最近窗口里 95%
+                      的商品列表请求耗时不超过 1800ms，已经偏慢。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>告警事件</strong>
+                    <span
+                      >出现 <code>alert_core_api_latency_high</code>，
+                      这是“核心接口延迟过高”的告警事件，说明不是单个用户慢，而是商品列表接口整体变慢。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>Tracing</strong>
+                    <span
+                      >调用树显示 <code>MongoDB commodities list=1500ms</code>，
+                      占 BFF 总耗时大部分。MongoDB commodities list 是数据库查询
+                      span，代表商品查询和统计总数这一步。</span
+                    >
+                  </div>
+                </div>
+                <p class="finding">
+                  结论：慢点在数据库查询。优先检查商品列表查询条件、排序字段、分页
+                  offset 和 MongoDB 索引。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head">
+              <h3>Case 2：商品列表接口 5xx 错误率升高</h3>
+            </div>
+            <div class="case-body">
+              <div class="symptom">
+                <strong>用户现象</strong>
+                <p>部分用户打开商品列表直接看到“页面加载失败”。</p>
+              </div>
+              <div>
+                <div class="timeline">
+                  <div class="timeline-item">
+                    <strong>前端错误</strong>
+                    <span
+                      ><code>frontend_error_reported</code> 带有
+                      <code>traceId=trace_500_001</code
+                      >、<code>page=/present/commodity/list</code>。frontend_error_reported
+                      是浏览器错误上报事件，traceId 是拿去查 BFF
+                      日志的线索。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>BFF 日志</strong>
+                    <span
+                      >查 <code>traceId</code>，看到
+                      <code>status=500</code
+                      >、<code>event=http_request_failed</code>。500
+                      表示服务端错误，不是参数错误或权限拒绝。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>Metrics</strong>
+                    <span
+                      >窗口内 <code>serverErrorRate=0.2</code>，触发
+                      <code>alert_core_api_error_rate_high</code
+                      >。serverErrorRate=0.2 表示 5xx 错误率是 20%。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>Tracing</strong>
+                    <span
+                      >用日志里的 <code>otelTraceId</code> 打开
+                      trace，看到错误发生在 backend
+                      处理商品列表阶段。otelTraceId 是 OpenTelemetry 调用链
+                      ID，用来在 Jaeger 或 Tempo 里查调用树。</span
+                    >
+                  </div>
+                </div>
+                <p class="finding">
+                  结论：这是核心接口系统性 5xx，不是单个浏览器问题。先看 backend
+                  异常日志和对应 span 的错误标记。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head">
+              <h3>Case 3：只有新版本前端审计页白屏</h3>
+            </div>
+            <div class="case-body">
+              <div class="symptom">
+                <strong>用户现象</strong>
+                <p>管理员打开审计日志页白屏，商品列表页正常。</p>
+              </div>
+              <div>
+                <div class="timeline">
+                  <div class="timeline-item">
+                    <strong>前端错误</strong>
+                    <span
+                      ><code>frontend_error_reported</code> 显示
+                      <code>page=/present/commodity/audit</code>、
+                      <code>appVersion=2026.05.09</code>。page
+                      表示出错页面，appVersion
+                      表示发布版本，用来判断是否是某次发布引入的问题。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>堆栈</strong>
+                    <span
+                      ><code>stack</code> 指向审计页渲染逻辑；如果生产接入
+                      source map，可以还原到具体源码行。stack
+                      是运行时报错堆栈，source map
+                      是把压缩后的生产代码映射回源码的文件。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>后端关联</strong>
+                    <span
+                      >如果错误里有 <code>traceId</code>，继续查
+                      BFF；如果没有，说明可能是纯前端渲染错误。纯前端错误通常不一定有后端请求链路。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>对比版本</strong>
+                    <span
+                      >旧版本没有同类错误，新版本集中出现，优先回看本次审计页改动。</span
+                    >
+                  </div>
+                </div>
+                <p class="finding">
+                  结论：问题优先定位在前端版本变更。后端 trace
+                  只用于排除接口错误，不是第一排查对象。
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="case">
+            <div class="case-head">
+              <h3>Case 4：operator 访问审计页报 403</h3>
+            </div>
+            <div class="case-body">
+              <div class="symptom">
+                <strong>用户现象</strong>
+                <p>operator 点击审计日志入口，页面提示无权限。</p>
+              </div>
+              <div>
+                <div class="timeline">
+                  <div class="timeline-item">
+                    <strong>页面逻辑</strong>
+                    <span
+                      >审计页先执行 <code>getCurrentUser</code>，发现
+                      <code>roles</code> 不包含 <code>admin</code>。roles
+                      是当前登录用户的角色列表，admin 才允许查看审计日志。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>AppError</strong>
+                    <span
+                      >页面抛出
+                      <code>createAppError({ status: 403 })</code>，进入
+                      <code>error.tsx</code>。AppError 是前端包装的业务错误，403
+                      表示“知道你是谁，但你没有权限”。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>前端上报</strong>
+                    <span
+                      ><code>frontend_error_reported</code> 记录
+                      <code>page=/present/commodity/audit</code>
+                      和用户信息。这里记录用户是为了确认是不是角色配置导致的预期拒绝。</span
+                    >
+                  </div>
+                  <div class="timeline-item">
+                    <strong>判断</strong>
+                    <span>这是权限隔离的预期结果，不是系统故障。</span>
+                  </div>
+                </div>
+                <p class="finding">
+                  结论：403 是业务权限控制，不应触发 5xx
+                  告警；排障时要先区分“预期拒绝”和“系统异常”。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>七、字段速查表</h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>字段</th>
+              <th>来源</th>
+              <th>用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>traceId</code></td>
+              <td>BFF / backend / 前端错误上报</td>
+              <td>业务排障主线，前端拿到后可查后端日志</td>
+            </tr>
+            <tr>
+              <td><code>otelTraceId</code></td>
+              <td>OpenTelemetry active span</td>
+              <td>从日志跳到 tracing 平台调用树</td>
+            </tr>
+            <tr>
+              <td><code>event</code></td>
+              <td>所有结构化日志</td>
+              <td>按事件类型检索，例如 <code>http_request_metric</code></td>
+            </tr>
+            <tr>
+              <td><code>p95Ms / p99Ms</code></td>
+              <td>HttpMetrics</td>
+              <td>判断接口整体延迟是否劣化</td>
+            </tr>
+            <tr>
+              <td><code>page / appVersion</code></td>
+              <td>前端错误和 Web Vitals</td>
+              <td>定位页面、发布版本和 source map</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>八、当前边界</h2>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>已经具备</h3>
+            <ul>
+              <li>BFF / backend 结构化日志</li>
+              <li>RED metrics 与核心接口告警事件</li>
+              <li>前端 Web Vitals 与错误上报</li>
+              <li>OpenTelemetry BFF -> backend -> MongoDB span</li>
+              <li>traceId 与 otelTraceId 日志关联</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>还需要平台接入</h3>
+            <ul>
+              <li>日志平台：ELK / Loki / Datadog</li>
+              <li>告警平台：Alertmanager / PagerDuty</li>
+              <li>Tracing UI：Jaeger / Tempo</li>
+              <li>source map 上传和版本管理</li>
+              <li>Prometheus / Grafana 指标存储</li>
+            </ul>
+          </div>
+        </div>
+        <p class="note">
+          当前代码侧已经产生日志、metrics、trace
+          数据；生产环境需要再接入对应平台，才能完成检索、看板、告警和调用树可视化。
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

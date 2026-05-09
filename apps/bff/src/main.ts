@@ -1,3 +1,4 @@
+import "./common/tracing/open-telemetry";
 import { ValidationPipe } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";

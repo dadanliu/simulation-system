@@ -1,3 +1,5 @@
+import { trace } from "@opentelemetry/api";
+
 type StructuredLogLevel = "info" | "warn" | "error";
 
 type StructuredLogInput = {
@@ -12,6 +14,21 @@ function compactFields(fields: Record<string, unknown> = {}) {
   return Object.fromEntries(
     Object.entries(fields).filter(([, value]) => value !== undefined)
   );
+}
+
+function readActiveTraceFields() {
+  const activeSpan = trace.getActiveSpan();
+
+  if (!activeSpan) {
+    return {};
+  }
+
+  const spanContext = activeSpan.spanContext();
+
+  return {
+    otelSpanId: spanContext.spanId,
+    otelTraceId: spanContext.traceId
+  };
 }
 
 function stringifyUnknown(value: unknown) {
@@ -53,6 +70,7 @@ export function writeStructuredLog(input: StructuredLogInput) {
     context: input.context,
     event: input.event,
     ...(input.message ? { message: input.message } : {}),
+    ...readActiveTraceFields(),
     ...compactFields(input.fields)
   };
   const line = JSON.stringify(entry);

@@ -16,6 +16,10 @@
     "@nestjs/core": "^11.1.6",
     "@nestjs/mongoose": "^11.0.3",
     "@nestjs/platform-express": "^11.1.6",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/auto-instrumentations-node": "^0.75.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.217.0",
+    "@opentelemetry/sdk-node": "^0.217.0",
     "mongoose": "^8.19.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
