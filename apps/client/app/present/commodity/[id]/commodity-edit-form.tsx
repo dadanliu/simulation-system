@@ -69,7 +69,11 @@ export function CommodityEditForm({ commodity }: CommodityEditFormProps) {
       return "商品价格必须大于 0";
     }
 
-    if (!form.stock || !Number.isInteger(Number(form.stock)) || Number(form.stock) < 0) {
+    if (
+      !form.stock ||
+      !Number.isInteger(Number(form.stock)) ||
+      Number(form.stock) < 0
+    ) {
       return "商品库存必须是非负整数";
     }
 
@@ -136,7 +140,9 @@ export function CommodityEditForm({ commodity }: CommodityEditFormProps) {
       setImageFileId(data.fileId);
       setImageUrl(data.url);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "图片上传失败，请稍后重试");
+      setErrorMessage(
+        error instanceof Error ? error.message : "图片上传失败，请稍后重试"
+      );
     } finally {
       setIsUploading(false);
     }
@@ -186,12 +192,15 @@ export function CommodityEditForm({ commodity }: CommodityEditFormProps) {
         />
       </label>
       <p className="form-hint">
-        限制：JPG、PNG、WEBP，最大 2MB。当前选择：{selectedFileName || "未选择新文件"}
+        限制：JPG、PNG、WEBP，最大 2MB。当前选择：
+        {selectedFileName || "未选择新文件"}
       </p>
       {isUploading ? <p className="form-hint">图片上传中...</p> : null}
       {imageUrl ? (
         <div className="upload-result">
-          <p className="upload-result__title">{uploadedImage ? "新图片已上传" : "当前商品图片"}</p>
+          <p className="upload-result__title">
+            {uploadedImage ? "新图片已上传" : "当前商品图片"}
+          </p>
           <CommodityImage
             alt={form.name || commodity.name}
             className="commodity-thumb"
@@ -261,7 +270,11 @@ export function CommodityEditForm({ commodity }: CommodityEditFormProps) {
       {message ? <p className="form-success">{message}</p> : null}
 
       <div className="inline-actions">
-        <button className="button" disabled={isSubmitting || isUploading} type="submit">
+        <button
+          className="button"
+          disabled={isSubmitting || isUploading}
+          type="submit"
+        >
           {isSubmitting ? "保存中..." : "保存编辑"}
         </button>
         <button

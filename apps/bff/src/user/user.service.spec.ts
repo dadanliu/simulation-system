@@ -14,26 +14,28 @@ describe("UserService", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    roleService.getPermissionCodesByRoleCodes.mockImplementation(async (roles: string[]) => {
-      if (roles.includes("admin")) {
-        return [
-          "audit:read",
-          "commodity:create",
-          "commodity:delete",
-          "commodity:read",
-          "commodity:update",
-          "permission:manage",
-          "role:manage",
-          "user:manage"
-        ];
-      }
+    roleService.getPermissionCodesByRoleCodes.mockImplementation(
+      async (roles: string[]) => {
+        if (roles.includes("admin")) {
+          return [
+            "audit:read",
+            "commodity:create",
+            "commodity:delete",
+            "commodity:read",
+            "commodity:update",
+            "permission:manage",
+            "role:manage",
+            "user:manage"
+          ];
+        }
 
-      if (roles.includes("operator")) {
-        return ["commodity:create", "commodity:read", "commodity:update"];
-      }
+        if (roles.includes("operator")) {
+          return ["commodity:create", "commodity:read", "commodity:update"];
+        }
 
-      return ["commodity:read"];
-    });
+        return ["commodity:read"];
+      }
+    );
   });
 
   it("authenticates with a password hash", async () => {
@@ -52,9 +54,15 @@ describe("UserService", () => {
       })
     };
 
-    const result = await createService(userModel).findUserByCredentials("admin", "admin123");
+    const result = await createService(userModel).findUserByCredentials(
+      "admin",
+      "admin123"
+    );
 
-    expect(userModel.findOne).toHaveBeenCalledWith({ enabled: true, username: "admin" });
+    expect(userModel.findOne).toHaveBeenCalledWith({
+      enabled: true,
+      username: "admin"
+    });
     expect(result).toEqual({
       id: "u_admin_001",
       permissions: [
@@ -82,14 +90,21 @@ describe("UserService", () => {
       roles: ["admin"],
       username: "admin"
     };
-    const lean = jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(user);
+    const lean = jest
+      .fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(user);
     const userModel = {
       findOne: jest.fn().mockReturnValue({ lean })
     };
     const service = createService(userModel);
 
-    await expect(service.findUserByCredentials("missing", "admin123")).resolves.toBeNull();
-    await expect(service.findUserByCredentials("admin", "wrong-password")).resolves.toBeNull();
+    await expect(
+      service.findUserByCredentials("missing", "admin123")
+    ).resolves.toBeNull();
+    await expect(
+      service.findUserByCredentials("admin", "wrong-password")
+    ).resolves.toBeNull();
   });
 
   it("does not expose password or passwordHash in user responses", async () => {
@@ -129,7 +144,9 @@ describe("UserService", () => {
 
   it("hashes passwords when creating users", async () => {
     const createdUser = {
-      toObject: jest.fn().mockImplementation(function toObject(this: { savedUser: UserRecord }) {
+      toObject: jest.fn().mockImplementation(function toObject(this: {
+        savedUser: UserRecord;
+      }) {
         return this.savedUser;
       })
     };
@@ -149,7 +166,9 @@ describe("UserService", () => {
       roles: ["operator"],
       username: "operator"
     });
-    const savedUser = userModel.create.mock.calls[0][0] as UserRecord & { password?: string };
+    const savedUser = userModel.create.mock.calls[0][0] as UserRecord & {
+      password?: string;
+    };
 
     expect(savedUser.password).toBeUndefined();
     expect(savedUser.passwordHash).not.toBe("operator123");

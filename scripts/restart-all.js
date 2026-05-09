@@ -9,10 +9,14 @@ function stopAll() {
 
 stopAll();
 
-const child = spawn(process.platform === "win32" ? "pnpm.cmd" : "pnpm", ["dev:all"], {
-  cwd: process.cwd(),
-  stdio: "inherit"
-});
+const child = spawn(
+  process.platform === "win32" ? "pnpm.cmd" : "pnpm",
+  ["dev:all"],
+  {
+    cwd: process.cwd(),
+    stdio: "inherit"
+  }
+);
 
 child.on("exit", (code, signal) => {
   if (signal) {

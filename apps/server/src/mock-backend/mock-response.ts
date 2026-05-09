@@ -10,7 +10,9 @@ export type MockBusinessErrorResponse = {
   data: null;
 };
 
-export type MockResponse<T> = MockSuccessResponse<T> | MockBusinessErrorResponse;
+export type MockResponse<T> =
+  | MockSuccessResponse<T>
+  | MockBusinessErrorResponse;
 
 export function mockSuccess<T>(data: T): MockSuccessResponse<T> {
   return {
@@ -20,7 +22,10 @@ export function mockSuccess<T>(data: T): MockSuccessResponse<T> {
   };
 }
 
-export function mockBusinessError(errno: number, errmsg: string): MockBusinessErrorResponse {
+export function mockBusinessError(
+  errno: number,
+  errmsg: string
+): MockBusinessErrorResponse {
   return {
     errno,
     errmsg,

@@ -1,6 +1,16 @@
-import { HttpException, HttpStatus, Injectable, Logger, OnModuleDestroy, UnauthorizedException } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  Injectable,
+  OnModuleDestroy,
+  UnauthorizedException
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import Redis from "ioredis";
+import {
+  getErrorLogFields,
+  writeStructuredLog
+} from "../common/logging/structured-log";
 
 type FailureSubject = {
   ip: string;
@@ -11,7 +21,6 @@ type FailureSubject = {
 export class LoginRiskService implements OnModuleDestroy {
   private static readonly REDIS_ERROR_LOG_INTERVAL_MS = 30_000;
 
-  private readonly logger = new Logger(LoginRiskService.name);
   private readonly redis: Redis;
   private readonly ipKeyPrefix: string;
   private readonly lockKeyPrefix: string;
@@ -23,21 +32,39 @@ export class LoginRiskService implements OnModuleDestroy {
   private lastRedisErrorLogAt = 0;
 
   constructor(private readonly configService: ConfigService) {
-    this.maxFailuresPerIp = this.readPositiveInteger("LOGIN_MAX_FAILURES_PER_IP", 20);
-    this.maxFailuresPerUser = this.readPositiveInteger("LOGIN_MAX_FAILURES_PER_USER", 5);
-    this.failureWindowSeconds = this.readPositiveInteger("LOGIN_FAILURE_WINDOW_SECONDS", 900);
+    this.maxFailuresPerIp = this.readPositiveInteger(
+      "LOGIN_MAX_FAILURES_PER_IP",
+      20
+    );
+    this.maxFailuresPerUser = this.readPositiveInteger(
+      "LOGIN_MAX_FAILURES_PER_USER",
+      5
+    );
+    this.failureWindowSeconds = this.readPositiveInteger(
+      "LOGIN_FAILURE_WINDOW_SECONDS",
+      900
+    );
     this.lockSeconds = this.readPositiveInteger("LOGIN_LOCK_SECONDS", 600);
-    this.ipKeyPrefix = this.configService.get<string>("LOGIN_FAILURE_IP_REDIS_KEY_PREFIX", "next-bff:login-fail:ip:");
+    this.ipKeyPrefix = this.configService.get<string>(
+      "LOGIN_FAILURE_IP_REDIS_KEY_PREFIX",
+      "next-bff:login-fail:ip:"
+    );
     this.userKeyPrefix = this.configService.get<string>(
       "LOGIN_FAILURE_USER_REDIS_KEY_PREFIX",
       "next-bff:login-fail:user:"
     );
-    this.lockKeyPrefix = this.configService.get<string>("LOGIN_LOCK_REDIS_KEY_PREFIX", "next-bff:login-lock:");
-    this.redis = new Redis(this.configService.get<string>("REDIS_URL", "redis://127.0.0.1:6379"), {
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 1,
-      retryStrategy: (times) => Math.min(times * 500, 5_000)
-    });
+    this.lockKeyPrefix = this.configService.get<string>(
+      "LOGIN_LOCK_REDIS_KEY_PREFIX",
+      "next-bff:login-lock:"
+    );
+    this.redis = new Redis(
+      this.configService.get<string>("REDIS_URL", "redis://127.0.0.1:6379"),
+      {
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 1,
+        retryStrategy: (times) => Math.min(times * 500, 5_000)
+      }
+    );
     this.redis.on("error", (error) => {
       this.logRedisError(error);
     });
@@ -113,7 +140,10 @@ export class LoginRiskService implements OnModuleDestroy {
   }
 
   isRateLimitError(error: unknown): error is HttpException {
-    return error instanceof HttpException && error.getStatus() === HttpStatus.TOO_MANY_REQUESTS;
+    return (
+      error instanceof HttpException &&
+      error.getStatus() === HttpStatus.TOO_MANY_REQUESTS
+    );
   }
 
   private getUserFailuresKey(username: string) {
@@ -146,17 +176,30 @@ export class LoginRiskService implements OnModuleDestroy {
   }
 
   private createRateLimitError(remainingSeconds: number) {
-    return new HttpException(`too many login attempts, try again in ${remainingSeconds}s`, HttpStatus.TOO_MANY_REQUESTS);
+    return new HttpException(
+      `too many login attempts, try again in ${remainingSeconds}s`,
+      HttpStatus.TOO_MANY_REQUESTS
+    );
   }
 
   private logRedisError(error: Error) {
     const now = Date.now();
 
-    if (now - this.lastRedisErrorLogAt < LoginRiskService.REDIS_ERROR_LOG_INTERVAL_MS) {
+    if (
+      now - this.lastRedisErrorLogAt <
+      LoginRiskService.REDIS_ERROR_LOG_INTERVAL_MS
+    ) {
       return;
     }
 
     this.lastRedisErrorLogAt = now;
-    this.logger.error(`Redis login risk store error: ${error.message}. Start Redis or set REDIS_URL to a reachable Redis instance.`);
+    writeStructuredLog({
+      context: LoginRiskService.name,
+      event: "redis_login_risk_store_error",
+      fields: getErrorLogFields(error),
+      level: "error",
+      message:
+        "Redis login risk store error. Start Redis or set REDIS_URL to a reachable Redis instance."
+    });
   }
 }

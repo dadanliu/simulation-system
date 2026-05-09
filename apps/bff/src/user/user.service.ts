@@ -4,7 +4,13 @@ import { Model } from "mongoose";
 import { RoleService } from "../role/role.service";
 import { hashPassword, verifyPassword } from "./password-hash";
 import { UserEntity, type UserDocument } from "./schemas/user.schema";
-import type { AuthUser, CreateUserInput, UpdateUserInput, User, UserRecord } from "./user.types";
+import type {
+  AuthUser,
+  CreateUserInput,
+  UpdateUserInput,
+  User,
+  UserRecord
+} from "./user.types";
 
 type PersistedUserRecord = UserRecord & {
   _id?: unknown;
@@ -14,7 +20,8 @@ type PersistedUserRecord = UserRecord & {
 @Injectable()
 export class UserService {
   constructor(
-    @InjectModel(UserEntity.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(UserEntity.name)
+    private readonly userModel: Model<UserDocument>,
     private readonly roleService: RoleService
   ) {}
 
@@ -52,7 +59,9 @@ export class UserService {
       await this.roleService.assertRoleCodes(body.roles);
     }
 
-    const user = await this.userModel.findOneAndUpdate({ id }, { $set: body }, { new: true }).lean();
+    const user = await this.userModel
+      .findOneAndUpdate({ id }, { $set: body }, { new: true })
+      .lean();
 
     if (!user) {
       throw new NotFoundException("user not found");
@@ -65,8 +74,13 @@ export class UserService {
     return this.updateUser(id, { roles });
   }
 
-  async findUserByCredentials(username: string, password: string): Promise<AuthUser | null> {
-    const user = await this.userModel.findOne({ username, enabled: true }).lean<PersistedUserRecord | null>();
+  async findUserByCredentials(
+    username: string,
+    password: string
+  ): Promise<AuthUser | null> {
+    const user = await this.userModel
+      .findOne({ username, enabled: true })
+      .lean<PersistedUserRecord | null>();
 
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return null;
@@ -86,13 +100,19 @@ export class UserService {
   }
 
   private toSafeUser(user: PersistedUserRecord): User {
-    const { _id: _id, password: _password, passwordHash: _passwordHash, ...safeUser } = user;
+    const {
+      _id: _id,
+      password: _password,
+      passwordHash: _passwordHash,
+      ...safeUser
+    } = user;
     return safeUser;
   }
 
   private async toAuthUser(user: UserRecord): Promise<AuthUser> {
     const { id, username, roles } = user;
-    const permissions = await this.roleService.getPermissionCodesByRoleCodes(roles);
+    const permissions =
+      await this.roleService.getPermissionCodesByRoleCodes(roles);
     return { id, permissions, username, roles };
   }
 }

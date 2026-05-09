@@ -102,7 +102,9 @@ export function UserCreateForm() {
       setCreatedUser(user);
       setForm(initialFormState);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "网络异常，请稍后重试");
+      setErrorMessage(
+        error instanceof Error ? error.message : "网络异常，请稍后重试"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -177,7 +179,8 @@ export function UserCreateForm() {
         <div className="form-success stack">
           <p>用户已创建：{createdUser.displayName}</p>
           <p className="form-hint">
-            ID：{createdUser.id}，用户名：{createdUser.username}，角色：{createdUser.roles.join(", ")}
+            ID：{createdUser.id}，用户名：{createdUser.username}，角色：
+            {createdUser.roles.join(", ")}
           </p>
         </div>
       ) : null}

@@ -93,7 +93,9 @@ export function UploadDemo() {
 
       setUploaded(data);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "网络异常，请稍后重试");
+      setErrorMessage(
+        error instanceof Error ? error.message : "网络异常，请稍后重试"
+      );
     } finally {
       setIsUploading(false);
     }
@@ -112,7 +114,10 @@ export function UploadDemo() {
         />
       </label>
 
-      <p className="form-hint">限制：JPG、PNG、WEBP，最大 2MB。当前选择：{selectedFileName || "未选择文件"}</p>
+      <p className="form-hint">
+        限制：JPG、PNG、WEBP，最大 2MB。当前选择：
+        {selectedFileName || "未选择文件"}
+      </p>
 
       {errorMessage ? <p className="form-error">{errorMessage}</p> : null}
 

@@ -12,10 +12,15 @@ type CommodityStatusFormProps = {
   currentStatus: CommodityStatus;
 };
 
-export function CommodityStatusForm({ commodityId, currentStatus }: CommodityStatusFormProps) {
+export function CommodityStatusForm({
+  commodityId,
+  currentStatus
+}: CommodityStatusFormProps) {
   const router = useRouter();
   const options = getNextCommodityStatusOptions(currentStatus);
-  const [status, setStatus] = useState<CommodityStatus>(options[0]?.value ?? currentStatus);
+  const [status, setStatus] = useState<CommodityStatus>(
+    options[0]?.value ?? currentStatus
+  );
   const [reason, setReason] = useState("");
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -49,7 +54,11 @@ export function CommodityStatusForm({ commodityId, currentStatus }: CommoditySta
   }
 
   if (options.length === 0) {
-    return <p className="form-hint">当前状态不能直接流转。offline 商品需要重新创建或走后续恢复流程。</p>;
+    return (
+      <p className="form-hint">
+        当前状态不能直接流转。offline 商品需要重新创建或走后续恢复流程。
+      </p>
+    );
   }
 
   return (

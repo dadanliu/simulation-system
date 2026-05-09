@@ -9,7 +9,10 @@ import { GetCurrentUserService } from "../auth/get-current-user";
 import { CommodityController } from "../commodity/commodity.controller";
 import { CommodityService } from "../commodity/commodity.service";
 import { HttpExceptionFilter } from "../common/filters/http-exception.filter";
-import { createCsrfOriginMiddleware, getConfiguredCsrfAllowedOrigins } from "../common/http/csrf-origin";
+import {
+  createCsrfOriginMiddleware,
+  getConfiguredCsrfAllowedOrigins
+} from "../common/http/csrf-origin";
 import { traceIdMiddleware } from "../common/http/trace-id";
 import { RequestLoggingInterceptor } from "../common/interceptors/request-logging.interceptor";
 import { SuccessResponseInterceptor } from "../common/interceptors/success-response.interceptor";
@@ -133,7 +136,10 @@ export async function createBffTestApp(
     })
   );
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(app.get(RequestLoggingInterceptor), app.get(SuccessResponseInterceptor));
+  app.useGlobalInterceptors(
+    app.get(RequestLoggingInterceptor),
+    app.get(SuccessResponseInterceptor)
+  );
   await app.init();
 
   return app;

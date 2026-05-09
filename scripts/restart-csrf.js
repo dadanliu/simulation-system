@@ -39,7 +39,9 @@ function listPidsByPort(port) {
 }
 
 function stopPids(pids) {
-  const uniquePids = [...new Set(pids)].filter((pid) => pid !== String(process.pid));
+  const uniquePids = [...new Set(pids)].filter(
+    (pid) => pid !== String(process.pid)
+  );
 
   if (uniquePids.length === 0) {
     console.log("No existing CSRF demo process found.");
@@ -73,11 +75,15 @@ stopPids([
   ...listPidsByPort(defaultPort)
 ]);
 
-const child = spawn(process.platform === "win32" ? "pnpm.cmd" : "pnpm", ["simulate:csrf"], {
-  cwd: process.cwd(),
-  env: process.env,
-  stdio: "inherit"
-});
+const child = spawn(
+  process.platform === "win32" ? "pnpm.cmd" : "pnpm",
+  ["simulate:csrf"],
+  {
+    cwd: process.cwd(),
+    env: process.env,
+    stdio: "inherit"
+  }
+);
 
 child.on("exit", (code, signal) => {
   if (signal) {

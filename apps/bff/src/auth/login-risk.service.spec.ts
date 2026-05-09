@@ -90,7 +90,8 @@ jest.mock("ioredis", () => {
         set: (key: string, value: string, mode: string, seconds: number) => {
           commands.push(() => {
             mockRedisState.strings.set(key, {
-              expiresAt: mode === "EX" ? Date.now() + seconds * 1000 : undefined,
+              expiresAt:
+                mode === "EX" ? Date.now() + seconds * 1000 : undefined,
               value
             });
             results.push([null, "OK"]);
@@ -136,16 +137,20 @@ describe("LoginRiskService", () => {
       })
     );
 
-    await expect(service.recordFailure({ ip: "127.0.0.1", username: "admin" })).rejects.toBeInstanceOf(
-      UnauthorizedException
-    );
-    await expect(service.recordFailure({ ip: "127.0.0.1", username: "admin" })).rejects.toBeInstanceOf(
-      UnauthorizedException
-    );
-    await expect(service.recordFailure({ ip: "127.0.0.1", username: "admin" })).rejects.toMatchObject({
+    await expect(
+      service.recordFailure({ ip: "127.0.0.1", username: "admin" })
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(
+      service.recordFailure({ ip: "127.0.0.1", username: "admin" })
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    await expect(
+      service.recordFailure({ ip: "127.0.0.1", username: "admin" })
+    ).rejects.toMatchObject({
       status: HttpStatus.TOO_MANY_REQUESTS
     });
-    await expect(service.assertLoginAllowed({ ip: "127.0.0.1", username: "admin" })).rejects.toMatchObject({
+    await expect(
+      service.assertLoginAllowed({ ip: "127.0.0.1", username: "admin" })
+    ).rejects.toMatchObject({
       status: HttpStatus.TOO_MANY_REQUESTS
     });
   });
@@ -159,10 +164,12 @@ describe("LoginRiskService", () => {
       })
     );
 
-    await expect(service.recordFailure({ ip: "127.0.0.1", username: "admin" })).rejects.toBeInstanceOf(
-      UnauthorizedException
-    );
+    await expect(
+      service.recordFailure({ ip: "127.0.0.1", username: "admin" })
+    ).rejects.toBeInstanceOf(UnauthorizedException);
     await service.reset({ ip: "127.0.0.1", username: "admin" });
-    await expect(service.assertLoginAllowed({ ip: "127.0.0.1", username: "admin" })).resolves.toBeUndefined();
+    await expect(
+      service.assertLoginAllowed({ ip: "127.0.0.1", username: "admin" })
+    ).resolves.toBeUndefined();
   });
 });

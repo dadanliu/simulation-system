@@ -43,8 +43,13 @@ export function TopBar({ appEnv, currentUser, showEnvBadge }: TopBarProps) {
   return (
     <header className="top-bar">
       <div>
-        <h1 className="top-bar__title">{activeRoute?.title ?? "Next BFF Admin"}</h1>
-        <p className="top-bar__meta">{activeRoute?.description ?? "Next.js App Router + BFF workspace bootstrap"}</p>
+        <h1 className="top-bar__title">
+          {activeRoute?.title ?? "Next BFF Admin"}
+        </h1>
+        <p className="top-bar__meta">
+          {activeRoute?.description ??
+            "Next.js App Router + BFF workspace bootstrap"}
+        </p>
       </div>
       <div className="top-bar__actions">
         <div className="user-chip">
@@ -52,10 +57,17 @@ export function TopBar({ appEnv, currentUser, showEnvBadge }: TopBarProps) {
             <p className="user-chip__name">{currentUser.username}</p>
             <p className="user-chip__meta">{currentUser.roles.join(" / ")}</p>
           </div>
-          {showEnvBadge ? <span className="badge badge--warning">{appEnv}</span> : null}
+          {showEnvBadge ? (
+            <span className="badge badge--warning">{appEnv}</span>
+          ) : null}
           <span className="badge">{pathname}</span>
         </div>
-        <button className="button button--secondary" disabled={isSubmitting} onClick={handleLogout} type="button">
+        <button
+          className="button button--secondary"
+          disabled={isSubmitting}
+          onClick={handleLogout}
+          type="button"
+        >
           {isSubmitting ? "退出中..." : "退出登录"}
         </button>
       </div>

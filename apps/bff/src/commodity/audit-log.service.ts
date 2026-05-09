@@ -3,7 +3,10 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import type { Commodity } from "./commodity.types";
 import type { QueryAuditLogDto } from "./dto/query-audit-log.dto";
-import { AuditLogEntity, type AuditLogDocument } from "./schemas/audit-log.schema";
+import {
+  AuditLogEntity,
+  type AuditLogDocument
+} from "./schemas/audit-log.schema";
 
 type AuditLogRecord = {
   action: string;
@@ -21,9 +24,16 @@ type AuditLogRecord = {
 
 @Injectable()
 export class AuditLogService {
-  constructor(@InjectModel(AuditLogEntity.name) private readonly auditLogModel: Model<AuditLogDocument>) {}
+  constructor(
+    @InjectModel(AuditLogEntity.name)
+    private readonly auditLogModel: Model<AuditLogDocument>
+  ) {}
 
-  recordCommodityCreate(operator: string, commodity: Commodity, traceId: string) {
+  recordCommodityCreate(
+    operator: string,
+    commodity: Commodity,
+    traceId: string
+  ) {
     return this.createAuditLog({
       action: "create",
       after: {
@@ -78,7 +88,13 @@ export class AuditLogService {
     });
   }
 
-  recordCommodityUpdate(operator: string, commodityId: string, before: Commodity, after: Commodity, traceId: string) {
+  recordCommodityUpdate(
+    operator: string,
+    commodityId: string,
+    before: Commodity,
+    after: Commodity,
+    traceId: string
+  ) {
     return this.createAuditLog({
       action: "update",
       after: this.pickEditableFields(after),

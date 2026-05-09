@@ -99,7 +99,9 @@ function assertRequiredPortsAvailable() {
     return;
   }
 
-  console.error("Cannot start HTTPS dev services because required ports are in use:");
+  console.error(
+    "Cannot start HTTPS dev services because required ports are in use:"
+  );
 
   for (const item of busyPorts) {
     console.error(`- port ${item.port}: ${item.pids.join(", ")}`);
@@ -152,7 +154,11 @@ function prefixLine(serviceName, line) {
 }
 
 function printAccessInfo() {
-  if (printedAccessInfo || !readyServices.has("client") || !readyServices.has("bff")) {
+  if (
+    printedAccessInfo ||
+    !readyServices.has("client") ||
+    !readyServices.has("bff")
+  ) {
     return;
   }
 
@@ -160,12 +166,22 @@ function printAccessInfo() {
 
   console.log("");
   console.log("HTTPS dev services are ready:");
-  console.log(`- client: ${services.find((service) => service.name === "client").url}`);
-  console.log(`- bff:    ${services.find((service) => service.name === "bff").url} (internal)`);
-  console.log(`- server: ${services.find((service) => service.name === "server").url} (internal)`);
+  console.log(
+    `- client: ${services.find((service) => service.name === "client").url}`
+  );
+  console.log(
+    `- bff:    ${services.find((service) => service.name === "bff").url} (internal)`
+  );
+  console.log(
+    `- server: ${services.find((service) => service.name === "server").url} (internal)`
+  );
   console.log("");
-  console.log("Open https://localhost:3000 and accept the local self-signed certificate if prompted.");
-  console.log("BFF sets COOKIE_SECURE=true in this mode, so next_bff_session should show Secure in DevTools.");
+  console.log(
+    "Open https://localhost:3000 and accept the local self-signed certificate if prompted."
+  );
+  console.log(
+    "BFF sets COOKIE_SECURE=true in this mode, so next_bff_session should show Secure in DevTools."
+  );
   console.log("");
 }
 

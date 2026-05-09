@@ -28,12 +28,16 @@ async function readCurrentUser() {
     return null;
   }
 
-  const payload = (await response.json().catch(() => null)) as ApiEnvelope<{ user: CurrentUser }> | null;
+  const payload = (await response.json().catch(() => null)) as ApiEnvelope<{
+    user: CurrentUser;
+  }> | null;
   return payload?.success && payload.data?.user ? payload.data.user : null;
 }
 
 export async function POST(request: Request) {
-  const payload = (await request.json().catch(() => null)) as ClientErrorPayload | null;
+  const payload = (await request
+    .json()
+    .catch(() => null)) as ClientErrorPayload | null;
   const currentUser = await readCurrentUser();
 
   console.error(

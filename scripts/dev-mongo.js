@@ -45,7 +45,9 @@ async function waitUntilReady() {
     await wait(500);
   }
 
-  throw new Error(`MongoDB did not become ready at ${MONGO_HOST}:${MONGO_PORT}`);
+  throw new Error(
+    `MongoDB did not become ready at ${MONGO_HOST}:${MONGO_PORT}`
+  );
 }
 
 function keepAliveForExistingMongo() {
@@ -64,9 +66,20 @@ function startMongo() {
   ensureDbPath();
   console.log(`Starting mongod at ${MONGO_HOST}:${MONGO_PORT}`);
 
-  return spawn("mongod", ["--dbpath", MONGO_DB_PATH, "--bind_ip", MONGO_HOST, "--port", String(MONGO_PORT)], {
-    stdio: ["ignore", "pipe", "pipe"]
-  });
+  return spawn(
+    "mongod",
+    [
+      "--dbpath",
+      MONGO_DB_PATH,
+      "--bind_ip",
+      MONGO_HOST,
+      "--port",
+      String(MONGO_PORT)
+    ],
+    {
+      stdio: ["ignore", "pipe", "pipe"]
+    }
+  );
 }
 
 function pipeOutput(childProcess) {
@@ -98,7 +111,11 @@ async function main() {
       const reason = signal ? `signal ${signal}` : `code ${code}`;
 
       if (!isReady) {
-        reject(new Error(`MongoDB process exited before becoming ready with ${reason}`));
+        reject(
+          new Error(
+            `MongoDB process exited before becoming ready with ${reason}`
+          )
+        );
         return;
       }
 
@@ -121,7 +138,9 @@ process.on("SIGTERM", () => {
 
 main().catch((error) => {
   console.error(error.message);
-  console.error("Install MongoDB, start MongoDB at 127.0.0.1:27017, or set MONGODB_URI for BFF/server.");
+  console.error(
+    "Install MongoDB, start MongoDB at 127.0.0.1:27017, or set MONGODB_URI for BFF/server."
+  );
   stop();
   process.exit(1);
 });

@@ -17,7 +17,9 @@ import { AuditLogEntity, AuditLogSchema } from "./schemas/audit-log.schema";
     PermissionModule,
     RoleModule,
     UploadModule,
-    MongooseModule.forFeature([{ name: AuditLogEntity.name, schema: AuditLogSchema }])
+    MongooseModule.forFeature([
+      { name: AuditLogEntity.name, schema: AuditLogSchema }
+    ])
   ],
   controllers: [CommodityController],
   providers: [AuditLogService, CommodityService]

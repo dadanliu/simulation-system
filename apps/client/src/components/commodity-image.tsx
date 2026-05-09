@@ -28,7 +28,11 @@ export function CommodityImage({
 
   if (!src || failed) {
     return (
-      <span className={`${className} commodity-image-fallback`} role="img" aria-label={fallbackLabel}>
+      <span
+        className={`${className} commodity-image-fallback`}
+        role="img"
+        aria-label={fallbackLabel}
+      >
         {fallbackLabel}
       </span>
     );

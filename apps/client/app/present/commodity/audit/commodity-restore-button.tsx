@@ -8,7 +8,9 @@ type CommodityRestoreButtonProps = {
   commodityId: string;
 };
 
-export function CommodityRestoreButton({ commodityId }: CommodityRestoreButtonProps) {
+export function CommodityRestoreButton({
+  commodityId
+}: CommodityRestoreButtonProps) {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,7 +50,12 @@ export function CommodityRestoreButton({ commodityId }: CommodityRestoreButtonPr
 
   return (
     <div className="stack">
-      <button className="button button--secondary" disabled={isSubmitting} onClick={handleRestore} type="button">
+      <button
+        className="button button--secondary"
+        disabled={isSubmitting}
+        onClick={handleRestore}
+        type="button"
+      >
         {isSubmitting ? "恢复中..." : "恢复"}
       </button>
       {errorMessage ? <p className="form-error">{errorMessage}</p> : null}

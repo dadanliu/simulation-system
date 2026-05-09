@@ -36,7 +36,10 @@ type UpdateCommodityStatusResponse = {
   commodity: Commodity;
 };
 
-export async function updateCommodityStatus(id: string, input: { reason: string; status: CommodityStatus }) {
+export async function updateCommodityStatus(
+  id: string,
+  input: { reason: string; status: CommodityStatus }
+) {
   const { data } = await clientApiRequest<UpdateCommodityStatusResponse>(
     `/api/commodity/${encodeURIComponent(id)}/status`,
     {

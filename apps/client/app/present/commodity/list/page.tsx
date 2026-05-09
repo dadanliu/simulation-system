@@ -6,7 +6,9 @@ type CommodityListPageProps = {
 
 export const dynamic = "force-dynamic";
 
-export default async function CommodityListPage({ searchParams }: CommodityListPageProps) {
+export default async function CommodityListPage({
+  searchParams
+}: CommodityListPageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
   return <CommodityListContent searchParams={resolvedSearchParams} />;
 }

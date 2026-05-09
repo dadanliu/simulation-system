@@ -62,7 +62,11 @@ export function CommodityCreateForm() {
       return "商品价格必须大于 0";
     }
 
-    if (!form.stock || !Number.isInteger(Number(form.stock)) || Number(form.stock) < 0) {
+    if (
+      !form.stock ||
+      !Number.isInteger(Number(form.stock)) ||
+      Number(form.stock) < 0
+    ) {
       return "商品库存必须是非负整数";
     }
 
@@ -126,7 +130,9 @@ export function CommodityCreateForm() {
 
       setUploadedImage(data);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "图片上传失败，请稍后重试");
+      setErrorMessage(
+        error instanceof Error ? error.message : "图片上传失败，请稍后重试"
+      );
     } finally {
       setIsUploading(false);
     }
@@ -158,7 +164,9 @@ export function CommodityCreateForm() {
       // 创建成功后跳转详情页，便于立即确认新商品数据。
       router.push(`/present/commodity/${created.id}`);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "网络异常，请稍后重试");
+      setErrorMessage(
+        error instanceof Error ? error.message : "网络异常，请稍后重试"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -176,7 +184,8 @@ export function CommodityCreateForm() {
         />
       </label>
       <p className="form-hint">
-        限制：JPG、PNG、WEBP，最大 2MB。当前选择：{selectedFileName || "未选择文件"}
+        限制：JPG、PNG、WEBP，最大 2MB。当前选择：
+        {selectedFileName || "未选择文件"}
       </p>
       {isUploading ? <p className="form-hint">图片上传中...</p> : null}
       {uploadedImage ? (
@@ -237,7 +246,9 @@ export function CommodityCreateForm() {
         <span>状态 *</span>
         <select
           disabled={isSubmitting}
-          onChange={(event) => updateForm("status", event.target.value as CommodityStatus)}
+          onChange={(event) =>
+            updateForm("status", event.target.value as CommodityStatus)
+          }
           required
           value={form.status}
         >

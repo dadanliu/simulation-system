@@ -24,27 +24,57 @@ export class FileUrlService {
   private readonly thumbStaleWhileRevalidateSeconds: number;
 
   constructor(configService: ConfigService) {
-    this.publicBaseUrl = configService.get<string>("BFF_PUBLIC_BASE_URL", "http://localhost:3001").replace(/\/$/, "");
-    this.secret = configService.get<string>("FILE_URL_SIGNING_SECRET", "next-bff-dev-file-secret");
-    this.defaultTtlSeconds = Number(configService.get<string>("FILE_URL_TTL_SECONDS", "604800"));
-    this.detailMaxAgeSeconds = Number(configService.get<string>("FILE_CACHE_DETAIL_MAX_AGE_SECONDS", "31536000"));
+    this.publicBaseUrl = configService
+      .get<string>("BFF_PUBLIC_BASE_URL", "http://localhost:3001")
+      .replace(/\/$/, "");
+    this.secret = configService.get<string>(
+      "FILE_URL_SIGNING_SECRET",
+      "next-bff-dev-file-secret"
+    );
+    this.defaultTtlSeconds = Number(
+      configService.get<string>("FILE_URL_TTL_SECONDS", "604800")
+    );
+    this.detailMaxAgeSeconds = Number(
+      configService.get<string>("FILE_CACHE_DETAIL_MAX_AGE_SECONDS", "31536000")
+    );
     this.detailStaleWhileRevalidateSeconds = Number(
-      configService.get<string>("FILE_CACHE_DETAIL_STALE_WHILE_REVALIDATE_SECONDS", "86400")
+      configService.get<string>(
+        "FILE_CACHE_DETAIL_STALE_WHILE_REVALIDATE_SECONDS",
+        "86400"
+      )
     );
-    this.previewCacheMaxAgeSeconds = Number(configService.get<string>("FILE_CACHE_PREVIEW_MAX_AGE_SECONDS", "300"));
+    this.previewCacheMaxAgeSeconds = Number(
+      configService.get<string>("FILE_CACHE_PREVIEW_MAX_AGE_SECONDS", "300")
+    );
     this.previewCacheStaleWhileRevalidateSeconds = Number(
-      configService.get<string>("FILE_CACHE_PREVIEW_STALE_WHILE_REVALIDATE_SECONDS", "60")
+      configService.get<string>(
+        "FILE_CACHE_PREVIEW_STALE_WHILE_REVALIDATE_SECONDS",
+        "60"
+      )
     );
-    this.previewTtlSeconds = Number(configService.get<string>("FILE_PREVIEW_URL_TTL_SECONDS", "3600"));
-    this.thumbMaxAgeSeconds = Number(configService.get<string>("FILE_CACHE_THUMB_MAX_AGE_SECONDS", "31536000"));
+    this.previewTtlSeconds = Number(
+      configService.get<string>("FILE_PREVIEW_URL_TTL_SECONDS", "3600")
+    );
+    this.thumbMaxAgeSeconds = Number(
+      configService.get<string>("FILE_CACHE_THUMB_MAX_AGE_SECONDS", "31536000")
+    );
     this.thumbStaleWhileRevalidateSeconds = Number(
-      configService.get<string>("FILE_CACHE_THUMB_STALE_WHILE_REVALIDATE_SECONDS", "86400")
+      configService.get<string>(
+        "FILE_CACHE_THUMB_STALE_WHILE_REVALIDATE_SECONDS",
+        "86400"
+      )
     );
   }
 
   buildSignedUrl(input: SignedFileUrlInput) {
-    const expires = Math.floor(Date.now() / 1000) + this.getTtlSeconds(input.variant);
-    const signature = this.sign(input.fileId, input.variant, input.version, expires);
+    const expires =
+      Math.floor(Date.now() / 1000) + this.getTtlSeconds(input.variant);
+    const signature = this.sign(
+      input.fileId,
+      input.variant,
+      input.version,
+      expires
+    );
     const searchParams = new URLSearchParams({
       expires: String(expires),
       signature,
@@ -62,7 +92,12 @@ export class FileUrlService {
     v?: string;
     variant?: string;
   }) {
-    if (!input.signature || !input.expires || !input.v || !this.isVariant(input.variant)) {
+    if (
+      !input.signature ||
+      !input.expires ||
+      !input.v ||
+      !this.isVariant(input.variant)
+    ) {
       return null;
     }
 
@@ -102,9 +137,14 @@ export class FileUrlService {
 
     return {
       immutable: true,
-      maxAge: variant === "thumb" ? this.thumbMaxAgeSeconds : this.detailMaxAgeSeconds,
+      maxAge:
+        variant === "thumb"
+          ? this.thumbMaxAgeSeconds
+          : this.detailMaxAgeSeconds,
       staleWhileRevalidate:
-        variant === "thumb" ? this.thumbStaleWhileRevalidateSeconds : this.detailStaleWhileRevalidateSeconds
+        variant === "thumb"
+          ? this.thumbStaleWhileRevalidateSeconds
+          : this.detailStaleWhileRevalidateSeconds
     };
   }
 
@@ -113,10 +153,19 @@ export class FileUrlService {
   }
 
   private getTtlSeconds(variant: FileImageVariant) {
-    return variant === "preview" ? this.previewTtlSeconds : this.defaultTtlSeconds;
+    return variant === "preview"
+      ? this.previewTtlSeconds
+      : this.defaultTtlSeconds;
   }
 
-  private sign(fileId: string, variant: FileImageVariant, version: string, expires: number) {
-    return createHmac("sha256", this.secret).update(`${fileId}:${variant}:${version}:${expires}`).digest("hex");
+  private sign(
+    fileId: string,
+    variant: FileImageVariant,
+    version: string,
+    expires: number
+  ) {
+    return createHmac("sha256", this.secret)
+      .update(`${fileId}:${variant}:${version}:${expires}`)
+      .digest("hex");
   }
 }

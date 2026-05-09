@@ -40,7 +40,10 @@ export class UploadService {
     }
 
     const uploadedFile = file as UploadedMemoryFile;
-    const storedFile = await this.storageService.save(uploadedFile, scene?.trim() || "commodity");
+    const storedFile = await this.storageService.save(
+      uploadedFile,
+      scene?.trim() || "commodity"
+    );
     this.fileRegistryService.save(storedFile);
 
     return mockSuccess({

@@ -43,7 +43,10 @@ async function bootstrap() {
     })
   );
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(app.get(RequestLoggingInterceptor), app.get(SuccessResponseInterceptor));
+  app.useGlobalInterceptors(
+    app.get(RequestLoggingInterceptor),
+    app.get(SuccessResponseInterceptor)
+  );
   await app.listen(Number(configService.getOrThrow<string>("BFF_PORT")));
 }
 

@@ -212,11 +212,11 @@ apps/server
 
 当前内置用户：
 
-| username | password | roles |
-| --- | --- | --- |
-| `admin` | `admin123` | `["admin"]` |
+| username   | password      | roles          |
+| ---------- | ------------- | -------------- |
+| `admin`    | `admin123`    | `["admin"]`    |
 | `operator` | `operator123` | `["operator"]` |
-| `viewer` | `viewer123` | `["viewer"]` |
+| `viewer`   | `viewer123`   | `["viewer"]`   |
 
 用户绑定角色输入：
 
@@ -358,23 +358,23 @@ classDiagram
 
 当前权限点：
 
-| PermissionCode | 用途 |
-| --- | --- |
-| `commodity:read` | 商品列表、商品详情读取 |
-| `commodity:create` | 商品创建 |
-| `commodity:update` | 商品更新权限点，当前 BFF 先定义，后续接商品更新路由 |
-| `commodity:delete` | 商品删除权限点，当前 BFF 先定义，后续接商品删除路由 |
-| `user:manage` | 用户基础信息和用户角色绑定 |
-| `role:manage` | 角色基础信息和角色权限绑定 |
-| `permission:manage` | 权限点基础信息维护 |
+| PermissionCode      | 用途                                                |
+| ------------------- | --------------------------------------------------- |
+| `commodity:read`    | 商品列表、商品详情读取                              |
+| `commodity:create`  | 商品创建                                            |
+| `commodity:update`  | 商品更新权限点，当前 BFF 先定义，后续接商品更新路由 |
+| `commodity:delete`  | 商品删除权限点，当前 BFF 先定义，后续接商品删除路由 |
+| `user:manage`       | 用户基础信息和用户角色绑定                          |
+| `role:manage`       | 角色基础信息和角色权限绑定                          |
+| `permission:manage` | 权限点基础信息维护                                  |
 
 当前角色权限：
 
-| Role | Permissions |
-| --- | --- |
-| `admin` | 全部权限 |
+| Role       | Permissions                                              |
+| ---------- | -------------------------------------------------------- |
+| `admin`    | 全部权限                                                 |
 | `operator` | `commodity:read`、`commodity:create`、`commodity:update` |
-| `viewer` | `commodity:read` |
+| `viewer`   | `commodity:read`                                         |
 
 ---
 
@@ -591,15 +591,15 @@ commodity 解决: 商品业务入口和转发
 
 这个矩阵比文字更重要。看懂它，就看懂了 `admin` / `operator` / `viewer` 的差异。
 
-| 能力 | PermissionCode | admin | operator | viewer |
-| --- | --- | --- | --- | --- |
-| 看商品列表 / 详情 | `commodity:read` | yes | yes | yes |
-| 创建商品 | `commodity:create` | yes | yes | no |
-| 更新商品 | `commodity:update` | yes | yes | no |
-| 删除商品 | `commodity:delete` | yes | no | no |
-| 维护用户 | `user:manage` | yes | no | no |
-| 维护角色 | `role:manage` | yes | no | no |
-| 维护权限点 | `permission:manage` | yes | no | no |
+| 能力              | PermissionCode      | admin | operator | viewer |
+| ----------------- | ------------------- | ----- | -------- | ------ |
+| 看商品列表 / 详情 | `commodity:read`    | yes   | yes      | yes    |
+| 创建商品          | `commodity:create`  | yes   | yes      | no     |
+| 更新商品          | `commodity:update`  | yes   | yes      | no     |
+| 删除商品          | `commodity:delete`  | yes   | no       | no     |
+| 维护用户          | `user:manage`       | yes   | no       | no     |
+| 维护角色          | `role:manage`       | yes   | no       | no     |
+| 维护权限点        | `permission:manage` | yes   | no       | no     |
 
 所以你可以直接推导：
 

@@ -1,5 +1,11 @@
 import { clientApiRequest } from "../auth/client";
-import type { CreateUserInput, RolePermissionCode, RoleView, User, UserRole } from "./types";
+import type {
+  CreateUserInput,
+  RolePermissionCode,
+  RoleView,
+  User,
+  UserRole
+} from "./types";
 
 export async function createUser(input: CreateUserInput) {
   const { data } = await clientApiRequest<User>(
@@ -20,7 +26,11 @@ export async function createUser(input: CreateUserInput) {
   return data;
 }
 
-export async function bindUserRoles(id: string, roles: UserRole[], reason: string) {
+export async function bindUserRoles(
+  id: string,
+  roles: UserRole[],
+  reason: string
+) {
   const { data } = await clientApiRequest<User>(
     `/api/users/${encodeURIComponent(id)}/roles`,
     {
@@ -39,7 +49,11 @@ export async function bindUserRoles(id: string, roles: UserRole[], reason: strin
   return data;
 }
 
-export async function bindRolePermissions(code: string, permissions: RolePermissionCode[], reason: string) {
+export async function bindRolePermissions(
+  code: string,
+  permissions: RolePermissionCode[],
+  reason: string
+) {
   const { data } = await clientApiRequest<RoleView>(
     `/api/roles/${encodeURIComponent(code)}/permissions`,
     {

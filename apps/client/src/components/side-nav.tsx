@@ -18,7 +18,9 @@ export function SideNav({ currentUser }: SideNavProps) {
     }
 
     if (route.requiredPermissions?.length) {
-      return route.requiredPermissions.every((permission) => currentUser.permissions?.includes(permission));
+      return route.requiredPermissions.every((permission) =>
+        currentUser.permissions?.includes(permission)
+      );
     }
 
     return true;

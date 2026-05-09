@@ -10,7 +10,10 @@ export default function PresentNotFound() {
         <Link className="button" href="/present/commodity/list">
           返回商品列表
         </Link>
-        <Link className="button button--secondary" href="/present/commodity/create">
+        <Link
+          className="button button--secondary"
+          href="/present/commodity/create"
+        >
           去创建商品
         </Link>
       </div>

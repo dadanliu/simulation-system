@@ -5,7 +5,10 @@ import { RoleModule } from "../role/role.module";
 import { PermissionController } from "./permission.controller";
 import { PermissionsGuard } from "./permissions.guard";
 import { PermissionService } from "./permission.service";
-import { PermissionEntity, PermissionSchema } from "./schemas/permission.schema";
+import {
+  PermissionEntity,
+  PermissionSchema
+} from "./schemas/permission.schema";
 import { RoleEntity, RoleSchema } from "../role/schemas/role.schema";
 
 @Module({

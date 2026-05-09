@@ -20,7 +20,11 @@ export class CommodityService {
     private readonly auditLogService: AuditLogService
   ) {}
 
-  async listCommodities(request: Request, user: AuthUser, query: QueryCommodityListDto) {
+  async listCommodities(
+    request: Request,
+    user: AuthUser,
+    query: QueryCommodityListDto
+  ) {
     const searchParams = new URLSearchParams();
 
     // BFF 对外暴露 minPrice / maxPrice / page / pageSize 等前端友好的字段；
@@ -46,12 +50,18 @@ export class CommodityService {
       }
     }
 
-    const backendPath = searchParams.size ? `/api/commodity/list?${searchParams.toString()}` : "/api/commodity/list";
+    const backendPath = searchParams.size
+      ? `/api/commodity/list?${searchParams.toString()}`
+      : "/api/commodity/list";
 
-    const data = await this.apiClientService.request<CommodityListData>(request, backendPath, {
-      // BFF 将已登录用户上下文注入到后端请求里。
-      userId: user.id
-    });
+    const data = await this.apiClientService.request<CommodityListData>(
+      request,
+      backendPath,
+      {
+        // BFF 将已登录用户上下文注入到后端请求里。
+        userId: user.id
+      }
+    );
 
     return data;
   }
@@ -78,18 +88,30 @@ export class CommodityService {
     }
   }
 
-  async createCommodity(request: Request & { traceId?: string }, user: AuthUser, body: CreateCommodityDto) {
-    const commodity = await this.apiClientService.request<Commodity>(request, "/api/commodity/create", {
-      body: {
-        ...body,
-        createdBy: user.id
-      },
-      method: "POST",
-      // 创建接口同样带上当前登录用户，后端后续可用于审计和归属。
-      userId: user.id
-    });
+  async createCommodity(
+    request: Request & { traceId?: string },
+    user: AuthUser,
+    body: CreateCommodityDto
+  ) {
+    const commodity = await this.apiClientService.request<Commodity>(
+      request,
+      "/api/commodity/create",
+      {
+        body: {
+          ...body,
+          createdBy: user.id
+        },
+        method: "POST",
+        // 创建接口同样带上当前登录用户，后端后续可用于审计和归属。
+        userId: user.id
+      }
+    );
 
-    const auditLog = await this.auditLogService.recordCommodityCreate(user.id, commodity, request.traceId ?? "");
+    const auditLog = await this.auditLogService.recordCommodityCreate(
+      user.id,
+      commodity,
+      request.traceId ?? ""
+    );
 
     return {
       auditLog,
@@ -97,24 +119,28 @@ export class CommodityService {
     };
   }
 
-  async deleteCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string, body: DeleteCommodityDto) {
+  async deleteCommodity(
+    request: Request & { traceId?: string },
+    user: AuthUser,
+    id: string,
+    body: DeleteCommodityDto
+  ) {
     let data: {
       after: Commodity;
       before: Commodity;
     };
 
     try {
-      data = await this.apiClientService.request<{ after: Commodity; before: Commodity }>(
-        request,
-        `/api/commodity/${encodeURIComponent(id)}`,
-        {
-          body: {
-            deletedBy: user.id
-          },
-          method: "DELETE",
-          userId: user.id
-        }
-      );
+      data = await this.apiClientService.request<{
+        after: Commodity;
+        before: Commodity;
+      }>(request, `/api/commodity/${encodeURIComponent(id)}`, {
+        body: {
+          deletedBy: user.id
+        },
+        method: "DELETE",
+        userId: user.id
+      });
     } catch (error) {
       if (error instanceof BffBusinessException && error.code === 20001) {
         throw new NotFoundException("commodity not found");
@@ -150,14 +176,13 @@ export class CommodityService {
     };
 
     try {
-      data = await this.apiClientService.request<{ after: Commodity; before: Commodity }>(
-        request,
-        `/api/commodity/${encodeURIComponent(id)}/restore`,
-        {
-          method: "PATCH",
-          userId: user.id
-        }
-      );
+      data = await this.apiClientService.request<{
+        after: Commodity;
+        before: Commodity;
+      }>(request, `/api/commodity/${encodeURIComponent(id)}/restore`, {
+        method: "PATCH",
+        userId: user.id
+      });
     } catch (error) {
       if (error instanceof BffBusinessException && error.code === 20001) {
         throw new NotFoundException("commodity not found");
@@ -181,25 +206,29 @@ export class CommodityService {
     };
   }
 
-  async updateCommodity(request: Request & { traceId?: string }, user: AuthUser, id: string, body: UpdateCommodityDto) {
+  async updateCommodity(
+    request: Request & { traceId?: string },
+    user: AuthUser,
+    id: string,
+    body: UpdateCommodityDto
+  ) {
     let data: {
       after: Commodity;
       before: Commodity;
     };
 
     try {
-      data = await this.apiClientService.request<{ after: Commodity; before: Commodity }>(
-        request,
-        `/api/commodity/${encodeURIComponent(id)}`,
-        {
-          body: {
-            ...body,
-            updatedBy: user.id
-          },
-          method: "PATCH",
-          userId: user.id
-        }
-      );
+      data = await this.apiClientService.request<{
+        after: Commodity;
+        before: Commodity;
+      }>(request, `/api/commodity/${encodeURIComponent(id)}`, {
+        body: {
+          ...body,
+          updatedBy: user.id
+        },
+        method: "PATCH",
+        userId: user.id
+      });
     } catch (error) {
       if (error instanceof BffBusinessException && error.code === 20001) {
         throw new NotFoundException("commodity not found");
@@ -238,15 +267,14 @@ export class CommodityService {
     };
 
     try {
-      data = await this.apiClientService.request<{ after: Commodity; before: Commodity }>(
-        request,
-        `/api/commodity/${encodeURIComponent(id)}/status`,
-        {
-          body,
-          method: "PATCH",
-          userId: user.id
-        }
-      );
+      data = await this.apiClientService.request<{
+        after: Commodity;
+        before: Commodity;
+      }>(request, `/api/commodity/${encodeURIComponent(id)}/status`, {
+        body,
+        method: "PATCH",
+        userId: user.id
+      });
     } catch (error) {
       if (error instanceof BffBusinessException && error.code === 20001) {
         throw new NotFoundException("commodity not found");

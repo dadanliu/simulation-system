@@ -28,10 +28,17 @@ function redirectToLogin(nextPath: string) {
 
 function createTimeoutSignal(timeoutMs: number, upstreamSignal?: AbortSignal) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(new DOMException("Request timeout", "AbortError")), timeoutMs);
+  const timeoutId = setTimeout(
+    () => controller.abort(new DOMException("Request timeout", "AbortError")),
+    timeoutMs
+  );
 
   if (upstreamSignal) {
-    upstreamSignal.addEventListener("abort", () => controller.abort(upstreamSignal.reason), { once: true });
+    upstreamSignal.addEventListener(
+      "abort",
+      () => controller.abort(upstreamSignal.reason),
+      { once: true }
+    );
   }
 
   return {
@@ -79,14 +86,19 @@ export async function serverApiRequest<T>(
 ) {
   const cookie = await getCookieHeader();
   const upstreamSignal = options.init?.signal ?? undefined;
-  const { clear, signal } = createTimeoutSignal(options.timeoutMs ?? 8_000, upstreamSignal);
+  const { clear, signal } = createTimeoutSignal(
+    options.timeoutMs ?? 8_000,
+    upstreamSignal
+  );
 
   try {
     const response = await fetch(`${internalOrigin}${path}`, {
       ...options.init,
       cache: "no-store",
       headers: {
-        ...(options.init?.headers ? Object.fromEntries(new Headers(options.init.headers).entries()) : {}),
+        ...(options.init?.headers
+          ? Object.fromEntries(new Headers(options.init.headers).entries())
+          : {}),
         cookie
       },
       signal

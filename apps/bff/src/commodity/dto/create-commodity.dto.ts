@@ -1,5 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsEnum, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min
+} from "class-validator";
 
 enum CreateCommodityStatus {
   Offline = "offline",
@@ -23,7 +31,11 @@ export class CreateCommodityDto {
   @Min(0)
   stock!: number;
 
-  @ApiProperty({ description: "商品状态", enum: CreateCommodityStatus, example: CreateCommodityStatus.Pending })
+  @ApiProperty({
+    description: "商品状态",
+    enum: CreateCommodityStatus,
+    example: CreateCommodityStatus.Pending
+  })
   @IsEnum(CreateCommodityStatus)
   status!: CreateCommodityStatus;
 
@@ -32,12 +44,20 @@ export class CreateCommodityDto {
   @IsNotEmpty()
   description!: string;
 
-  @ApiProperty({ description: "商品图片文件ID", example: "upload_10001", required: false })
+  @ApiProperty({
+    description: "商品图片文件ID",
+    example: "upload_10001",
+    required: false
+  })
   @IsOptional()
   @IsString()
   imageFileId?: string;
 
-  @ApiProperty({ description: "商品图片访问地址", example: "/uploads/commodity/example.png", required: false })
+  @ApiProperty({
+    description: "商品图片访问地址",
+    example: "/uploads/commodity/example.png",
+    required: false
+  })
   @IsOptional()
   @IsString()
   imageUrl?: string;

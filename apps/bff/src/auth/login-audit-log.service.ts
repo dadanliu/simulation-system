@@ -2,7 +2,10 @@ import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { QueryLoginAuditLogDto } from "./dto/query-login-audit-log.dto";
-import { LoginAuditLogEntity, type LoginAuditLogDocument } from "./schemas/login-audit-log.schema";
+import {
+  LoginAuditLogEntity,
+  type LoginAuditLogDocument
+} from "./schemas/login-audit-log.schema";
 
 type LoginAuditContext = {
   ip?: string;
@@ -14,14 +17,23 @@ type LoginAuditOutcome = "blocked" | "failure" | "success";
 
 @Injectable()
 export class LoginAuditLogService {
-  constructor(@InjectModel(LoginAuditLogEntity.name) private readonly loginAuditLogModel: Model<LoginAuditLogDocument>) {}
+  constructor(
+    @InjectModel(LoginAuditLogEntity.name)
+    private readonly loginAuditLogModel: Model<LoginAuditLogDocument>
+  ) {}
 
   recordSuccess(username: string, userId: string, context: LoginAuditContext) {
     return this.createLog(username, userId, "success", context, null);
   }
 
   recordFailure(username: string, context: LoginAuditContext) {
-    return this.createLog(username, null, "failure", context, "invalid_credentials");
+    return this.createLog(
+      username,
+      null,
+      "failure",
+      context,
+      "invalid_credentials"
+    );
   }
 
   recordBlocked(username: string, context: LoginAuditContext) {

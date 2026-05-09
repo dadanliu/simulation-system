@@ -28,7 +28,10 @@ function listPids() {
         encoding: "utf8"
       }).trim();
 
-      for (const pid of output.split("\n").map((value) => value.trim()).filter(Boolean)) {
+      for (const pid of output
+        .split("\n")
+        .map((value) => value.trim())
+        .filter(Boolean)) {
         pids.add(pid);
       }
     } catch (error) {

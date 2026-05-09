@@ -39,7 +39,11 @@ describe("AuditLogService", () => {
     });
     const service = new AuditLogService({ create } as never);
 
-    const result = await service.recordCommodityCreate("u_admin_001", commodity, "trace-create");
+    const result = await service.recordCommodityCreate(
+      "u_admin_001",
+      commodity,
+      "trace-create"
+    );
 
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({

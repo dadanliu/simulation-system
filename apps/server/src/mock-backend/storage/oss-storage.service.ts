@@ -12,19 +12,32 @@ export class OssStorageService implements StorageService {
     private readonly fileRegistryService: FileRegistryService
   ) {}
 
-  async save(file: UploadedMemoryFile, scene: StorageScene): Promise<StoredFile> {
-    const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+  async save(
+    file: UploadedMemoryFile,
+    scene: StorageScene
+  ): Promise<StoredFile> {
+    const sanitizedFilename = file.originalname.replace(
+      /[^a-zA-Z0-9._-]/g,
+      "_"
+    );
     const fileId = `oss_${randomUUID()}`;
-    const keyPrefix = this.configService.get<string>("OSS_KEY_PREFIX", "uploads").replace(/^\/|\/$/g, "");
+    const keyPrefix = this.configService
+      .get<string>("OSS_KEY_PREFIX", "uploads")
+      .replace(/^\/|\/$/g, "");
     const key = `${keyPrefix}/${scene}/${fileId}-${sanitizedFilename}`;
     const bucket = this.configService.getOrThrow<string>("OSS_BUCKET");
     const region = this.configService.getOrThrow<string>("OSS_REGION");
-    const accessKeyId = this.configService.getOrThrow<string>("OSS_ACCESS_KEY_ID");
-    const accessKeySecret = this.configService.getOrThrow<string>("OSS_ACCESS_KEY_SECRET");
+    const accessKeyId =
+      this.configService.getOrThrow<string>("OSS_ACCESS_KEY_ID");
+    const accessKeySecret = this.configService.getOrThrow<string>(
+      "OSS_ACCESS_KEY_SECRET"
+    );
     const publicBaseUrl =
-      this.configService.get<string>("OSS_PUBLIC_BASE_URL") ?? `https://${bucket}.${region}.aliyuncs.com`;
+      this.configService.get<string>("OSS_PUBLIC_BASE_URL") ??
+      `https://${bucket}.${region}.aliyuncs.com`;
     const uploadBaseUrl =
-      this.configService.get<string>("OSS_UPLOAD_BASE_URL") ?? `https://${bucket}.${region}.aliyuncs.com`;
+      this.configService.get<string>("OSS_UPLOAD_BASE_URL") ??
+      `https://${bucket}.${region}.aliyuncs.com`;
 
     await this.putObject(`${uploadBaseUrl.replace(/\/$/, "")}/${key}`, file, {
       accessKeyId,
@@ -54,16 +67,23 @@ export class OssStorageService implements StorageService {
 
     const bucket = this.configService.getOrThrow<string>("OSS_BUCKET");
     const region = this.configService.getOrThrow<string>("OSS_REGION");
-    const accessKeyId = this.configService.getOrThrow<string>("OSS_ACCESS_KEY_ID");
-    const accessKeySecret = this.configService.getOrThrow<string>("OSS_ACCESS_KEY_SECRET");
+    const accessKeyId =
+      this.configService.getOrThrow<string>("OSS_ACCESS_KEY_ID");
+    const accessKeySecret = this.configService.getOrThrow<string>(
+      "OSS_ACCESS_KEY_SECRET"
+    );
     const fetchBaseUrl =
-      this.configService.get<string>("OSS_UPLOAD_BASE_URL") ?? `https://${bucket}.${region}.aliyuncs.com`;
-    const response = await this.fetchObject(`${fetchBaseUrl.replace(/\/$/, "")}/${storedFile.key}`, {
-      accessKeyId,
-      accessKeySecret,
-      bucket,
-      key: storedFile.key
-    });
+      this.configService.get<string>("OSS_UPLOAD_BASE_URL") ??
+      `https://${bucket}.${region}.aliyuncs.com`;
+    const response = await this.fetchObject(
+      `${fetchBaseUrl.replace(/\/$/, "")}/${storedFile.key}`,
+      {
+        accessKeyId,
+        accessKeySecret,
+        bucket,
+        key: storedFile.key
+      }
+    );
 
     return {
       body: Buffer.from(await response.arrayBuffer()),
@@ -84,8 +104,16 @@ export class OssStorageService implements StorageService {
   ) {
     const date = new Date().toUTCString();
     const canonicalResource = `/${credentials.bucket}/${credentials.key}`;
-    const stringToSign = ["PUT", "", file.mimetype, date, canonicalResource].join("\n");
-    const signature = createHmac("sha1", credentials.accessKeySecret).update(stringToSign).digest("base64");
+    const stringToSign = [
+      "PUT",
+      "",
+      file.mimetype,
+      date,
+      canonicalResource
+    ].join("\n");
+    const signature = createHmac("sha1", credentials.accessKeySecret)
+      .update(stringToSign)
+      .digest("base64");
     const response = await fetch(url, {
       body: new Uint8Array(file.buffer),
       headers: {
@@ -113,7 +141,9 @@ export class OssStorageService implements StorageService {
     const date = new Date().toUTCString();
     const canonicalResource = `/${credentials.bucket}/${credentials.key}`;
     const stringToSign = ["GET", "", "", date, canonicalResource].join("\n");
-    const signature = createHmac("sha1", credentials.accessKeySecret).update(stringToSign).digest("base64");
+    const signature = createHmac("sha1", credentials.accessKeySecret)
+      .update(stringToSign)
+      .digest("base64");
     const response = await fetch(url, {
       headers: {
         Authorization: `OSS ${credentials.accessKeyId}:${signature}`,

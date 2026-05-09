@@ -4,7 +4,10 @@ import { UserService } from "../user/user.service";
 import { getSessionIdFromRequest } from "./session-cookie";
 import { LoginAuditLogService } from "./login-audit-log.service";
 import { LoginRiskService } from "./login-risk.service";
-import { SessionStoreService, type SessionDevice } from "./session-store.service";
+import {
+  SessionStoreService,
+  type SessionDevice
+} from "./session-store.service";
 import { QueryLoginAuditLogDto } from "./dto/query-login-audit-log.dto";
 
 type LoginContext = SessionDevice & {
@@ -29,11 +32,17 @@ export class AuthService {
         username: normalizedUsername
       });
     } catch (error) {
-      await this.loginAuditLogService.recordBlocked(normalizedUsername, context);
+      await this.loginAuditLogService.recordBlocked(
+        normalizedUsername,
+        context
+      );
       throw error;
     }
 
-    const user = await this.userService.findUserByCredentials(normalizedUsername, password);
+    const user = await this.userService.findUserByCredentials(
+      normalizedUsername,
+      password
+    );
 
     if (!user) {
       try {
@@ -43,11 +52,17 @@ export class AuthService {
         });
       } catch (error) {
         if (this.loginRiskService.isRateLimitError(error)) {
-          await this.loginAuditLogService.recordBlocked(normalizedUsername, context);
+          await this.loginAuditLogService.recordBlocked(
+            normalizedUsername,
+            context
+          );
           throw error;
         }
 
-        await this.loginAuditLogService.recordFailure(normalizedUsername, context);
+        await this.loginAuditLogService.recordFailure(
+          normalizedUsername,
+          context
+        );
         throw error;
       }
 
@@ -58,8 +73,15 @@ export class AuthService {
       ip: context.ip ?? "",
       username: normalizedUsername
     });
-    await this.loginAuditLogService.recordSuccess(normalizedUsername, user.id, context);
-    const sessionId = await this.sessionStoreService.createSession(user.id, context);
+    await this.loginAuditLogService.recordSuccess(
+      normalizedUsername,
+      user.id,
+      context
+    );
+    const sessionId = await this.sessionStoreService.createSession(
+      user.id,
+      context
+    );
 
     return {
       user,

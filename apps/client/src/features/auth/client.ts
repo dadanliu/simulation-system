@@ -74,15 +74,26 @@ function redirectToLogin() {
 }
 
 function buildUrlString(input: RequestInfo | URL) {
-  return typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+  return typeof input === "string"
+    ? input
+    : input instanceof URL
+      ? input.toString()
+      : input.url;
 }
 
 function createTimeoutSignal(timeoutMs: number, upstreamSignal?: AbortSignal) {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(new DOMException("Request timeout", "AbortError")), timeoutMs);
+  const timeoutId = window.setTimeout(
+    () => controller.abort(new DOMException("Request timeout", "AbortError")),
+    timeoutMs
+  );
 
   if (upstreamSignal) {
-    upstreamSignal.addEventListener("abort", () => controller.abort(upstreamSignal.reason), { once: true });
+    upstreamSignal.addEventListener(
+      "abort",
+      () => controller.abort(upstreamSignal.reason),
+      { once: true }
+    );
   }
 
   return {
@@ -145,7 +156,9 @@ export async function ensureCsrfToken() {
     cache: "no-store",
     credentials: "same-origin"
   });
-  const payload = (await response.json().catch(() => null)) as CsrfResponse | null;
+  const payload = (await response
+    .json()
+    .catch(() => null)) as CsrfResponse | null;
 
   if (!response.ok || !payload?.success) {
     throw new Error(payload?.message ?? "获取 CSRF token 失败");
@@ -219,7 +232,10 @@ export async function clientApiRequest<T>(
 
       if (!response.ok || !envelope?.success || envelope.data === undefined) {
         throw new ClientApiError(
-          envelope?.message || rawText || options.fallbackMessage || `Request failed with status ${response.status}`,
+          envelope?.message ||
+            rawText ||
+            options.fallbackMessage ||
+            `Request failed with status ${response.status}`,
           {
             category: "http",
             status: envelope?.statusCode ?? response.status,
@@ -271,10 +287,13 @@ export async function clientApiRequest<T>(
         throw timeoutError;
       }
 
-      const networkError = new ClientApiError(options.fallbackMessage || "网络异常，请稍后重试", {
-        category: "network",
-        url
-      });
+      const networkError = new ClientApiError(
+        options.fallbackMessage || "网络异常，请稍后重试",
+        {
+          category: "network",
+          url
+        }
+      );
 
       if (attempt < retries) {
         await sleep(300 * (attempt + 1));

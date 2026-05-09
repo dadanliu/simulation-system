@@ -15,7 +15,10 @@ export type HighRiskOperationPolicy = {
   requiresSecondConfirmation: boolean;
 };
 
-export const highRiskOperationPolicies: Record<HighRiskOperationCode, HighRiskOperationPolicy> = {
+export const highRiskOperationPolicies: Record<
+  HighRiskOperationCode,
+  HighRiskOperationPolicy
+> = {
   "commodity.delete": {
     approvalReserved: true,
     code: "commodity.delete",
@@ -54,5 +57,7 @@ export const highRiskOperationPolicies: Record<HighRiskOperationCode, HighRiskOp
 };
 
 export function listApprovalFlowCandidates() {
-  return Object.values(highRiskOperationPolicies).filter((policy) => policy.approvalReserved);
+  return Object.values(highRiskOperationPolicies).filter(
+    (policy) => policy.approvalReserved
+  );
 }

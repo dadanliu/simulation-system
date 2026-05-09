@@ -1,5 +1,10 @@
 import { Injectable } from "@nestjs/common";
-import { BackendRequestException, BffBusinessException, BffSystemException, type BackendEnvelope } from "./errors";
+import {
+  BackendRequestException,
+  BffBusinessException,
+  BffSystemException,
+  type BackendEnvelope
+} from "./errors";
 
 @Injectable()
 export class ResponseHandlerService {
@@ -13,11 +18,17 @@ export class ResponseHandlerService {
     }
 
     if (this.isBusinessErrorEnvelope(payload)) {
-      throw new BffBusinessException(payload.message ?? payload.error ?? "Backend business error", payload.code);
+      throw new BffBusinessException(
+        payload.message ?? payload.error ?? "Backend business error",
+        payload.code
+      );
     }
 
     if (this.isErrnoBusinessErrorEnvelope(payload)) {
-      throw new BffBusinessException(payload.errmsg ?? "Backend business error", payload.errno);
+      throw new BffBusinessException(
+        payload.errmsg ?? "Backend business error",
+        payload.errno
+      );
     }
 
     throw new BffSystemException("Unexpected backend response");
@@ -25,14 +36,18 @@ export class ResponseHandlerService {
 
   async handleFetchResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
-      throw new BackendRequestException(`Backend request failed with status ${response.status}`);
+      throw new BackendRequestException(
+        `Backend request failed with status ${response.status}`
+      );
     }
 
     const payload = (await response.json()) as BackendEnvelope<T>;
     return this.unwrap(payload);
   }
 
-  private isSuccessEnvelope<T>(payload: BackendEnvelope<T>): payload is Extract<BackendEnvelope<T>, { success: true }> {
+  private isSuccessEnvelope<T>(
+    payload: BackendEnvelope<T>
+  ): payload is Extract<BackendEnvelope<T>, { success: true }> {
     return "success" in payload && payload.success === true;
   }
 
@@ -42,7 +57,9 @@ export class ResponseHandlerService {
     return "success" in payload && payload.success === false;
   }
 
-  private isErrnoSuccessEnvelope<T>(payload: BackendEnvelope<T>): payload is Extract<BackendEnvelope<T>, { errno: 0 }> {
+  private isErrnoSuccessEnvelope<T>(
+    payload: BackendEnvelope<T>
+  ): payload is Extract<BackendEnvelope<T>, { errno: 0 }> {
     return "errno" in payload && payload.errno === 0;
   }
 

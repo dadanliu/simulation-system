@@ -33,7 +33,8 @@ export class LoginAuditLogEntity {
   reason!: string | null;
 }
 
-export const LoginAuditLogSchema = SchemaFactory.createForClass(LoginAuditLogEntity);
+export const LoginAuditLogSchema =
+  SchemaFactory.createForClass(LoginAuditLogEntity);
 
 LoginAuditLogSchema.index({ username: 1, createdAt: -1 });
 LoginAuditLogSchema.index({ userId: 1, createdAt: -1 });

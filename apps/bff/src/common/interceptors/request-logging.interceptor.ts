@@ -1,5 +1,11 @@
-import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from "@nestjs/common";
+import {
+  CallHandler,
+  ExecutionContext,
+  Injectable,
+  NestInterceptor
+} from "@nestjs/common";
 import { tap, type Observable } from "rxjs";
+import { writeStructuredLog } from "../logging/structured-log";
 
 type RequestWithTraceId = {
   method?: string;
@@ -14,8 +20,6 @@ type ResponseWithStatusCode = {
 
 @Injectable()
 export class RequestLoggingInterceptor implements NestInterceptor {
-  private readonly logger = new Logger(RequestLoggingInterceptor.name);
-
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const http = context.switchToHttp();
     const request = http.getRequest<RequestWithTraceId>();
@@ -30,9 +34,18 @@ export class RequestLoggingInterceptor implements NestInterceptor {
         const statusCode = response.statusCode ?? 200;
         const traceId = request.traceId ?? "";
 
-        this.logger.log(
-          `request completed method=${method} path=${path} status=${statusCode} durationMs=${durationMs} traceId=${traceId}`
-        );
+        writeStructuredLog({
+          context: RequestLoggingInterceptor.name,
+          event: "http_request_completed",
+          fields: {
+            durationMs,
+            method,
+            path,
+            status: statusCode,
+            traceId
+          },
+          level: "info"
+        });
       })
     );
   }

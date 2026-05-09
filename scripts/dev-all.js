@@ -127,7 +127,10 @@ function prefixLine(serviceName, line) {
 }
 
 function printAccessInfo() {
-  if (printedAccessInfo || services.some((service) => !readyServices.has(service.name))) {
+  if (
+    printedAccessInfo ||
+    services.some((service) => !readyServices.has(service.name))
+  ) {
     return;
   }
 
@@ -135,11 +138,21 @@ function printAccessInfo() {
 
   console.log("");
   console.log("Dev services are ready:");
-  console.log(`- client: ${services.find((service) => service.name === "client").url}`);
-  console.log(`- bff:    ${services.find((service) => service.name === "bff").url}`);
-  console.log(`- server: ${services.find((service) => service.name === "server").url}`);
-  console.log(`- mongo:  ${services.find((service) => service.name === "mongo").url}`);
-  console.log(`- redis:  ${services.find((service) => service.name === "redis").url}`);
+  console.log(
+    `- client: ${services.find((service) => service.name === "client").url}`
+  );
+  console.log(
+    `- bff:    ${services.find((service) => service.name === "bff").url}`
+  );
+  console.log(
+    `- server: ${services.find((service) => service.name === "server").url}`
+  );
+  console.log(
+    `- mongo:  ${services.find((service) => service.name === "mongo").url}`
+  );
+  console.log(
+    `- redis:  ${services.find((service) => service.name === "redis").url}`
+  );
   console.log("");
 }
 
@@ -198,7 +211,9 @@ async function assertAppPortsAvailable() {
   }
 
   if (occupied.length > 0) {
-    throw new Error(`Ports already in use (${occupied.join(", ")}). Run pnpm stop:all and retry pnpm dev:all.`);
+    throw new Error(
+      `Ports already in use (${occupied.join(", ")}). Run pnpm stop:all and retry pnpm dev:all.`
+    );
   }
 }
 
@@ -233,7 +248,9 @@ async function waitForHealth(service) {
     await wait(500);
   }
 
-  throw new Error(`[${service.name}] did not pass health check at ${service.healthUrl} within ${READY_TIMEOUT_MS}ms`);
+  throw new Error(
+    `[${service.name}] did not pass health check at ${service.healthUrl} within ${READY_TIMEOUT_MS}ms`
+  );
 }
 
 function stopChildren(signal = "SIGTERM") {
@@ -253,13 +270,17 @@ function stopChildren(signal = "SIGTERM") {
 }
 
 function spawnService(service) {
-  return spawn(service.command ?? "pnpm", service.args ?? ["--filter", service.packageName, "dev"], {
-    env: {
-      ...process.env,
-      ...service.env
-    },
-    stdio: ["inherit", "pipe", "pipe"]
-  });
+  return spawn(
+    service.command ?? "pnpm",
+    service.args ?? ["--filter", service.packageName, "dev"],
+    {
+      env: {
+        ...process.env,
+        ...service.env
+      },
+      stdio: ["inherit", "pipe", "pipe"]
+    }
+  );
 }
 
 function startServiceAndWait(service) {
@@ -297,7 +318,9 @@ function startServiceAndWait(service) {
       const reason = signal ? `signal ${signal}` : `code ${code}`;
 
       if (!isReady) {
-        reject(new Error(`[${service.name}] exited before ready with ${reason}`));
+        reject(
+          new Error(`[${service.name}] exited before ready with ${reason}`)
+        );
         return;
       }
 

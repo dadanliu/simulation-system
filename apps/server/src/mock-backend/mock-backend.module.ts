@@ -14,7 +14,12 @@ import { UploadService } from "./upload.service";
 import { UsersService } from "./users.service";
 
 @Module({
-  imports: [ConfigModule, MongooseModule.forFeature([{ name: Commodity.name, schema: CommoditySchema }])],
+  imports: [
+    ConfigModule,
+    MongooseModule.forFeature([
+      { name: Commodity.name, schema: CommoditySchema }
+    ])
+  ],
   controllers: [MockBackendController],
   providers: [
     MockBackendService,
@@ -25,7 +30,12 @@ import { UsersService } from "./users.service";
     S3StorageService,
     OssStorageService,
     {
-      inject: [ConfigService, LocalStorageService, S3StorageService, OssStorageService],
+      inject: [
+        ConfigService,
+        LocalStorageService,
+        S3StorageService,
+        OssStorageService
+      ],
       provide: STORAGE_SERVICE,
       useFactory: (
         configService: ConfigService,
@@ -33,7 +43,8 @@ import { UsersService } from "./users.service";
         s3StorageService: S3StorageService,
         ossStorageService: OssStorageService
       ) => {
-        const storageDriver = configService.getOrThrow<string>("STORAGE_DRIVER");
+        const storageDriver =
+          configService.getOrThrow<string>("STORAGE_DRIVER");
 
         if (storageDriver === "s3") {
           return s3StorageService;

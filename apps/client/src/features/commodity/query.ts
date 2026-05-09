@@ -13,8 +13,18 @@ const DEFAULT_PAGE = 1;
 const DEFAULT_PAGE_SIZE = 10;
 const DEFAULT_SORT_BY: CommodityListSortBy = "createdAt";
 const DEFAULT_SORT_ORDER: CommodityListSortOrder = "desc";
-const VALID_STATUSES = new Set<CommodityStatus>(["on_sale", "pending", "offline"]);
-const VALID_SORT_BY = new Set<CommodityListSortBy>(["createdAt", "name", "price", "status", "stock"]);
+const VALID_STATUSES = new Set<CommodityStatus>([
+  "on_sale",
+  "pending",
+  "offline"
+]);
+const VALID_SORT_BY = new Set<CommodityListSortBy>([
+  "createdAt",
+  "name",
+  "price",
+  "status",
+  "stock"
+]);
 const VALID_SORT_ORDER = new Set<CommodityListSortOrder>(["asc", "desc"]);
 const KNOWN_QUERY_KEYS = [
   "createdFrom",
@@ -42,12 +52,16 @@ function parsePositiveInteger(value: SearchParamValue, fallback: number) {
 
 function parseStatus(value: SearchParamValue): CommodityStatus | "" {
   const status = firstSearchParam(value);
-  return status && VALID_STATUSES.has(status as CommodityStatus) ? (status as CommodityStatus) : "";
+  return status && VALID_STATUSES.has(status as CommodityStatus)
+    ? (status as CommodityStatus)
+    : "";
 }
 
 function parseSortBy(value: SearchParamValue): CommodityListSortBy {
   const sortBy = firstSearchParam(value);
-  return sortBy && VALID_SORT_BY.has(sortBy as CommodityListSortBy) ? (sortBy as CommodityListSortBy) : DEFAULT_SORT_BY;
+  return sortBy && VALID_SORT_BY.has(sortBy as CommodityListSortBy)
+    ? (sortBy as CommodityListSortBy)
+    : DEFAULT_SORT_BY;
 }
 
 function parseSortOrder(value: SearchParamValue): CommodityListSortOrder {
@@ -61,7 +75,9 @@ function readString(value: SearchParamValue) {
   return firstSearchParam(value)?.trim() ?? "";
 }
 
-export function readCommodityListFilters(searchParams: CommoditySearchParams): CommodityListFilters {
+export function readCommodityListFilters(
+  searchParams: CommoditySearchParams
+): CommodityListFilters {
   return {
     createdFrom: readString(searchParams.createdFrom),
     createdTo: readString(searchParams.createdTo),
@@ -122,7 +138,9 @@ export function buildCommodityListSearchParams(filters: CommodityListFilters) {
   return query;
 }
 
-export function buildCommodityListRequestSearchParams(searchParams: CommoditySearchParams) {
+export function buildCommodityListRequestSearchParams(
+  searchParams: CommoditySearchParams
+) {
   const query = new URLSearchParams();
 
   for (const key of KNOWN_QUERY_KEYS) {

@@ -1,6 +1,16 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from "@nestjs/common";
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  HttpException,
+  HttpStatus
+} from "@nestjs/common";
 import type { Request, Response } from "express";
 import { resolveTraceId } from "../http/trace-id";
+import {
+  getErrorLogFields,
+  writeStructuredLog
+} from "../logging/structured-log";
 
 type HttpExceptionPayload = {
   message?: string | string[];
@@ -12,11 +22,11 @@ function isHttpExceptionPayload(value: unknown): value is HttpExceptionPayload {
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(HttpExceptionFilter.name);
-
   catch(exception: unknown, host: ArgumentsHost) {
     const context = host.switchToHttp();
-    const request = context.getRequest<Request & { requestStartedAt?: number; traceId?: string }>();
+    const request = context.getRequest<
+      Request & { requestStartedAt?: number; traceId?: string }
+    >();
     const response = context.getResponse<Response>();
     const traceId = request.traceId ?? resolveTraceId(request);
     const path = request.originalUrl ?? request.url;
@@ -32,12 +42,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
           : isHttpExceptionPayload(payload)
             ? Array.isArray(payload.message)
               ? payload.message.join(", ")
-              : payload.message ?? exception.message
+              : (payload.message ?? exception.message)
             : exception.message;
 
-      this.logger.warn(
-        `request failed method=${method} path=${path} status=${status} durationMs=${durationMs} traceId=${traceId} message=${message}`
-      );
+      writeStructuredLog({
+        context: HttpExceptionFilter.name,
+        event: "http_request_failed",
+        fields: {
+          durationMs,
+          method,
+          path,
+          status,
+          traceId,
+          ...getErrorLogFields(exception)
+        },
+        level: "warn",
+        message
+      });
       response.status(status).json({
         success: false,
         message,
@@ -50,14 +71,37 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (exception instanceof Error) {
-      this.logger.error(
-        `request failed method=${method} path=${path} status=500 durationMs=${durationMs} traceId=${traceId} error=${exception.name}: ${exception.message}`,
-        exception.stack
-      );
+      writeStructuredLog({
+        context: HttpExceptionFilter.name,
+        event: "http_request_failed",
+        fields: {
+          durationMs,
+          method,
+          path,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          traceId,
+          ...getErrorLogFields(exception)
+        },
+        level: "error",
+        message: exception.message
+      });
     } else {
-      this.logger.error(
-        `request failed method=${method} path=${path} status=500 durationMs=${durationMs} traceId=${traceId} error=${JSON.stringify(exception)}`
-      );
+      const errorFields = getErrorLogFields(exception);
+
+      writeStructuredLog({
+        context: HttpExceptionFilter.name,
+        event: "http_request_failed",
+        fields: {
+          durationMs,
+          method,
+          path,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          traceId,
+          ...errorFields
+        },
+        level: "error",
+        message: errorFields.errorMessage
+      });
     }
 
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({

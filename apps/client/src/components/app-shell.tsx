@@ -15,7 +15,11 @@ export function AppShell({ children, currentUser }: AppShellProps) {
     <div className="page-shell">
       <SideNav currentUser={currentUser} />
       <main className="main-panel">
-        <TopBar appEnv={appEnv} currentUser={currentUser} showEnvBadge={showEnvBadge} />
+        <TopBar
+          appEnv={appEnv}
+          currentUser={currentUser}
+          showEnvBadge={showEnvBadge}
+        />
         {children}
       </main>
     </div>

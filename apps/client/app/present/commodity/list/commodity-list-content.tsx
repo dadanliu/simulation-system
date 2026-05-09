@@ -27,8 +27,11 @@ const sortLabel = {
   stock: "库存"
 };
 
-export async function CommodityListContent({ searchParams }: CommodityListContentProps) {
-  const { filters, list, pagination, totalPages } = await getCommodityListPageData(searchParams);
+export async function CommodityListContent({
+  searchParams
+}: CommodityListContentProps) {
+  const { filters, list, pagination, totalPages } =
+    await getCommodityListPageData(searchParams);
 
   return (
     <section className="stack">
@@ -56,7 +59,10 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
       <section className="panel stack">
         <div>
           <h2>商品列表</h2>
-          <p>首屏数据由独立 Server Component 获取并渲染，筛选与分页交互交给 Client Component。</p>
+          <p>
+            首屏数据由独立 Server Component 获取并渲染，筛选与分页交互交给
+            Client Component。
+          </p>
         </div>
 
         <CommodityListFiltersPanel filters={filters} />
@@ -73,7 +79,9 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
         {list.length === 0 ? (
           <div className="empty-state">
             <p className="card__label">暂无商品</p>
-            <p>当前筛选条件没有匹配结果，可以放宽关键词、状态、价格、库存或时间范围。</p>
+            <p>
+              当前筛选条件没有匹配结果，可以放宽关键词、状态、价格、库存或时间范围。
+            </p>
           </div>
         ) : (
           <table className="data-table">
@@ -102,7 +110,10 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
                   </td>
                   <td>{commodity.id}</td>
                   <td>
-                    <Link className="table-link" href={`/present/commodity/${commodity.id}`}>
+                    <Link
+                      className="table-link"
+                      href={`/present/commodity/${commodity.id}`}
+                    >
                       {commodity.name}
                     </Link>
                   </td>
@@ -115,7 +126,11 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
           </table>
         )}
 
-        <CommodityListPagination currentPage={pagination.page} filters={filters} totalPages={totalPages} />
+        <CommodityListPagination
+          currentPage={pagination.page}
+          filters={filters}
+          totalPages={totalPages}
+        />
       </section>
     </section>
   );

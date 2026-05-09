@@ -20,13 +20,17 @@ const statusLabel: Record<CommodityStatus, string> = {
 
 export const dynamic = "force-dynamic";
 
-export default async function CommodityDetailPage({ params }: CommodityDetailPageProps) {
+export default async function CommodityDetailPage({
+  params
+}: CommodityDetailPageProps) {
   const { id } = await params;
   const [commodity, currentUser] = await Promise.all([
     getCommodityDetail(id),
     getCurrentUser(`/present/commodity/${encodeURIComponent(id)}`)
   ]);
-  const canUpdateCommodity = currentUser.roles.some((role) => role === "admin" || role === "operator");
+  const canUpdateCommodity = currentUser.roles.some(
+    (role) => role === "admin" || role === "operator"
+  );
   const canDeleteCommodity = currentUser.roles.includes("admin");
 
   return (
@@ -34,14 +38,20 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
       <div>
         <p className="badge">Dynamic Route</p>
         <h2>商品详情页</h2>
-        <p>详情页通过商品数据访问层读取领域数据，无效 ID 会进入当前路由的错误边界。</p>
+        <p>
+          详情页通过商品数据访问层读取领域数据，无效 ID
+          会进入当前路由的错误边界。
+        </p>
       </div>
 
       <div className="inline-actions">
         <Link className="button" href="/present/commodity/list">
           返回商品列表
         </Link>
-        <Link className="button button--secondary" href="/present/commodity/create">
+        <Link
+          className="button button--secondary"
+          href="/present/commodity/create"
+        >
           去创建商品
         </Link>
       </div>
@@ -78,7 +88,8 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
         />
         <h3>{commodity.name}</h3>
         <p>
-          当前商品处于「{statusLabel[commodity.status]}」状态，库存数量为 {commodity.stock}。
+          当前商品处于「{statusLabel[commodity.status]}」状态，库存数量为{" "}
+          {commodity.stock}。
         </p>
         {commodity.description ? <p>{commodity.description}</p> : null}
       </article>
@@ -88,7 +99,10 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
           <div>
             <p className="badge">Editable</p>
             <h3>编辑商品基础信息</h3>
-            <p>admin 和 operator 可以编辑名称、价格、库存、描述和商品图片，提交后会写入审计日志。</p>
+            <p>
+              admin 和 operator
+              可以编辑名称、价格、库存、描述和商品图片，提交后会写入审计日志。
+            </p>
           </div>
           <CommodityEditForm commodity={commodity} />
         </section>
@@ -99,13 +113,24 @@ export default async function CommodityDetailPage({ params }: CommodityDetailPag
           <div>
             <p className="badge">Audit Trail</p>
             <h3>商品状态变更</h3>
-            <p>operator 可以在这里完成审核上架或下架，提交后 BFF 会同步写入审计日志。</p>
+            <p>
+              operator 可以在这里完成审核上架或下架，提交后 BFF
+              会同步写入审计日志。
+            </p>
           </div>
-          <CommodityStatusForm commodityId={commodity.id} currentStatus={commodity.status} />
+          <CommodityStatusForm
+            commodityId={commodity.id}
+            currentStatus={commodity.status}
+          />
         </section>
       ) : null}
 
-      {canDeleteCommodity ? <CommodityDeleteForm commodityId={commodity.id} commodityName={commodity.name} /> : null}
+      {canDeleteCommodity ? (
+        <CommodityDeleteForm
+          commodityId={commodity.id}
+          commodityName={commodity.name}
+        />
+      ) : null}
     </section>
   );
 }

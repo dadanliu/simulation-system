@@ -25,9 +25,12 @@ export function parseCookies(cookieHeader = "") {
 }
 
 export function getCsrfTokenFromRequest(request: Request) {
-  const cookieToken = parseCookies(request.headers.cookie)[CSRF_COOKIE_NAME] ?? "";
+  const cookieToken =
+    parseCookies(request.headers.cookie)[CSRF_COOKIE_NAME] ?? "";
   const headerValue = request.headers[CSRF_HEADER_NAME];
-  const headerToken = Array.isArray(headerValue) ? headerValue[0] ?? "" : headerValue ?? "";
+  const headerToken = Array.isArray(headerValue)
+    ? (headerValue[0] ?? "")
+    : (headerValue ?? "");
 
   return {
     cookieToken,
@@ -35,8 +38,15 @@ export function getCsrfTokenFromRequest(request: Request) {
   };
 }
 
-export function createCsrfCookie(token: string, options: CsrfCookieOptions = {}) {
-  const cookieParts = [`${CSRF_COOKIE_NAME}=${encodeURIComponent(token)}`, "Path=/", "SameSite=Lax"];
+export function createCsrfCookie(
+  token: string,
+  options: CsrfCookieOptions = {}
+) {
+  const cookieParts = [
+    `${CSRF_COOKIE_NAME}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "SameSite=Lax"
+  ];
 
   if (options.secure) {
     cookieParts.push("Secure");

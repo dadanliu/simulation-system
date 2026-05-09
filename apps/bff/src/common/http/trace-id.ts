@@ -24,7 +24,11 @@ export function resolveTraceId(request: Request) {
   return readHeaderValue(request.headers[TRACE_ID_HEADER]) ?? randomUUID();
 }
 
-export function traceIdMiddleware(request: Request, response: Response, next: NextFunction) {
+export function traceIdMiddleware(
+  request: Request,
+  response: Response,
+  next: NextFunction
+) {
   const requestWithTraceId = request as RequestWithTraceId;
   const traceId = resolveTraceId(request);
 

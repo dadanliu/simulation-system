@@ -1,9 +1,14 @@
 import type { UploadedMemoryFile } from "./upload.service";
 
-export const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+export const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp"
+]);
 export const MAX_UPLOAD_FILE_SIZE = 2 * 1024 * 1024;
 
-const EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649bf2b934ca495991b7852b";
+const EMPTY_SHA256 =
+  "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649bf2b934ca495991b7852b";
 
 export type ScanResult =
   | {
@@ -87,7 +92,12 @@ function sniffImageMimeType(buffer: Buffer) {
   return null;
 }
 function isJpeg(buffer: Buffer) {
-  return buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  return (
+    buffer.length >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  );
 }
 
 function isPng(buffer: Buffer) {

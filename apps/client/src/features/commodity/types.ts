@@ -37,7 +37,12 @@ export type CommodityListFilters = {
   status: CommodityStatus | "";
 };
 
-export type CommodityListSortBy = "createdAt" | "name" | "price" | "status" | "stock";
+export type CommodityListSortBy =
+  | "createdAt"
+  | "name"
+  | "price"
+  | "status"
+  | "stock";
 
 export type CommodityListSortOrder = "asc" | "desc";
 
@@ -65,7 +70,12 @@ export type UpdateCommodityInput = {
   stock: number;
 };
 
-export type AuditLogAction = "create" | "delete" | "restore" | "update" | "status_change";
+export type AuditLogAction =
+  | "create"
+  | "delete"
+  | "restore"
+  | "update"
+  | "status_change";
 
 export type AuditLog = {
   action: AuditLogAction;

@@ -3,7 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { bindRolePermissions, bindUserRoles } from "@/src/features/user/client";
-import type { PermissionView, RolePermissionCode, RoleView, User, UserRole } from "@/src/features/user/types";
+import type {
+  PermissionView,
+  RolePermissionCode,
+  RoleView,
+  User,
+  UserRole
+} from "@/src/features/user/types";
 
 type AccessControlClientProps = {
   currentUserId: string;
@@ -27,7 +33,12 @@ function requestHighRiskReason(message: string) {
   return confirmed ? reason.trim() : null;
 }
 
-export function AccessControlClient({ currentUserId, permissions, roles, users }: AccessControlClientProps) {
+export function AccessControlClient({
+  currentUserId,
+  permissions,
+  roles,
+  users
+}: AccessControlClientProps) {
   const router = useRouter();
   const roleOptions = roles.map((role) => ({
     label: role.name,
@@ -36,9 +47,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
   const [userDrafts, setUserDrafts] = useState<Record<string, UserRole[]>>(
     Object.fromEntries(users.map((user) => [user.id, user.roles]))
   );
-  const [roleDrafts, setRoleDrafts] = useState<Record<string, RolePermissionCode[]>>(
-    Object.fromEntries(roles.map((role) => [role.code, role.permissions]))
-  );
+  const [roleDrafts, setRoleDrafts] = useState<
+    Record<string, RolePermissionCode[]>
+  >(Object.fromEntries(roles.map((role) => [role.code, role.permissions])));
   const [editingRoleCode, setEditingRoleCode] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [message, setMessage] = useState("");
@@ -48,7 +59,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
   function toggleUserRole(userId: string, role: UserRole) {
     setUserDrafts((current) => {
       const draft = current[userId] ?? [];
-      const roles = draft.includes(role) ? draft.filter((item) => item !== role) : [...draft, role];
+      const roles = draft.includes(role)
+        ? draft.filter((item) => item !== role)
+        : [...draft, role];
       return {
         ...current,
         [userId]: roles
@@ -56,7 +69,10 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
     });
   }
 
-  function toggleRolePermission(roleCode: string, permission: RolePermissionCode) {
+  function toggleRolePermission(
+    roleCode: string,
+    permission: RolePermissionCode
+  ) {
     setRoleDrafts((current) => {
       const draft = current[roleCode] ?? [];
       const permissions = draft.includes(permission)
@@ -79,7 +95,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
       return;
     }
 
-    const reason = requestHighRiskReason(`确认更新用户「${user?.username ?? userId}」的角色为：${roles.join(", ")}？`);
+    const reason = requestHighRiskReason(
+      `确认更新用户「${user?.username ?? userId}」的角色为：${roles.join(", ")}？`
+    );
 
     if (reason === null) {
       return;
@@ -96,10 +114,16 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
 
     try {
       await bindUserRoles(userId, roles, reason);
-      setMessage(userId === currentUserId ? "当前用户角色已更新，正在刷新页面权限。" : "用户角色已更新");
+      setMessage(
+        userId === currentUserId
+          ? "当前用户角色已更新，正在刷新页面权限。"
+          : "用户角色已更新"
+      );
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "用户角色更新失败");
+      setErrorMessage(
+        error instanceof Error ? error.message : "用户角色更新失败"
+      );
     } finally {
       setPendingUserId("");
     }
@@ -109,7 +133,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
     const draft = roleDrafts[roleCode] ?? [];
     const role = roles.find((item) => item.code === roleCode);
 
-    const reason = requestHighRiskReason(`确认更新角色「${role?.name ?? roleCode}」的权限，共 ${draft.length} 项？`);
+    const reason = requestHighRiskReason(
+      `确认更新角色「${role?.name ?? roleCode}」的权限，共 ${draft.length} 项？`
+    );
 
     if (reason === null) {
       return;
@@ -130,7 +156,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
       setEditingRoleCode(null);
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "角色权限更新失败");
+      setErrorMessage(
+        error instanceof Error ? error.message : "角色权限更新失败"
+      );
     } finally {
       setPendingRoleCode("");
     }
@@ -156,7 +184,8 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
           <p className="badge">Users</p>
           <h3>用户列表与角色绑定</h3>
           <p className="form-hint">
-            admin 可以直接为用户绑定角色。若修改的是当前登录用户，刷新后菜单入口会按最新权限重新计算。
+            admin
+            可以直接为用户绑定角色。若修改的是当前登录用户，刷新后菜单入口会按最新权限重新计算。
           </p>
         </div>
 
@@ -176,15 +205,22 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
                 <td className="mono-cell">{user.username}</td>
                 <td>
                   {user.displayName}
-                  {user.id === currentUserId ? <span className="badge badge--warning">当前用户</span> : null}
+                  {user.id === currentUserId ? (
+                    <span className="badge badge--warning">当前用户</span>
+                  ) : null}
                 </td>
                 <td>{user.enabled ? "启用中" : "已停用"}</td>
                 <td>
                   <div className="choice-grid">
                     {roleOptions.map((role) => (
-                      <label key={`${user.id}-${role.value}`} className="choice">
+                      <label
+                        key={`${user.id}-${role.value}`}
+                        className="choice"
+                      >
                         <input
-                          checked={(userDrafts[user.id] ?? []).includes(role.value)}
+                          checked={(userDrafts[user.id] ?? []).includes(
+                            role.value
+                          )}
                           disabled={pendingUserId === user.id}
                           onChange={() => toggleUserRole(user.id, role.value)}
                           type="checkbox"
@@ -260,7 +296,9 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
                 <div className="inline-actions">
                   <button
                     className="button button--secondary"
-                    onClick={() => setEditingRoleCode(isEditing ? null : role.code)}
+                    onClick={() =>
+                      setEditingRoleCode(isEditing ? null : role.code)
+                    }
                     type="button"
                   >
                     {isEditing ? "切回只读" : "编辑权限"}
@@ -280,11 +318,16 @@ export function AccessControlClient({ currentUserId, permissions, roles, users }
 
               <div className="choice-grid">
                 {permissions.map((permission) => (
-                  <label key={`${role.code}-${permission.code}`} className="choice">
+                  <label
+                    key={`${role.code}-${permission.code}`}
+                    className="choice"
+                  >
                     <input
                       checked={draft.includes(permission.code)}
                       disabled={!isEditing || pendingRoleCode === role.code}
-                      onChange={() => toggleRolePermission(role.code, permission.code)}
+                      onChange={() =>
+                        toggleRolePermission(role.code, permission.code)
+                      }
                       type="checkbox"
                     />
                     <span>{permission.name}</span>

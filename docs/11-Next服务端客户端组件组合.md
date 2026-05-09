@@ -62,7 +62,9 @@ export function Counter() {
 // apps/client/app/present/commodity/list/page.tsx
 export const dynamic = "force-dynamic";
 
-export default async function CommodityListPage({ searchParams }: CommodityListPageProps) {
+export default async function CommodityListPage({
+  searchParams
+}: CommodityListPageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
   return <CommodityListContent searchParams={resolvedSearchParams} />;
 }
@@ -72,14 +74,21 @@ export default async function CommodityListPage({ searchParams }: CommodityListP
 
 ```tsx
 // apps/client/app/present/commodity/list/commodity-list-content.tsx
-export async function CommodityListContent({ searchParams }: CommodityListContentProps) {
-  const { filters, list, pagination, totalPages } = await getCommodityListPageData(searchParams);
+export async function CommodityListContent({
+  searchParams
+}: CommodityListContentProps) {
+  const { filters, list, pagination, totalPages } =
+    await getCommodityListPageData(searchParams);
 
   return (
     <section>
       <CommodityListFiltersPanel filters={filters} />
       <table>{/* list rows */}</table>
-      <CommodityListPagination currentPage={pagination.page} filters={filters} totalPages={totalPages} />
+      <CommodityListPagination
+        currentPage={pagination.page}
+        filters={filters}
+        totalPages={totalPages}
+      />
     </section>
   );
 }
@@ -91,7 +100,9 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
 // apps/client/app/present/commodity/list/commodity-list-filters.tsx
 "use client";
 
-export function CommodityListFiltersPanel({ filters }: CommodityListFiltersPanelProps) {
+export function CommodityListFiltersPanel({
+  filters
+}: CommodityListFiltersPanelProps) {
   // useRouter、事件处理、表单状态都在这里
 }
 ```

@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Req, Res, UnauthorizedException } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Param,
+  Req,
+  Res,
+  UnauthorizedException
+} from "@nestjs/common";
 import { ApiCookieAuth, ApiExcludeEndpoint } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { createHash } from "node:crypto";
@@ -17,7 +24,11 @@ export class FileController {
   @Get(":fileId")
   @ApiExcludeEndpoint()
   @ApiCookieAuth("next_bff_session")
-  async getFile(@Req() request: Request, @Param("fileId") fileId: string, @Res() response: Response) {
+  async getFile(
+    @Req() request: Request,
+    @Param("fileId") fileId: string,
+    @Res() response: Response
+  ) {
     const currentUser = await this.getCurrentUserService.execute(request);
     const signedUrl = this.fileUrlService.verify({
       expires: this.readQueryValue(request.query.expires),
@@ -34,11 +45,22 @@ export class FileController {
     if (signedUrl) {
       const etag = this.buildEtag(fileId, signedUrl.variant, signedUrl.version);
       const lastModified = this.readLastModified(signedUrl.version);
-      const cacheProfile = this.fileUrlService.getCacheProfile(signedUrl.variant);
+      const cacheProfile = this.fileUrlService.getCacheProfile(
+        signedUrl.variant
+      );
 
-      response.setHeader("Cache-Control", this.buildPublicCacheControl(cacheProfile));
-      response.setHeader("CDN-Cache-Control", this.buildCdnCacheControl(cacheProfile));
-      response.setHeader("Surrogate-Control", this.buildCdnCacheControl(cacheProfile));
+      response.setHeader(
+        "Cache-Control",
+        this.buildPublicCacheControl(cacheProfile)
+      );
+      response.setHeader(
+        "CDN-Cache-Control",
+        this.buildCdnCacheControl(cacheProfile)
+      );
+      response.setHeader(
+        "Surrogate-Control",
+        this.buildCdnCacheControl(cacheProfile)
+      );
       response.setHeader("ETag", etag);
       response.setHeader("Vary", "Accept");
 
@@ -56,11 +78,18 @@ export class FileController {
       response.setHeader("Vary", "Cookie, Accept");
     }
 
-    const upstreamResponse = await this.uploadService.getFile(request, fileId, currentUser?.id);
+    const upstreamResponse = await this.uploadService.getFile(
+      request,
+      fileId,
+      currentUser?.id
+    );
     const arrayBuffer = await upstreamResponse.arrayBuffer();
 
     response.status(upstreamResponse.status);
-    response.setHeader("Content-Type", upstreamResponse.headers.get("content-type") ?? "application/octet-stream");
+    response.setHeader(
+      "Content-Type",
+      upstreamResponse.headers.get("content-type") ?? "application/octet-stream"
+    );
     response.send(Buffer.from(arrayBuffer));
   }
 
@@ -68,7 +97,11 @@ export class FileController {
     return typeof value === "string" ? value : undefined;
   }
 
-  private buildCdnCacheControl(profile: { immutable: boolean; maxAge: number; staleWhileRevalidate: number }) {
+  private buildCdnCacheControl(profile: {
+    immutable: boolean;
+    maxAge: number;
+    staleWhileRevalidate: number;
+  }) {
     return [
       "public",
       `max-age=${profile.maxAge}`,
@@ -78,11 +111,17 @@ export class FileController {
   }
 
   private buildEtag(fileId: string, variant: string, version: string) {
-    const digest = createHash("sha256").update(`${fileId}:${variant}:${version}`).digest("hex");
+    const digest = createHash("sha256")
+      .update(`${fileId}:${variant}:${version}`)
+      .digest("hex");
     return `"${digest}"`;
   }
 
-  private buildPublicCacheControl(profile: { immutable: boolean; maxAge: number; staleWhileRevalidate: number }) {
+  private buildPublicCacheControl(profile: {
+    immutable: boolean;
+    maxAge: number;
+    staleWhileRevalidate: number;
+  }) {
     return [
       "public",
       `max-age=${profile.maxAge}`,
@@ -91,10 +130,20 @@ export class FileController {
     ].join(", ");
   }
 
-  private isNotModified(request: Request, etag: string, lastModified: Date | null) {
+  private isNotModified(
+    request: Request,
+    etag: string,
+    lastModified: Date | null
+  ) {
     const ifNoneMatch = request.headers["if-none-match"];
 
-    if (typeof ifNoneMatch === "string" && ifNoneMatch.split(",").map((value) => value.trim()).includes(etag)) {
+    if (
+      typeof ifNoneMatch === "string" &&
+      ifNoneMatch
+        .split(",")
+        .map((value) => value.trim())
+        .includes(etag)
+    ) {
       return true;
     }
 
@@ -103,7 +152,10 @@ export class FileController {
     if (typeof ifModifiedSince === "string" && lastModified) {
       const modifiedSince = new Date(ifModifiedSince);
 
-      if (!Number.isNaN(modifiedSince.getTime()) && lastModified.getTime() <= modifiedSince.getTime()) {
+      if (
+        !Number.isNaN(modifiedSince.getTime()) &&
+        lastModified.getTime() <= modifiedSince.getTime()
+      ) {
         return true;
       }
     }

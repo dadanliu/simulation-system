@@ -13,18 +13,32 @@ export class S3StorageService implements StorageService {
     private readonly fileRegistryService: FileRegistryService
   ) {}
 
-  async save(file: UploadedMemoryFile, scene: StorageScene): Promise<StoredFile> {
-    const sanitizedFilename = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+  async save(
+    file: UploadedMemoryFile,
+    scene: StorageScene
+  ): Promise<StoredFile> {
+    const sanitizedFilename = file.originalname.replace(
+      /[^a-zA-Z0-9._-]/g,
+      "_"
+    );
     const fileId = `s3_${randomUUID()}`;
-    const keyPrefix = this.configService.get<string>("S3_KEY_PREFIX", "uploads").replace(/^\/|\/$/g, "");
+    const keyPrefix = this.configService
+      .get<string>("S3_KEY_PREFIX", "uploads")
+      .replace(/^\/|\/$/g, "");
     const key = `${keyPrefix}/${scene}/${fileId}-${sanitizedFilename}`;
     const bucket = this.configService.getOrThrow<string>("S3_BUCKET");
     const region = this.configService.getOrThrow<string>("S3_REGION");
-    const accessKeyId = this.configService.getOrThrow<string>("S3_ACCESS_KEY_ID");
-    const secretAccessKey = this.configService.getOrThrow<string>("S3_SECRET_ACCESS_KEY");
+    const accessKeyId =
+      this.configService.getOrThrow<string>("S3_ACCESS_KEY_ID");
+    const secretAccessKey = this.configService.getOrThrow<string>(
+      "S3_SECRET_ACCESS_KEY"
+    );
     const publicBaseUrl =
-      this.configService.get<string>("S3_PUBLIC_BASE_URL") ?? `https://${bucket}.s3.${region}.amazonaws.com`;
-    const uploadBaseUrl = this.configService.get<string>("S3_UPLOAD_BASE_URL") ?? `https://${bucket}.s3.${region}.amazonaws.com`;
+      this.configService.get<string>("S3_PUBLIC_BASE_URL") ??
+      `https://${bucket}.s3.${region}.amazonaws.com`;
+    const uploadBaseUrl =
+      this.configService.get<string>("S3_UPLOAD_BASE_URL") ??
+      `https://${bucket}.s3.${region}.amazonaws.com`;
     const url = `${uploadBaseUrl.replace(/\/$/, "")}/${key}`;
 
     await this.putObject(url, file, {
@@ -54,15 +68,22 @@ export class S3StorageService implements StorageService {
 
     const bucket = this.configService.getOrThrow<string>("S3_BUCKET");
     const region = this.configService.getOrThrow<string>("S3_REGION");
-    const accessKeyId = this.configService.getOrThrow<string>("S3_ACCESS_KEY_ID");
-    const secretAccessKey = this.configService.getOrThrow<string>("S3_SECRET_ACCESS_KEY");
+    const accessKeyId =
+      this.configService.getOrThrow<string>("S3_ACCESS_KEY_ID");
+    const secretAccessKey = this.configService.getOrThrow<string>(
+      "S3_SECRET_ACCESS_KEY"
+    );
     const fetchBaseUrl =
-      this.configService.get<string>("S3_UPLOAD_BASE_URL") ?? `https://${bucket}.s3.${region}.amazonaws.com`;
-    const response = await this.fetchObject(`${fetchBaseUrl.replace(/\/$/, "")}/${storedFile.key}`, {
-      accessKeyId,
-      region,
-      secretAccessKey
-    });
+      this.configService.get<string>("S3_UPLOAD_BASE_URL") ??
+      `https://${bucket}.s3.${region}.amazonaws.com`;
+    const response = await this.fetchObject(
+      `${fetchBaseUrl.replace(/\/$/, "")}/${storedFile.key}`,
+      {
+        accessKeyId,
+        region,
+        secretAccessKey
+      }
+    );
 
     return {
       body: Buffer.from(await response.arrayBuffer()),
@@ -95,7 +116,14 @@ export class S3StorageService implements StorageService {
       `x-amz-content-sha256:${payloadHash}\n` +
       `x-amz-date:${amzDate}\n`;
     const signedHeaders = "content-type;host;x-amz-content-sha256;x-amz-date";
-    const canonicalRequest = ["PUT", canonicalUri, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
+    const canonicalRequest = [
+      "PUT",
+      canonicalUri,
+      "",
+      canonicalHeaders,
+      signedHeaders,
+      payloadHash
+    ].join("\n");
     const credentialScope = `${dateStamp}/${credentials.region}/s3/aws4_request`;
     const stringToSign = [
       "AWS4-HMAC-SHA256",
@@ -103,8 +131,14 @@ export class S3StorageService implements StorageService {
       credentialScope,
       createHash("sha256").update(canonicalRequest).digest("hex")
     ].join("\n");
-    const signingKey = this.getSignatureKey(credentials.secretAccessKey, dateStamp, credentials.region);
-    const signature = createHmac("sha256", signingKey).update(stringToSign).digest("hex");
+    const signingKey = this.getSignatureKey(
+      credentials.secretAccessKey,
+      dateStamp,
+      credentials.region
+    );
+    const signature = createHmac("sha256", signingKey)
+      .update(stringToSign)
+      .digest("hex");
     const authorization = `AWS4-HMAC-SHA256 Credential=${credentials.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
     const response = await fetch(url, {
       body: new Uint8Array(file.buffer),
@@ -140,9 +174,19 @@ export class S3StorageService implements StorageService {
       .split("/")
       .map((part) => encodeURIComponent(part))
       .join("/");
-    const canonicalHeaders = `host:${parsedUrl.host}\n` + `x-amz-content-sha256:${payloadHash}\n` + `x-amz-date:${amzDate}\n`;
+    const canonicalHeaders =
+      `host:${parsedUrl.host}\n` +
+      `x-amz-content-sha256:${payloadHash}\n` +
+      `x-amz-date:${amzDate}\n`;
     const signedHeaders = "host;x-amz-content-sha256;x-amz-date";
-    const canonicalRequest = ["GET", canonicalUri, "", canonicalHeaders, signedHeaders, payloadHash].join("\n");
+    const canonicalRequest = [
+      "GET",
+      canonicalUri,
+      "",
+      canonicalHeaders,
+      signedHeaders,
+      payloadHash
+    ].join("\n");
     const credentialScope = `${dateStamp}/${credentials.region}/s3/aws4_request`;
     const stringToSign = [
       "AWS4-HMAC-SHA256",
@@ -150,8 +194,14 @@ export class S3StorageService implements StorageService {
       credentialScope,
       createHash("sha256").update(canonicalRequest).digest("hex")
     ].join("\n");
-    const signingKey = this.getSignatureKey(credentials.secretAccessKey, dateStamp, credentials.region);
-    const signature = createHmac("sha256", signingKey).update(stringToSign).digest("hex");
+    const signingKey = this.getSignatureKey(
+      credentials.secretAccessKey,
+      dateStamp,
+      credentials.region
+    );
+    const signature = createHmac("sha256", signingKey)
+      .update(stringToSign)
+      .digest("hex");
     const authorization = `AWS4-HMAC-SHA256 Credential=${credentials.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
     const response = await fetch(url, {
       headers: {
@@ -170,8 +220,14 @@ export class S3StorageService implements StorageService {
     return response;
   }
 
-  private getSignatureKey(secretAccessKey: string, dateStamp: string, region: string) {
-    const dateKey = createHmac("sha256", `AWS4${secretAccessKey}`).update(dateStamp).digest();
+  private getSignatureKey(
+    secretAccessKey: string,
+    dateStamp: string,
+    region: string
+  ) {
+    const dateKey = createHmac("sha256", `AWS4${secretAccessKey}`)
+      .update(dateStamp)
+      .digest();
     const regionKey = createHmac("sha256", dateKey).update(region).digest();
     const serviceKey = createHmac("sha256", regionKey).update("s3").digest();
     return createHmac("sha256", serviceKey).update("aws4_request").digest();

@@ -7,7 +7,11 @@ import { DatabaseModule } from "./database/database.module";
 import { MockBackendModule } from "./mock-backend/mock-backend.module";
 
 @Module({
-  imports: [ConfigModule.forRoot(serverConfigModuleOptions), DatabaseModule, MockBackendModule],
+  imports: [
+    ConfigModule.forRoot(serverConfigModuleOptions),
+    DatabaseModule,
+    MockBackendModule
+  ],
   controllers: [AppController],
   providers: [RequestLoggingInterceptor]
 })

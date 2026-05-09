@@ -48,7 +48,9 @@ export default function LoginPage() {
       // Middleware redirects protected pages to /login?next=..., so after login we return to that original page.
       const nextPath = new URLSearchParams(window.location.search).get("next");
       const redirectPath =
-        nextPath?.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/present/commodity/list";
+        nextPath?.startsWith("/") && !nextPath.startsWith("//")
+          ? nextPath
+          : "/present/commodity/list";
 
       router.push(redirectPath);
       router.refresh();

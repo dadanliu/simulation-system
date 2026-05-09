@@ -55,7 +55,9 @@ describe("validateBffEnv", () => {
         ...validEnv,
         APP_ENV: "test"
       })
-    ).toThrow('APP_ENV=test requires MONGODB_URI database name to end with "-test"');
+    ).toThrow(
+      'APP_ENV=test requires MONGODB_URI database name to end with "-test"'
+    );
   });
 
   it("rejects production when the database name looks non-production", () => {

@@ -2,7 +2,9 @@ import { verifyPassword } from "../user/password-hash";
 import { RbacSeedService } from "./rbac-seed.service";
 
 describe("RbacSeedService", () => {
-  function createConfigService(values: Record<string, string | undefined> = {}) {
+  function createConfigService(
+    values: Record<string, string | undefined> = {}
+  ) {
     return {
       get: jest.fn((key: string, fallback?: string) => values[key] ?? fallback)
     };
@@ -32,13 +34,17 @@ describe("RbacSeedService", () => {
 
     await service.onModuleInit();
 
-    const adminSeedCall = userModel.updateOne.mock.calls.find(([filter]) => filter.id === "u_admin_001");
+    const adminSeedCall = userModel.updateOne.mock.calls.find(
+      ([filter]) => filter.id === "u_admin_001"
+    );
     expect(adminSeedCall).toBeDefined();
 
     const [, update, options] = adminSeedCall;
     expect(update.$set.password).toBeUndefined();
     expect(update.$set.passwordHash).toMatch(/^\$2[aby]\$/);
-    await expect(verifyPassword("admin123", update.$set.passwordHash)).resolves.toBe(true);
+    await expect(
+      verifyPassword("admin123", update.$set.passwordHash)
+    ).resolves.toBe(true);
     expect(update.$unset).toEqual({ password: "" });
     expect(options).toEqual({ upsert: true });
   });
@@ -72,12 +78,16 @@ describe("RbacSeedService", () => {
 
     await service.onModuleInit();
 
-    const legacyMigrationCall = userModel.updateOne.mock.calls.find(([filter]) => filter.id === "u_legacy_001");
+    const legacyMigrationCall = userModel.updateOne.mock.calls.find(
+      ([filter]) => filter.id === "u_legacy_001"
+    );
     expect(legacyMigrationCall).toBeDefined();
 
     const [, update] = legacyMigrationCall;
     expect(update.$set.passwordHash).toMatch(/^\$2[aby]\$/);
-    await expect(verifyPassword("legacy123", update.$set.passwordHash)).resolves.toBe(true);
+    await expect(
+      verifyPassword("legacy123", update.$set.passwordHash)
+    ).resolves.toBe(true);
     expect(update.$unset).toEqual({ password: "" });
   });
 

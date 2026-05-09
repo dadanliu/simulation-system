@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Post,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors
+} from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import {
   ApiBody,
@@ -53,9 +61,17 @@ export class UploadController {
     }
   })
   @ApiResponse({ status: 200, description: "上传成功" })
-  @ApiResponse({ status: 400, description: "文件缺失、类型非法或超出大小限制", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: "文件缺失、类型非法或超出大小限制",
+    type: ErrorResponseDto
+  })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无上传权限", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: "无上传权限",
+    type: ErrorResponseDto
+  })
   async uploadFile(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,

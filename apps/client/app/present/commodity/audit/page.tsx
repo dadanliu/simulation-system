@@ -70,7 +70,9 @@ function formatDiff(value: Record<string, unknown> | null) {
 
 export const dynamic = "force-dynamic";
 
-export default async function CommodityAuditPage({ searchParams }: AuditLogPageProps) {
+export default async function CommodityAuditPage({
+  searchParams
+}: AuditLogPageProps) {
   const resolvedSearchParams = await searchParams;
   const currentUser = await getCurrentUser("/present/commodity/audit");
   const action = readSingleParam(resolvedSearchParams.action);
@@ -92,7 +94,10 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
     ...resolvedSearchParams,
     pageSize
   });
-  const totalPages = Math.max(1, Math.ceil(data.pagination.total / data.pagination.pageSize));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(data.pagination.total / data.pagination.pageSize)
+  );
   const previousQuery = buildAuditSearchParams({
     action,
     createdFrom,
@@ -117,14 +122,23 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
       <div>
         <p className="badge">Audit</p>
         <h2>商品审计日志</h2>
-        <p>查看商品创建、编辑、状态变更、删除和恢复的 before / after 记录，并用 traceId 串起请求链路。</p>
+        <p>
+          查看商品创建、编辑、状态变更、删除和恢复的 before / after 记录，并用
+          traceId 串起请求链路。
+        </p>
       </div>
 
       <div className="inline-actions">
-        <Link className="button button--secondary" href="/present/commodity/list">
+        <Link
+          className="button button--secondary"
+          href="/present/commodity/list"
+        >
           返回商品列表
         </Link>
-        <Link className="button" href="/present/commodity/audit?action=status_change&pageSize=20">
+        <Link
+          className="button"
+          href="/present/commodity/audit?action=status_change&pageSize=20"
+        >
           只看状态变更
         </Link>
       </div>
@@ -132,7 +146,11 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
       <form className="filter-bar" method="get">
         <label className="field">
           <span>操作人</span>
-          <input defaultValue={operator} name="operator" placeholder="u_admin_001" />
+          <input
+            defaultValue={operator}
+            name="operator"
+            placeholder="u_admin_001"
+          />
         </label>
         <label className="field">
           <span>动作</span>
@@ -150,11 +168,19 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
         </label>
         <label className="field">
           <span>开始时间</span>
-          <input defaultValue={createdFrom} name="createdFrom" placeholder="2026-04-28T00:00:00.000Z" />
+          <input
+            defaultValue={createdFrom}
+            name="createdFrom"
+            placeholder="2026-04-28T00:00:00.000Z"
+          />
         </label>
         <label className="field">
           <span>结束时间</span>
-          <input defaultValue={createdTo} name="createdTo" placeholder="2026-04-28T23:59:59.999Z" />
+          <input
+            defaultValue={createdTo}
+            name="createdTo"
+            placeholder="2026-04-28T23:59:59.999Z"
+          />
         </label>
         <label className="field">
           <span>每页数量</span>
@@ -168,7 +194,10 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
           <button className="button" type="submit">
             筛选
           </button>
-          <Link className="button button--secondary" href="/present/commodity/audit">
+          <Link
+            className="button button--secondary"
+            href="/present/commodity/audit"
+          >
             重置
           </Link>
         </div>
@@ -201,7 +230,10 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
                 <td>{log.operator}</td>
                 <td>{actionLabel[log.action]}</td>
                 <td>
-                  <Link className="table-link" href={`/present/commodity/${log.target.id}`}>
+                  <Link
+                    className="table-link"
+                    href={`/present/commodity/${log.target.id}`}
+                  >
                     {log.target.id}
                   </Link>
                 </td>
@@ -209,7 +241,13 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
                 <td className="mono-cell">{formatDiff(log.after)}</td>
                 <td>{log.reason ?? "-"}</td>
                 <td className="mono-cell">{log.traceId}</td>
-                <td>{log.action === "delete" ? <CommodityRestoreButton commodityId={log.target.id} /> : "-"}</td>
+                <td>
+                  {log.action === "delete" ? (
+                    <CommodityRestoreButton commodityId={log.target.id} />
+                  ) : (
+                    "-"
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -217,7 +255,8 @@ export default async function CommodityAuditPage({ searchParams }: AuditLogPageP
       )}
 
       <p className="form-hint">
-        当前页 {data.pagination.page}，每页 {data.pagination.pageSize}，共 {data.pagination.total} 条。
+        当前页 {data.pagination.page}，每页 {data.pagination.pageSize}，共{" "}
+        {data.pagination.total} 条。
       </p>
 
       <div className="pagination-bar">

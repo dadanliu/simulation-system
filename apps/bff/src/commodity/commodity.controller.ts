@@ -12,7 +12,14 @@ import {
   Req,
   UseGuards
 } from "@nestjs/common";
-import { ApiBody, ApiCookieAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
+import {
+  ApiBody,
+  ApiCookieAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags
+} from "@nestjs/swagger";
 import type { Request } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
@@ -41,10 +48,22 @@ export class CommodityController {
   @ApiOperation({ summary: "分页查询商品列表" })
   @ApiCookieAuth("next_bff_session")
   @ApiResponse({ status: 200, description: "商品列表查询成功" })
-  @ApiResponse({ status: 400, description: "查询参数错误", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: "查询参数错误",
+    type: ErrorResponseDto
+  })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无商品读取权限", type: ErrorResponseDto })
-  async listCommodities(@Req() request: Request, @CurrentUser() user: AuthUser, @Query() query: QueryCommodityListDto) {
+  @ApiResponse({
+    status: 403,
+    description: "无商品读取权限",
+    type: ErrorResponseDto
+  })
+  async listCommodities(
+    @Req() request: Request,
+    @CurrentUser() user: AuthUser,
+    @Query() query: QueryCommodityListDto
+  ) {
     return this.commodityService.listCommodities(request, user, query);
   }
 
@@ -53,16 +72,33 @@ export class CommodityController {
   @ApiOperation({ summary: "查询商品审计日志" })
   @ApiCookieAuth("next_bff_session")
   @ApiResponse({ status: 200, description: "审计日志查询成功" })
-  @ApiResponse({ status: 400, description: "查询参数错误", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: "查询参数错误",
+    type: ErrorResponseDto
+  })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无审计日志查看权限", type: ErrorResponseDto })
-  listAuditLogs(@CurrentUser() user: AuthUser, @Query() query: QueryAuditLogDto) {
+  @ApiResponse({
+    status: 403,
+    description: "无审计日志查看权限",
+    type: ErrorResponseDto
+  })
+  listAuditLogs(
+    @CurrentUser() user: AuthUser,
+    @Query() query: QueryAuditLogDto
+  ) {
     if (!user.roles.includes("admin")) {
       throw new ForbiddenException("permission denied");
     }
 
-    if (query.createdFrom && query.createdTo && new Date(query.createdFrom) > new Date(query.createdTo)) {
-      throw new BadRequestException("createdFrom must be before or equal to createdTo");
+    if (
+      query.createdFrom &&
+      query.createdTo &&
+      new Date(query.createdFrom) > new Date(query.createdTo)
+    ) {
+      throw new BadRequestException(
+        "createdFrom must be before or equal to createdTo"
+      );
     }
 
     return this.commodityService.listAuditLogs(query);
@@ -75,9 +111,21 @@ export class CommodityController {
   @ApiParam({ name: "id", description: "商品ID", example: "10001" })
   @ApiResponse({ status: 200, description: "商品详情查询成功" })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无商品读取权限", type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: "商品不存在", type: ErrorResponseDto })
-  async getCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Param("id", CommodityIdPipe) id: string) {
+  @ApiResponse({
+    status: 403,
+    description: "无商品读取权限",
+    type: ErrorResponseDto
+  })
+  @ApiResponse({
+    status: 404,
+    description: "商品不存在",
+    type: ErrorResponseDto
+  })
+  async getCommodity(
+    @Req() request: Request,
+    @CurrentUser() user: AuthUser,
+    @Param("id", CommodityIdPipe) id: string
+  ) {
     return this.commodityService.getCommodity(request, user, id);
   }
 
@@ -87,10 +135,22 @@ export class CommodityController {
   @ApiCookieAuth("next_bff_session")
   @ApiBody({ type: CreateCommodityDto })
   @ApiResponse({ status: 200, description: "商品创建成功" })
-  @ApiResponse({ status: 400, description: "参数错误或业务校验失败", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: "参数错误或业务校验失败",
+    type: ErrorResponseDto
+  })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无商品创建权限", type: ErrorResponseDto })
-  async createCommodity(@Req() request: Request, @CurrentUser() user: AuthUser, @Body() body: CreateCommodityDto) {
+  @ApiResponse({
+    status: 403,
+    description: "无商品创建权限",
+    type: ErrorResponseDto
+  })
+  async createCommodity(
+    @Req() request: Request,
+    @CurrentUser() user: AuthUser,
+    @Body() body: CreateCommodityDto
+  ) {
     return this.commodityService.createCommodity(request, user, body);
   }
 
@@ -101,8 +161,16 @@ export class CommodityController {
   @ApiParam({ name: "id", description: "商品ID", example: "10001" })
   @ApiResponse({ status: 200, description: "商品删除成功" })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无商品删除权限", type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: "商品不存在", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: "无商品删除权限",
+    type: ErrorResponseDto
+  })
+  @ApiResponse({
+    status: 404,
+    description: "商品不存在",
+    type: ErrorResponseDto
+  })
   async deleteCommodity(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,
@@ -119,8 +187,16 @@ export class CommodityController {
   @ApiParam({ name: "id", description: "商品ID", example: "10001" })
   @ApiResponse({ status: 200, description: "商品恢复成功" })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无商品删除/恢复权限", type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: "商品不存在或未删除", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: "无商品删除/恢复权限",
+    type: ErrorResponseDto
+  })
+  @ApiResponse({
+    status: 404,
+    description: "商品不存在或未删除",
+    type: ErrorResponseDto
+  })
   async restoreCommodity(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,
@@ -137,10 +213,22 @@ export class CommodityController {
   @ApiParam({ name: "id", description: "商品ID", example: "10001" })
   @ApiBody({ type: UpdateCommodityDto })
   @ApiResponse({ status: 200, description: "商品编辑成功" })
-  @ApiResponse({ status: 400, description: "参数错误或业务校验失败", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: "参数错误或业务校验失败",
+    type: ErrorResponseDto
+  })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无商品更新权限", type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: "商品不存在", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: "无商品更新权限",
+    type: ErrorResponseDto
+  })
+  @ApiResponse({
+    status: 404,
+    description: "商品不存在",
+    type: ErrorResponseDto
+  })
   async updateCommodity(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,
@@ -157,10 +245,22 @@ export class CommodityController {
   @ApiParam({ name: "id", description: "商品ID", example: "10001" })
   @ApiBody({ type: UpdateCommodityStatusDto })
   @ApiResponse({ status: 200, description: "商品状态变更成功" })
-  @ApiResponse({ status: 400, description: "参数错误或状态流转非法", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: "参数错误或状态流转非法",
+    type: ErrorResponseDto
+  })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无商品更新权限", type: ErrorResponseDto })
-  @ApiResponse({ status: 404, description: "商品不存在", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: "无商品更新权限",
+    type: ErrorResponseDto
+  })
+  @ApiResponse({
+    status: 404,
+    description: "商品不存在",
+    type: ErrorResponseDto
+  })
   async updateCommodityStatus(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,

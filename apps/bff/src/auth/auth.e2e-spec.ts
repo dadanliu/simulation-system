@@ -1,8 +1,16 @@
-import { HttpException, HttpStatus, type INestApplication } from "@nestjs/common";
+import {
+  HttpException,
+  HttpStatus,
+  type INestApplication
+} from "@nestjs/common";
 import request = require("supertest");
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "../common/http/csrf-token";
 import type { AuthUser } from "../user/user.types";
-import { createBffTestApp, createTestAppMocks, type TestAppMocks } from "../test/app-test-utils";
+import {
+  createBffTestApp,
+  createTestAppMocks,
+  type TestAppMocks
+} from "../test/app-test-utils";
 
 describe("AuthController e2e", () => {
   let app: INestApplication;
@@ -51,8 +59,12 @@ describe("AuthController e2e", () => {
   }
 
   async function issueCsrfToken() {
-    const response = await request(app.getHttpServer()).get("/api/auth/csrf").expect(200);
-    const setCookie = getSetCookies(response).find((value) => value.startsWith(`${CSRF_COOKIE_NAME}=`));
+    const response = await request(app.getHttpServer())
+      .get("/api/auth/csrf")
+      .expect(200);
+    const setCookie = getSetCookies(response).find((value) =>
+      value.startsWith(`${CSRF_COOKIE_NAME}=`)
+    );
 
     expect(setCookie).toBeDefined();
 
@@ -103,7 +115,9 @@ describe("AuthController e2e", () => {
         username: "admin"
       })
       .expect(201);
-    const setCookie = getSetCookies(response).find((value) => value.startsWith("next_bff_session="));
+    const setCookie = getSetCookies(response).find((value) =>
+      value.startsWith("next_bff_session=")
+    );
 
     expect(setCookie).toBeDefined();
     expect(setCookie).toContain("next_bff_session=session-admin");
@@ -133,7 +147,10 @@ describe("AuthController e2e", () => {
 
   it("returns a unified 429 response when login is rate limited", async () => {
     mocks.authService.login.mockRejectedValue(
-      new HttpException("too many login attempts, try again in 60s", HttpStatus.TOO_MANY_REQUESTS)
+      new HttpException(
+        "too many login attempts, try again in 60s",
+        HttpStatus.TOO_MANY_REQUESTS
+      )
     );
     const csrf = await issueCsrfToken();
 
@@ -178,7 +195,9 @@ describe("AuthController e2e", () => {
       })
       .expect(201);
 
-    const sessionCookie = getSetCookies(response).find((value) => value.startsWith("next_bff_session="));
+    const sessionCookie = getSetCookies(response).find((value) =>
+      value.startsWith("next_bff_session=")
+    );
 
     expect(sessionCookie).toContain("Secure");
   });
@@ -232,8 +251,8 @@ describe("AuthController e2e", () => {
       })
       .expect(201);
 
-    const insecureSessionCookie = getSetCookies(insecureResponse).find((value) =>
-      value.startsWith("next_bff_session=")
+    const insecureSessionCookie = getSetCookies(insecureResponse).find(
+      (value) => value.startsWith("next_bff_session=")
     );
 
     expect(insecureSessionCookie).not.toContain("Secure");
@@ -253,7 +272,9 @@ describe("AuthController e2e", () => {
       .set("Cookie", ["next_bff_session=session-admin", csrf.cookie])
       .set(CSRF_HEADER_NAME, csrf.token)
       .expect(200);
-    const setCookie = getSetCookies(response).find((value) => value.startsWith("next_bff_session="));
+    const setCookie = getSetCookies(response).find((value) =>
+      value.startsWith("next_bff_session=")
+    );
 
     expect(mocks.authService.logout).toHaveBeenCalled();
     expect(setCookie).toBeDefined();
@@ -267,7 +288,9 @@ describe("AuthController e2e", () => {
 
   it("lists login logs with audit permission and query filters", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
-    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(true);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(
+      true
+    );
     mocks.authService.listLoginLogs.mockResolvedValue({
       list: [
         {

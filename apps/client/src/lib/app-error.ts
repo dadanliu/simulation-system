@@ -19,7 +19,9 @@ export function parseAppError(input: Error | string) {
   }
 
   try {
-    return JSON.parse(message.slice(APP_ERROR_PREFIX.length)) as AppErrorDetails;
+    return JSON.parse(
+      message.slice(APP_ERROR_PREFIX.length)
+    ) as AppErrorDetails;
   } catch {
     return null;
   }

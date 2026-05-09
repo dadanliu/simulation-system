@@ -18,8 +18,14 @@ export class LocalStorageService implements StorageService {
     const sanitizedFilename = this.sanitizeFilename(file.originalname);
     const fileId = `local_${randomUUID()}`;
     const key = `${scene}/${fileId}-${sanitizedFilename}`;
-    const uploadDir = this.configService.get<string>("LOCAL_UPLOAD_DIR", ".dev/uploads");
-    const publicBaseUrl = this.configService.get<string>("LOCAL_UPLOAD_PUBLIC_BASE_URL", "http://localhost:3002/uploads");
+    const uploadDir = this.configService.get<string>(
+      "LOCAL_UPLOAD_DIR",
+      ".dev/uploads"
+    );
+    const publicBaseUrl = this.configService.get<string>(
+      "LOCAL_UPLOAD_PUBLIC_BASE_URL",
+      "http://localhost:3002/uploads"
+    );
     const targetPath = path.resolve(uploadDir, key);
 
     mkdirSync(path.dirname(targetPath), { recursive: true });
@@ -45,7 +51,12 @@ export class LocalStorageService implements StorageService {
     }
 
     return {
-      body: readFileSync(path.resolve(this.configService.get<string>("LOCAL_UPLOAD_DIR", ".dev/uploads"), storedFile.key)),
+      body: readFileSync(
+        path.resolve(
+          this.configService.get<string>("LOCAL_UPLOAD_DIR", ".dev/uploads"),
+          storedFile.key
+        )
+      ),
       driver: storedFile.driver,
       mimeType: storedFile.mimeType
     };

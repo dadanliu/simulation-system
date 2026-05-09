@@ -17,7 +17,14 @@ describe("FileUrlService", () => {
       })
     );
 
-    const url = new URL(service.buildSignedUrl({ fileId: "file_1", variant: "thumb", version: "2026-05-07T10:00:00.000Z" }), "http://localhost");
+    const url = new URL(
+      service.buildSignedUrl({
+        fileId: "file_1",
+        variant: "thumb",
+        version: "2026-05-07T10:00:00.000Z"
+      }),
+      "http://localhost"
+    );
     const verification = service.verify({
       expires: url.searchParams.get("expires") ?? undefined,
       fileId: "file_1",

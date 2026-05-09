@@ -34,7 +34,11 @@ function requireNonEmpty(config: RawConfig, key: string, errors: string[]) {
   }
 }
 
-function requirePositiveInteger(config: RawConfig, key: string, errors: string[]) {
+function requirePositiveInteger(
+  config: RawConfig,
+  key: string,
+  errors: string[]
+) {
   const value = Number(config[key]);
 
   if (!Number.isInteger(value) || value <= 0) {
@@ -96,7 +100,11 @@ function requireOptionalUrl(config: RawConfig, key: string, errors: string[]) {
   }
 }
 
-function requireBooleanString(config: RawConfig, key: string, errors: string[]) {
+function requireBooleanString(
+  config: RawConfig,
+  key: string,
+  errors: string[]
+) {
   const value = config[key];
 
   if (value !== undefined && value !== "true" && value !== "false") {
@@ -131,15 +139,24 @@ function requireEnvironmentDatabase(config: RawConfig, errors: string[]) {
   }
 
   if (appEnv === "development" && !databaseName.endsWith("-dev")) {
-    errors.push('APP_ENV=development requires MONGODB_URI database name to end with "-dev"');
+    errors.push(
+      'APP_ENV=development requires MONGODB_URI database name to end with "-dev"'
+    );
   }
 
   if (appEnv === "test" && !databaseName.endsWith("-test")) {
-    errors.push('APP_ENV=test requires MONGODB_URI database name to end with "-test"');
+    errors.push(
+      'APP_ENV=test requires MONGODB_URI database name to end with "-test"'
+    );
   }
 
-  if (appEnv === "production" && /(?:^|[-_])(dev|test|mock)(?:$|[-_])/.test(databaseName)) {
-    errors.push("APP_ENV=production must not use a dev/test/mock database name");
+  if (
+    appEnv === "production" &&
+    /(?:^|[-_])(dev|test|mock)(?:$|[-_])/.test(databaseName)
+  ) {
+    errors.push(
+      "APP_ENV=production must not use a dev/test/mock database name"
+    );
   }
 }
 
@@ -166,7 +183,9 @@ export function validateServerEnv(input: RawConfig) {
   requireObjectStorageConfig(config, errors);
 
   if (config.APP_ENV === "production" && config.MOCK_SEED_ENABLED === "true") {
-    errors.push("MOCK_SEED_ENABLED=true is not allowed when APP_ENV=production");
+    errors.push(
+      "MOCK_SEED_ENABLED=true is not allowed when APP_ENV=production"
+    );
   }
 
   if (config.APP_ENV === "production" && config.STORAGE_DRIVER === "local") {

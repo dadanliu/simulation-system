@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  UseGuards
+} from "@nestjs/common";
 import { AuthGuard } from "../auth/auth.guard";
 import { RequirePermissions } from "../permission/permissions.decorator";
 import { PermissionsGuard } from "../permission/permissions.guard";
@@ -25,13 +33,23 @@ export class RoleController {
 
   @Put(":code")
   @RequirePermissions("role:manage")
-  updateRole(@Param("code") code: string, @Body() body: Partial<Omit<Role, "code">>) {
+  updateRole(
+    @Param("code") code: string,
+    @Body() body: Partial<Omit<Role, "code">>
+  ) {
     return this.roleService.updateRole(code, body);
   }
 
   @Put(":code/permissions")
   @RequirePermissions("role:manage")
-  bindPermissions(@Param("code") code: string, @Body() body: BindRolePermissionsDto) {
-    return this.roleService.bindPermissions(code, body.permissions, body.reason);
+  bindPermissions(
+    @Param("code") code: string,
+    @Body() body: BindRolePermissionsDto
+  ) {
+    return this.roleService.bindPermissions(
+      code,
+      body.permissions,
+      body.reason
+    );
   }
 }

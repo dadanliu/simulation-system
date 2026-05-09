@@ -23,10 +23,16 @@ body {
   margin: 0;
   min-height: 100%;
   background:
-    radial-gradient(circle at top left, rgba(0, 87, 255, 0.12), transparent 35%),
+    radial-gradient(
+      circle at top left,
+      rgba(0, 87, 255, 0.12),
+      transparent 35%
+    ),
     linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
   color: var(--text);
-  font-family: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-family:
+    "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    sans-serif;
 }
 
 a {
@@ -321,7 +327,11 @@ textarea {
 .commodity-image-fallback {
   border-style: dashed;
   background:
-    linear-gradient(135deg, rgba(224, 231, 255, 0.92), rgba(255, 255, 255, 0.98)),
+    linear-gradient(
+      135deg,
+      rgba(224, 231, 255, 0.92),
+      rgba(255, 255, 255, 0.98)
+    ),
     var(--surface-muted);
   color: var(--text-muted);
 }
@@ -454,12 +464,20 @@ textarea {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: 22px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(223, 233, 255, 0.62));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.94),
+    rgba(223, 233, 255, 0.62)
+  );
 }
 
 .danger-zone {
   border-color: rgba(190, 18, 60, 0.22);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 241, 242, 0.72));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.96),
+    rgba(255, 241, 242, 0.72)
+  );
 }
 
 .detail-card h3 {
@@ -485,7 +503,12 @@ textarea {
 .skeleton-list div {
   height: 54px;
   border-radius: 16px;
-  background: linear-gradient(90deg, rgba(229, 235, 244, 0.7), rgba(248, 250, 252, 0.92), rgba(229, 235, 244, 0.7));
+  background: linear-gradient(
+    90deg,
+    rgba(229, 235, 244, 0.7),
+    rgba(248, 250, 252, 0.92),
+    rgba(229, 235, 244, 0.7)
+  );
   background-size: 200% 100%;
   animation: shimmer 1.4s ease-in-out infinite;
 }

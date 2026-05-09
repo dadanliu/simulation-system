@@ -24,16 +24,25 @@ export const commodityStatusTransitionRules: CommodityStatusTransitionRule[] = [
   }
 ];
 
-export function isCommodityStatus(value: string | undefined): value is CommodityStatus {
+export function isCommodityStatus(
+  value: string | undefined
+): value is CommodityStatus {
   return value === "on_sale" || value === "pending" || value === "offline";
 }
 
 export function getNextCommodityStatusOptions(status: CommodityStatus) {
-  return commodityStatusTransitionRules.filter((rule) => rule.from === status).map((rule) => rule.to);
+  return commodityStatusTransitionRules
+    .filter((rule) => rule.from === status)
+    .map((rule) => rule.to);
 }
 
-export function validateCommodityStatusTransition(from: CommodityStatus, to: CommodityStatus) {
-  const matchedRule = commodityStatusTransitionRules.find((rule) => rule.from === from && rule.to === to);
+export function validateCommodityStatusTransition(
+  from: CommodityStatus,
+  to: CommodityStatus
+) {
+  const matchedRule = commodityStatusTransitionRules.find(
+    (rule) => rule.from === from && rule.to === to
+  );
 
   if (matchedRule) {
     return {
@@ -41,11 +50,15 @@ export function validateCommodityStatusTransition(from: CommodityStatus, to: Com
     };
   }
 
-  const firstAvailableRule = commodityStatusTransitionRules.find((rule) => rule.from === from);
+  const firstAvailableRule = commodityStatusTransitionRules.find(
+    (rule) => rule.from === from
+  );
 
   return {
     code: firstAvailableRule?.code ?? 20013,
-    message: firstAvailableRule?.message ?? "offline commodity cannot change status directly",
+    message:
+      firstAvailableRule?.message ??
+      "offline commodity cannot change status directly",
     ok: false as const
   };
 }

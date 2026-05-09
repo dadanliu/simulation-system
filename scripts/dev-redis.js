@@ -3,9 +3,12 @@ const net = require("node:net");
 
 const REDIS_PORT = Number(process.env.REDIS_PORT ?? 6379);
 const REDIS_HOST = process.env.REDIS_HOST ?? "127.0.0.1";
-const DOCKER_CONTAINER_NAME = process.env.REDIS_DOCKER_CONTAINER_NAME ?? "next-bff-redis";
+const DOCKER_CONTAINER_NAME =
+  process.env.REDIS_DOCKER_CONTAINER_NAME ?? "next-bff-redis";
 const DOCKER_IMAGE = process.env.REDIS_DOCKER_IMAGE ?? "redis:7-alpine";
-const DOCKER_READY_TIMEOUT_MS = Number(process.env.DOCKER_READY_TIMEOUT_MS ?? 90_000);
+const DOCKER_READY_TIMEOUT_MS = Number(
+  process.env.DOCKER_READY_TIMEOUT_MS ?? 90_000
+);
 
 let child;
 let startedDocker = false;
@@ -77,7 +80,16 @@ function startLocalRedisServer() {
 
   return spawn(
     "redis-server",
-    ["--bind", REDIS_HOST, "--port", String(REDIS_PORT), "--save", "", "--appendonly", "no"],
+    [
+      "--bind",
+      REDIS_HOST,
+      "--port",
+      String(REDIS_PORT),
+      "--save",
+      "",
+      "--appendonly",
+      "no"
+    ],
     {
       stdio: ["ignore", "pipe", "pipe"]
     }
@@ -91,13 +103,23 @@ function removeStaleDockerContainer() {
 }
 
 function startDockerRedis() {
-  console.log(`Starting Docker Redis ${DOCKER_CONTAINER_NAME} from ${DOCKER_IMAGE}`);
+  console.log(
+    `Starting Docker Redis ${DOCKER_CONTAINER_NAME} from ${DOCKER_IMAGE}`
+  );
   removeStaleDockerContainer();
   startedDocker = true;
 
   return spawn(
     "docker",
-    ["run", "--rm", "--name", DOCKER_CONTAINER_NAME, "-p", `${REDIS_PORT}:6379`, DOCKER_IMAGE],
+    [
+      "run",
+      "--rm",
+      "--name",
+      DOCKER_CONTAINER_NAME,
+      "-p",
+      `${REDIS_PORT}:6379`,
+      DOCKER_IMAGE
+    ],
     {
       stdio: ["ignore", "pipe", "pipe"]
     }
@@ -126,7 +148,9 @@ async function ensureDockerDaemon() {
       await wait(1_000);
     }
 
-    throw new Error(`Docker Desktop did not become ready within ${DOCKER_READY_TIMEOUT_MS}ms`);
+    throw new Error(
+      `Docker Desktop did not become ready within ${DOCKER_READY_TIMEOUT_MS}ms`
+    );
   }
 
   throw new Error("Docker is installed, but the Docker daemon is not running.");
@@ -165,8 +189,12 @@ async function main() {
     await ensureDockerDaemon();
     child = startDockerRedis();
   } else {
-    console.error("Redis is required for BFF sessions, but neither redis-server nor docker was found.");
-    console.error("Install Redis, start a Redis instance at 127.0.0.1:6379, or set REDIS_URL for the BFF.");
+    console.error(
+      "Redis is required for BFF sessions, but neither redis-server nor docker was found."
+    );
+    console.error(
+      "Install Redis, start a Redis instance at 127.0.0.1:6379, or set REDIS_URL for the BFF."
+    );
     process.exit(1);
   }
 
@@ -176,7 +204,9 @@ async function main() {
       const reason = signal ? `signal ${signal}` : `code ${code}`;
 
       if (!isReady) {
-        reject(new Error(`Redis process exited before becoming ready with ${reason}`));
+        reject(
+          new Error(`Redis process exited before becoming ready with ${reason}`)
+        );
         return;
       }
 
@@ -200,9 +230,13 @@ process.on("SIGTERM", () => {
 main().catch((error) => {
   console.error(error.message);
   if (startedDocker) {
-    console.error("If you want dev:redis to manage Redis with Docker, start Docker Desktop and rerun pnpm dev:redis.");
+    console.error(
+      "If you want dev:redis to manage Redis with Docker, start Docker Desktop and rerun pnpm dev:redis."
+    );
   }
-  console.error("Alternatively, install redis-server or run your own Redis and set REDIS_URL if it is not 127.0.0.1:6379.");
+  console.error(
+    "Alternatively, install redis-server or run your own Redis and set REDIS_URL if it is not 127.0.0.1:6379."
+  );
   stop();
   process.exit(1);
 });

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
   ApiBody,
@@ -32,15 +42,34 @@ export class AuthController {
   @Post("login")
   @ApiOperation({ summary: "用户登录" })
   @ApiBody({ type: LoginDto })
-  @ApiResponse({ status: 200, description: "登录成功，返回统一成功响应并设置 session cookie" })
-  @ApiResponse({ status: 400, description: "请求参数错误", type: ErrorResponseDto })
-  @ApiResponse({ status: 401, description: "用户名或密码错误", type: ErrorResponseDto })
-  async login(@Body() body: LoginDto, @Req() request: Request, @Res({ passthrough: true }) response: Response) {
-    const result = await this.authService.login(body.username.trim(), body.password, {
-      ip: request.ip,
-      traceId: (request as Request & { traceId?: string }).traceId,
-      userAgent: request.headers["user-agent"]?.toString()
-    });
+  @ApiResponse({
+    status: 200,
+    description: "登录成功，返回统一成功响应并设置 session cookie"
+  })
+  @ApiResponse({
+    status: 400,
+    description: "请求参数错误",
+    type: ErrorResponseDto
+  })
+  @ApiResponse({
+    status: 401,
+    description: "用户名或密码错误",
+    type: ErrorResponseDto
+  })
+  async login(
+    @Body() body: LoginDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response
+  ) {
+    const result = await this.authService.login(
+      body.username.trim(),
+      body.password,
+      {
+        ip: request.ip,
+        traceId: (request as Request & { traceId?: string }).traceId,
+        userAgent: request.headers["user-agent"]?.toString()
+      }
+    );
     const csrfToken = generateCsrfToken();
 
     response.setHeader("Set-Cookie", [
@@ -63,11 +92,16 @@ export class AuthController {
   @ApiCookieAuth("next_bff_session")
   @ApiResponse({ status: 200, description: "退出成功" })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  async logout(@Req() request: Request, @Res({ passthrough: true }) response: Response) {
+  async logout(
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response
+  ) {
     await this.authService.logout(request);
     response.setHeader("Set-Cookie", [
       clearSessionCookie({ secure: this.shouldUseSecureCookie() }),
-      createCsrfCookie(generateCsrfToken(), { secure: this.shouldUseSecureCookie() })
+      createCsrfCookie(generateCsrfToken(), {
+        secure: this.shouldUseSecureCookie()
+      })
     ]);
 
     return null;
@@ -79,7 +113,10 @@ export class AuthController {
   csrf(@Res({ passthrough: true }) response: Response) {
     const csrfToken = generateCsrfToken();
 
-    response.setHeader("Set-Cookie", createCsrfCookie(csrfToken, { secure: this.shouldUseSecureCookie() }));
+    response.setHeader(
+      "Set-Cookie",
+      createCsrfCookie(csrfToken, { secure: this.shouldUseSecureCookie() })
+    );
 
     return {
       csrfToken
@@ -115,7 +152,11 @@ export class AuthController {
   @ApiCookieAuth("next_bff_session")
   @ApiResponse({ status: 200, description: "查询登录日志成功" })
   @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
-  @ApiResponse({ status: 403, description: "无审计日志查看权限", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: "无审计日志查看权限",
+    type: ErrorResponseDto
+  })
   loginLogs(@Query() query: QueryLoginAuditLogDto) {
     return this.authService.listLoginLogs(query);
   }

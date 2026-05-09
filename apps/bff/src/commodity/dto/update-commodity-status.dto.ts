@@ -8,7 +8,11 @@ enum UpdateCommodityStatus {
 }
 
 export class UpdateCommodityStatusDto {
-  @ApiProperty({ description: "目标状态，仅允许上下架流转", enum: UpdateCommodityStatus, example: UpdateCommodityStatus.OnSale })
+  @ApiProperty({
+    description: "目标状态，仅允许上下架流转",
+    enum: UpdateCommodityStatus,
+    example: UpdateCommodityStatus.OnSale
+  })
   @IsEnum(UpdateCommodityStatus)
   status!: CommodityStatus;
 

@@ -1,4 +1,8 @@
-import { BadGatewayException, HttpException, InternalServerErrorException } from "@nestjs/common";
+import {
+  BadGatewayException,
+  HttpException,
+  InternalServerErrorException
+} from "@nestjs/common";
 
 export type BackendEnvelope<T> =
   | {

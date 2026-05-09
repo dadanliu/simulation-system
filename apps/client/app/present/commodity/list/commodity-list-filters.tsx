@@ -10,11 +10,16 @@ type CommodityListFiltersProps = {
   filters: CommodityListFilters;
 };
 
-export function CommodityListFiltersPanel({ filters }: CommodityListFiltersProps) {
+export function CommodityListFiltersPanel({
+  filters
+}: CommodityListFiltersProps) {
   const router = useRouter();
   const [form, setForm] = useState(filters);
 
-  function updateForm<T extends keyof CommodityListFilters>(key: T, value: CommodityListFilters[T]) {
+  function updateForm<T extends keyof CommodityListFilters>(
+    key: T,
+    value: CommodityListFilters[T]
+  ) {
     setForm((current) => ({
       ...current,
       [key]: value
@@ -22,7 +27,9 @@ export function CommodityListFiltersPanel({ filters }: CommodityListFiltersProps
   }
 
   function pushFilters(nextFilters: CommodityListFilters) {
-    router.push(`/present/commodity/list?${buildCommodityListSearchParams(nextFilters).toString()}`);
+    router.push(
+      `/present/commodity/list?${buildCommodityListSearchParams(nextFilters).toString()}`
+    );
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -70,7 +77,12 @@ export function CommodityListFiltersPanel({ filters }: CommodityListFiltersProps
         <span>状态</span>
         <select
           name="status"
-          onChange={(event) => updateForm("status", event.target.value as CommodityListFilters["status"])}
+          onChange={(event) =>
+            updateForm(
+              "status",
+              event.target.value as CommodityListFilters["status"]
+            )
+          }
           value={form.status}
         >
           <option value="">全部</option>
@@ -149,7 +161,12 @@ export function CommodityListFiltersPanel({ filters }: CommodityListFiltersProps
         <span>排序字段</span>
         <select
           name="sortBy"
-          onChange={(event) => updateForm("sortBy", event.target.value as CommodityListFilters["sortBy"])}
+          onChange={(event) =>
+            updateForm(
+              "sortBy",
+              event.target.value as CommodityListFilters["sortBy"]
+            )
+          }
           value={form.sortBy}
         >
           <option value="createdAt">创建时间</option>
@@ -163,7 +180,12 @@ export function CommodityListFiltersPanel({ filters }: CommodityListFiltersProps
         <span>排序方向</span>
         <select
           name="sortOrder"
-          onChange={(event) => updateForm("sortOrder", event.target.value as CommodityListFilters["sortOrder"])}
+          onChange={(event) =>
+            updateForm(
+              "sortOrder",
+              event.target.value as CommodityListFilters["sortOrder"]
+            )
+          }
           value={form.sortOrder}
         >
           <option value="desc">降序</option>
@@ -174,7 +196,9 @@ export function CommodityListFiltersPanel({ filters }: CommodityListFiltersProps
         <span>每页数量</span>
         <select
           name="pageSize"
-          onChange={(event) => updateForm("pageSize", Number(event.target.value))}
+          onChange={(event) =>
+            updateForm("pageSize", Number(event.target.value))
+          }
           value={form.pageSize}
         >
           <option value={10}>10</option>
@@ -186,7 +210,11 @@ export function CommodityListFiltersPanel({ filters }: CommodityListFiltersProps
       <button className="button" type="submit">
         筛选
       </button>
-      <button className="button button--secondary" onClick={handleReset} type="button">
+      <button
+        className="button button--secondary"
+        onClick={handleReset}
+        type="button"
+      >
         重置
       </button>
     </form>

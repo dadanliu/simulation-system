@@ -1,7 +1,11 @@
-import { Injectable, Logger, OnModuleDestroy } from "@nestjs/common";
+import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import Redis from "ioredis";
 import { randomUUID } from "node:crypto";
+import {
+  getErrorLogFields,
+  writeStructuredLog
+} from "../common/logging/structured-log";
 import { SESSION_MAX_AGE_SECONDS } from "./session-cookie";
 
 export type SessionDevice = {
@@ -21,7 +25,6 @@ export type SessionRecord = {
 export class SessionStoreService implements OnModuleDestroy {
   private static readonly REDIS_ERROR_LOG_INTERVAL_MS = 30_000;
 
-  private readonly logger = new Logger(SessionStoreService.name);
   private readonly redis: Redis;
   private readonly sessionKeyPrefix: string;
   private readonly userSessionsKeyPrefix: string;
@@ -29,17 +32,26 @@ export class SessionStoreService implements OnModuleDestroy {
   private lastRedisErrorLogAt = 0;
 
   constructor(private readonly configService: ConfigService) {
-    this.ttlSeconds = this.readPositiveInteger("SESSION_TTL_SECONDS", SESSION_MAX_AGE_SECONDS);
-    this.sessionKeyPrefix = this.configService.get<string>("SESSION_REDIS_KEY_PREFIX", "next-bff:session:");
+    this.ttlSeconds = this.readPositiveInteger(
+      "SESSION_TTL_SECONDS",
+      SESSION_MAX_AGE_SECONDS
+    );
+    this.sessionKeyPrefix = this.configService.get<string>(
+      "SESSION_REDIS_KEY_PREFIX",
+      "next-bff:session:"
+    );
     this.userSessionsKeyPrefix = this.configService.get<string>(
       "SESSION_USER_REDIS_KEY_PREFIX",
       "next-bff:user-sessions:"
     );
-    this.redis = new Redis(this.configService.get<string>("REDIS_URL", "redis://127.0.0.1:6379"), {
-      enableOfflineQueue: false,
-      maxRetriesPerRequest: 1,
-      retryStrategy: (times) => Math.min(times * 500, 5_000)
-    });
+    this.redis = new Redis(
+      this.configService.get<string>("REDIS_URL", "redis://127.0.0.1:6379"),
+      {
+        enableOfflineQueue: false,
+        maxRetriesPerRequest: 1,
+        retryStrategy: (times) => Math.min(times * 500, 5_000)
+      }
+    );
     this.redis.on("error", (error) => {
       this.logRedisError(error);
     });
@@ -66,7 +78,12 @@ export class SessionStoreService implements OnModuleDestroy {
 
     await this.redis
       .multi()
-      .set(this.getSessionKey(sessionId), JSON.stringify(session), "EX", this.ttlSeconds)
+      .set(
+        this.getSessionKey(sessionId),
+        JSON.stringify(session),
+        "EX",
+        this.ttlSeconds
+      )
       .sadd(this.getUserSessionsKey(userId), sessionId)
       .expire(this.getUserSessionsKey(userId), this.ttlSeconds)
       .exec();
@@ -112,11 +129,19 @@ export class SessionStoreService implements OnModuleDestroy {
   }
 
   async listUserSessions(userId: string) {
-    const sessionIds = await this.redis.smembers(this.getUserSessionsKey(userId));
-    const sessions = await Promise.all(sessionIds.map((sessionId) => this.getSession(sessionId)));
-    const activeSessions = sessions.filter((session): session is SessionRecord => Boolean(session));
+    const sessionIds = await this.redis.smembers(
+      this.getUserSessionsKey(userId)
+    );
+    const sessions = await Promise.all(
+      sessionIds.map((sessionId) => this.getSession(sessionId))
+    );
+    const activeSessions = sessions.filter(
+      (session): session is SessionRecord => Boolean(session)
+    );
 
-    return activeSessions.sort((left, right) => right.createdAt - left.createdAt);
+    return activeSessions.sort(
+      (left, right) => right.createdAt - left.createdAt
+    );
   }
 
   private getSessionKey(sessionId: string) {
@@ -160,13 +185,21 @@ export class SessionStoreService implements OnModuleDestroy {
   private logRedisError(error: Error) {
     const now = Date.now();
 
-    if (now - this.lastRedisErrorLogAt < SessionStoreService.REDIS_ERROR_LOG_INTERVAL_MS) {
+    if (
+      now - this.lastRedisErrorLogAt <
+      SessionStoreService.REDIS_ERROR_LOG_INTERVAL_MS
+    ) {
       return;
     }
 
     this.lastRedisErrorLogAt = now;
-    this.logger.error(
-      `Redis session store error: ${error.message}. Start Redis or set REDIS_URL to a reachable Redis instance.`
-    );
+    writeStructuredLog({
+      context: SessionStoreService.name,
+      event: "redis_session_store_error",
+      fields: getErrorLogFields(error),
+      level: "error",
+      message:
+        "Redis session store error. Start Redis or set REDIS_URL to a reachable Redis instance."
+    });
   }
 }

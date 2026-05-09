@@ -2,7 +2,11 @@ import { NotFoundException, type INestApplication } from "@nestjs/common";
 import request = require("supertest");
 import { CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from "../common/http/csrf-token";
 import type { AuthUser } from "../user/user.types";
-import { createBffTestApp, createTestAppMocks, type TestAppMocks } from "../test/app-test-utils";
+import {
+  createBffTestApp,
+  createTestAppMocks,
+  type TestAppMocks
+} from "../test/app-test-utils";
 import type { Commodity } from "./commodity.types";
 
 describe("CommodityController e2e", () => {
@@ -50,7 +54,9 @@ describe("CommodityController e2e", () => {
 
   beforeEach(async () => {
     mocks = createTestAppMocks();
-    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(true);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(
+      true
+    );
     app = await createBffTestApp(mocks);
   });
 
@@ -69,8 +75,12 @@ describe("CommodityController e2e", () => {
   }
 
   async function issueCsrfToken() {
-    const response = await request(app.getHttpServer()).get("/api/auth/csrf").expect(200);
-    const setCookie = getSetCookies(response).find((value) => value.startsWith(`${CSRF_COOKIE_NAME}=`));
+    const response = await request(app.getHttpServer())
+      .get("/api/auth/csrf")
+      .expect(200);
+    const setCookie = getSetCookies(response).find((value) =>
+      value.startsWith(`${CSRF_COOKIE_NAME}=`)
+    );
 
     expect(setCookie).toBeDefined();
 
@@ -85,8 +95,13 @@ describe("CommodityController e2e", () => {
     };
   }
 
-  function expectPermissionCheck(roleCodes: string[], permissionCodes: string[]) {
-    expect(mocks.permissionService.hasAllPermissionsByRoleCodes).toHaveBeenCalledWith(roleCodes, permissionCodes);
+  function expectPermissionCheck(
+    roleCodes: string[],
+    permissionCodes: string[]
+  ) {
+    expect(
+      mocks.permissionService.hasAllPermissionsByRoleCodes
+    ).toHaveBeenCalledWith(roleCodes, permissionCodes);
   }
 
   it("rejects anonymous commodity access with a unified 401 response", async () => {
@@ -172,13 +187,17 @@ describe("CommodityController e2e", () => {
       success: false,
       traceId: "trace-list-pagesize"
     });
-    expect(response.body.message).toContain("pageSize must not be greater than 100");
+    expect(response.body.message).toContain(
+      "pageSize must not be greater than 100"
+    );
     expect(mocks.commodityService.listCommodities).not.toHaveBeenCalled();
   });
 
   it("returns a unified 404 response when commodity detail is missing", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
-    mocks.commodityService.getCommodity.mockRejectedValue(new NotFoundException("commodity not found"));
+    mocks.commodityService.getCommodity.mockRejectedValue(
+      new NotFoundException("commodity not found")
+    );
 
     const response = await request(app.getHttpServer())
       .get("/api/commodity/99999")
@@ -285,7 +304,9 @@ describe("CommodityController e2e", () => {
 
   it("rejects audit log access when the logged-in user lacks audit permission", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
-    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(false);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(
+      false
+    );
 
     const response = await request(app.getHttpServer())
       .get("/api/commodity/audit-logs")
@@ -309,7 +330,9 @@ describe("CommodityController e2e", () => {
       ...operatorUser,
       permissions: [...operatorUser.permissions, "audit:read"]
     });
-    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(true);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(
+      true
+    );
 
     const response = await request(app.getHttpServer())
       .get("/api/commodity/audit-logs")
@@ -377,7 +400,9 @@ describe("CommodityController e2e", () => {
 
   it("rejects commodity creation when the logged-in user lacks permission", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
-    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(false);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(
+      false
+    );
     const csrf = await issueCsrfToken();
 
     const response = await request(app.getHttpServer())
@@ -491,7 +516,9 @@ describe("CommodityController e2e", () => {
 
   it("rejects commodity update when the logged-in user lacks permission", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(operatorUser);
-    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(false);
+    mocks.permissionService.hasAllPermissionsByRoleCodes.mockResolvedValue(
+      false
+    );
     const csrf = await issueCsrfToken();
 
     const response = await request(app.getHttpServer())
@@ -818,7 +845,9 @@ describe("CommodityController e2e", () => {
       success: false,
       traceId: "trace-delete-forged-operator"
     });
-    expect(response.body.message).toContain("property operator should not exist");
+    expect(response.body.message).toContain(
+      "property operator should not exist"
+    );
     expect(mocks.commodityService.deleteCommodity).not.toHaveBeenCalled();
   });
 

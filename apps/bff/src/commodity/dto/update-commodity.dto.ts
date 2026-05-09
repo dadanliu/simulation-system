@@ -1,5 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import {
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min
+} from "class-validator";
 
 export class UpdateCommodityDto {
   @ApiProperty({ description: "商品名称", example: "北极星机械键盘" })
@@ -21,12 +28,20 @@ export class UpdateCommodityDto {
   @IsString()
   description!: string;
 
-  @ApiProperty({ description: "商品图片文件ID", example: "upload_10001", required: false })
+  @ApiProperty({
+    description: "商品图片文件ID",
+    example: "upload_10001",
+    required: false
+  })
   @IsOptional()
   @IsString()
   imageFileId?: string;
 
-  @ApiProperty({ description: "商品图片访问地址", example: "/uploads/commodity/example.png", required: false })
+  @ApiProperty({
+    description: "商品图片访问地址",
+    example: "/uploads/commodity/example.png",
+    required: false
+  })
   @IsOptional()
   @IsString()
   imageUrl?: string;

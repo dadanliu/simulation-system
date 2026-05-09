@@ -142,9 +142,14 @@ describe("CommodityService", () => {
     });
 
     await expect(
-      service.deleteCommodity({ traceId: "trace-delete" } as never, user, commodity.id, {
-        reason: "重复创建"
-      })
+      service.deleteCommodity(
+        { traceId: "trace-delete" } as never,
+        user,
+        commodity.id,
+        {
+          reason: "重复创建"
+        }
+      )
     ).resolves.toEqual({
       auditLog: {
         action: "delete",
@@ -190,12 +195,19 @@ describe("CommodityService", () => {
   });
 
   it("maps backend commodity-not-found error to Nest NotFoundException", async () => {
-    apiClientService.request.mockRejectedValue(new BffBusinessException("commodity not found", 20001));
+    apiClientService.request.mockRejectedValue(
+      new BffBusinessException("commodity not found", 20001)
+    );
 
     await expect(
-      service.deleteCommodity({ traceId: "trace-delete" } as never, user, "missing-id", {
-        reason: "重复创建"
-      })
+      service.deleteCommodity(
+        { traceId: "trace-delete" } as never,
+        user,
+        "missing-id",
+        {
+          reason: "重复创建"
+        }
+      )
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(auditLogService.recordCommodityDelete).not.toHaveBeenCalled();
   });
@@ -229,9 +241,14 @@ describe("CommodityService", () => {
     });
 
     await expect(
-      service.restoreCommodity({ traceId: "trace-restore" } as never, user, commodity.id, {
-        reason: "误删恢复"
-      })
+      service.restoreCommodity(
+        { traceId: "trace-restore" } as never,
+        user,
+        commodity.id,
+        {
+          reason: "误删恢复"
+        }
+      )
     ).resolves.toEqual({
       auditLog: {
         action: "restore",
@@ -301,14 +318,19 @@ describe("CommodityService", () => {
     });
 
     await expect(
-      service.updateCommodity({ traceId: "trace-update" } as never, user, commodity.id, {
-        description: "更新描述",
-        imageFileId: "file_1",
-        imageUrl: "/uploads/commodity/file_1.png",
-        name: "新商品",
-        price: 299,
-        stock: 8
-      })
+      service.updateCommodity(
+        { traceId: "trace-update" } as never,
+        user,
+        commodity.id,
+        {
+          description: "更新描述",
+          imageFileId: "file_1",
+          imageUrl: "/uploads/commodity/file_1.png",
+          name: "新商品",
+          price: 299,
+          stock: 8
+        }
+      )
     ).resolves.toEqual({
       auditLog: {
         action: "update",
@@ -380,10 +402,15 @@ describe("CommodityService", () => {
     });
 
     await expect(
-      service.updateCommodityStatus({ traceId: "trace-status" } as never, user, commodity.id, {
-        reason: "审核通过",
-        status: "on_sale"
-      })
+      service.updateCommodityStatus(
+        { traceId: "trace-status" } as never,
+        user,
+        commodity.id,
+        {
+          reason: "审核通过",
+          status: "on_sale"
+        }
+      )
     ).resolves.toMatchObject({
       auditLog: {
         action: "status_change",

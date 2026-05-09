@@ -30,7 +30,10 @@ function listPortPids() {
         encoding: "utf8"
       }).trim();
 
-      for (const pid of output.split("\n").map((value) => value.trim()).filter(Boolean)) {
+      for (const pid of output
+        .split("\n")
+        .map((value) => value.trim())
+        .filter(Boolean)) {
         pids.add(pid);
       }
     } catch (error) {
@@ -127,7 +130,9 @@ async function stopDevServices() {
   const remainingPids = listPortPids();
 
   if (remainingPids.length > 0) {
-    console.log(`Force stopping remaining dev services: ${remainingPids.join(", ")}`);
+    console.log(
+      `Force stopping remaining dev services: ${remainingPids.join(", ")}`
+    );
     const failed = killPids(remainingPids, "KILL");
 
     if (failed.length > 0) {
@@ -136,17 +141,23 @@ async function stopDevServices() {
   }
 
   if (!(await waitForPortsToClose())) {
-    throw new Error("Ports 3000, 3001, or 3002 are still in use after restart cleanup.");
+    throw new Error(
+      "Ports 3000, 3001, or 3002 are still in use after restart cleanup."
+    );
   }
 
   fs.rmSync(STATE_FILE, { force: true });
 }
 
 function startDevAll() {
-  const child = spawn(process.platform === "win32" ? "pnpm.cmd" : "pnpm", ["dev:all"], {
-    cwd: process.cwd(),
-    stdio: "inherit"
-  });
+  const child = spawn(
+    process.platform === "win32" ? "pnpm.cmd" : "pnpm",
+    ["dev:all"],
+    {
+      cwd: process.cwd(),
+      stdio: "inherit"
+    }
+  );
 
   child.on("exit", (code, signal) => {
     if (signal) {

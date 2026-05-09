@@ -21,6 +21,11 @@ export type StoredFileAccess = {
 };
 
 export type StorageService = {
-  getAccess(fileId: string): Promise<StoredFileAccess | null> | StoredFileAccess | null;
-  save(file: UploadedMemoryFile, scene: StorageScene): Promise<StoredFile> | StoredFile;
+  getAccess(
+    fileId: string
+  ): Promise<StoredFileAccess | null> | StoredFileAccess | null;
+  save(
+    file: UploadedMemoryFile,
+    scene: StorageScene
+  ): Promise<StoredFile> | StoredFile;
 };

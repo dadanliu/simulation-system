@@ -10,7 +10,10 @@ type CommodityDeleteFormProps = {
   commodityName: string;
 };
 
-export function CommodityDeleteForm({ commodityId, commodityName }: CommodityDeleteFormProps) {
+export function CommodityDeleteForm({
+  commodityId,
+  commodityName
+}: CommodityDeleteFormProps) {
   const router = useRouter();
   const [confirmText, setConfirmText] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -30,7 +33,9 @@ export function CommodityDeleteForm({ commodityId, commodityName }: CommodityDel
       return;
     }
 
-    const confirmed = window.confirm(`再次确认删除商品「${commodityName}」吗？删除后列表将不可见。`);
+    const confirmed = window.confirm(
+      `再次确认删除商品「${commodityName}」吗？删除后列表将不可见。`
+    );
 
     if (!confirmed) {
       return;
@@ -82,7 +87,11 @@ export function CommodityDeleteForm({ commodityId, commodityName }: CommodityDel
           />
         </label>
         <div className="inline-actions">
-          <button className="button button--danger" disabled={isSubmitting} type="submit">
+          <button
+            className="button button--danger"
+            disabled={isSubmitting}
+            type="submit"
+          >
             {isSubmitting ? "删除中..." : "删除商品"}
           </button>
         </div>

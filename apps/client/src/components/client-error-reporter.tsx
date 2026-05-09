@@ -7,7 +7,8 @@ import { reportFrontendError } from "@/src/lib/client-error-report";
 export function ClientErrorReporter() {
   useEffect(() => {
     function handleError(event: ErrorEvent) {
-      const appError = event.error instanceof Error ? parseAppError(event.error) : null;
+      const appError =
+        event.error instanceof Error ? parseAppError(event.error) : null;
 
       void reportFrontendError({
         category: "runtime",
@@ -20,7 +21,10 @@ export function ClientErrorReporter() {
     }
 
     function handleRejection(event: PromiseRejectionEvent) {
-      const reason = event.reason instanceof Error ? event.reason : new Error(String(event.reason));
+      const reason =
+        event.reason instanceof Error
+          ? event.reason
+          : new Error(String(event.reason));
       const appError = parseAppError(reason);
 
       void reportFrontendError({

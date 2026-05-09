@@ -25,7 +25,10 @@ export function getSessionIdFromRequest(request: Request) {
   return cookies[SESSION_COOKIE_NAME] ?? null;
 }
 
-export function createSessionCookie(sessionId: string, options: SessionCookieOptions = {}) {
+export function createSessionCookie(
+  sessionId: string,
+  options: SessionCookieOptions = {}
+) {
   const maxAgeSeconds = options.maxAgeSeconds ?? SESSION_MAX_AGE_SECONDS;
   const cookieParts = [
     `${SESSION_COOKIE_NAME}=${encodeURIComponent(sessionId)}`,
@@ -43,7 +46,13 @@ export function createSessionCookie(sessionId: string, options: SessionCookieOpt
 }
 
 export function clearSessionCookie(options: SessionCookieOptions = {}) {
-  const cookieParts = [`${SESSION_COOKIE_NAME}=`, "Path=/", "HttpOnly", "SameSite=Lax", "Max-Age=0"];
+  const cookieParts = [
+    `${SESSION_COOKIE_NAME}=`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    "Max-Age=0"
+  ];
 
   if (options.secure) {
     cookieParts.push("Secure");

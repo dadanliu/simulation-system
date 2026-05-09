@@ -24,7 +24,9 @@ http://localhost:3000/present/commodity/list?page=1&pageSize=10&sortBy=createdAt
 // apps/client/app/present/commodity/list/page.tsx
 export const dynamic = "force-dynamic";
 
-export default async function CommodityListPage({ searchParams }: CommodityListPageProps) {
+export default async function CommodityListPage({
+  searchParams
+}: CommodityListPageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
   return <CommodityListContent searchParams={resolvedSearchParams} />;
 }
@@ -47,12 +49,15 @@ export async function CommodityListContent({ searchParams }: CommodityListConten
 
 ```ts
 // apps/client/src/features/commodity/server.ts
-const response = await fetch(`${internalOrigin}/api/commodity/list?${query.toString()}`, {
-  cache: "no-store",
-  headers: {
-    cookie
+const response = await fetch(
+  `${internalOrigin}/api/commodity/list?${query.toString()}`,
+  {
+    cache: "no-store",
+    headers: {
+      cookie
+    }
   }
-});
+);
 ```
 
 这里的 `fetch()` 运行在 Next 服务端，不运行在浏览器。

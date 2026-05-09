@@ -6,10 +6,15 @@ const { bffBaseUrl } = loadClientConfig();
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: NextRequest, context: { params: Promise<{ fileId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ fileId: string }> }
+) {
   const { fileId } = await context.params;
   const cookieStore = await cookies();
-  const upstreamUrl = new URL(`${bffBaseUrl}/api/files/${encodeURIComponent(fileId)}`);
+  const upstreamUrl = new URL(
+    `${bffBaseUrl}/api/files/${encodeURIComponent(fileId)}`
+  );
 
   request.nextUrl.searchParams.forEach((value, key) => {
     upstreamUrl.searchParams.set(key, value);
@@ -20,9 +25,13 @@ export async function GET(request: NextRequest, context: { params: Promise<{ fil
       accept: request.headers.get("accept") ?? "*/*",
       cookie: cookieStore.toString(),
       ...(request.headers.get("if-modified-since")
-        ? { "if-modified-since": request.headers.get("if-modified-since") ?? "" }
+        ? {
+            "if-modified-since": request.headers.get("if-modified-since") ?? ""
+          }
         : {}),
-      ...(request.headers.get("if-none-match") ? { "if-none-match": request.headers.get("if-none-match") ?? "" } : {})
+      ...(request.headers.get("if-none-match")
+        ? { "if-none-match": request.headers.get("if-none-match") ?? "" }
+        : {})
     },
     method: "GET"
   });

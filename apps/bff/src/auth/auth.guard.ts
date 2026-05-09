@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException
+} from "@nestjs/common";
 import { GetCurrentUserService } from "./get-current-user";
 import type { AuthenticatedRequest } from "./auth-request";
 
