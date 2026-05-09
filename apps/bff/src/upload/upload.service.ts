@@ -38,18 +38,29 @@ export type ProductImageUploadResult = {
 export class UploadService {
   constructor(private readonly apiClientService: ApiClientService) {}
 
-  async uploadFile(request: Request, user: AuthUser, file: UploadedMemoryFile, scene?: string) {
+  async uploadFile(
+    request: Request,
+    user: AuthUser,
+    file: UploadedMemoryFile,
+    scene?: string
+  ) {
     const formData = new FormData();
-    const blob = new Blob([new Uint8Array(file.buffer)], { type: file.mimetype });
+    const blob = new Blob([new Uint8Array(file.buffer)], {
+      type: file.mimetype
+    });
 
     formData.append("file", blob, file.originalname);
     formData.append("scene", scene?.trim() || "commodity");
 
-    const result = await this.apiClientService.request<UploadResult>(request, "/api/upload", {
-      formData,
-      method: "POST",
-      userId: user.id
-    });
+    const result = await this.apiClientService.request<UploadResult>(
+      request,
+      "/api/upload",
+      {
+        formData,
+        method: "POST",
+        userId: user.id
+      }
+    );
 
     const fileId = result.fileId ?? result.uploadId;
 

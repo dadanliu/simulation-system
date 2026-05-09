@@ -38,7 +38,11 @@ function getHeaderOrigin(request: Request) {
 export function createCsrfOriginMiddleware(allowedOrigins: string[]) {
   const allowedOriginSet = new Set(allowedOrigins);
 
-  return function csrfOriginMiddleware(request: Request, response: Response, next: NextFunction) {
+  return function csrfOriginMiddleware(
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) {
     if (SAFE_METHODS.has(request.method.toUpperCase())) {
       next();
       return;

@@ -23,6 +23,9 @@ export class TestResetController {
   }
 
   private isEnabled() {
-    return this.configService.get<string>("APP_ENV") === "test" || this.configService.get<string>("E2E_TEST_RESET_ENABLED") === "true";
+    return (
+      this.configService.get<string>("APP_ENV") === "test" ||
+      this.configService.get<string>("E2E_TEST_RESET_ENABLED") === "true"
+    );
   }
 }

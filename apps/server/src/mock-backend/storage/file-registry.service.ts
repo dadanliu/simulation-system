@@ -1,6 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from "node:fs";
 import * as path from "node:path";
 import type { StoredFile } from "./storage.types";
 
@@ -9,7 +15,12 @@ export class FileRegistryService {
   private readonly registryPath: string;
 
   constructor(configService: ConfigService) {
-    this.registryPath = path.resolve(configService.get<string>("UPLOAD_REGISTRY_PATH", ".dev/upload-registry.json"));
+    this.registryPath = path.resolve(
+      configService.get<string>(
+        "UPLOAD_REGISTRY_PATH",
+        ".dev/upload-registry.json"
+      )
+    );
   }
 
   get(fileId: string): StoredFile | null {
@@ -34,7 +45,10 @@ export class FileRegistryService {
     }
 
     try {
-      return JSON.parse(readFileSync(this.registryPath, "utf8")) as Record<string, StoredFile>;
+      return JSON.parse(readFileSync(this.registryPath, "utf8")) as Record<
+        string,
+        StoredFile
+      >;
     } catch {
       return {};
     }

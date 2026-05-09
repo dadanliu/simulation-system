@@ -15,7 +15,10 @@ function hasSessionCookie(request: NextRequest) {
 function redirectToLogin(request: NextRequest) {
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = LOGIN_PATH;
-  loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+  loginUrl.searchParams.set(
+    "next",
+    `${request.nextUrl.pathname}${request.nextUrl.search}`
+  );
 
   return NextResponse.redirect(loginUrl);
 }
@@ -71,13 +74,16 @@ function getRequestOrigin(request: NextRequest) {
 }
 
 function getSameOrigin(request: NextRequest) {
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const host =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
 
   if (!host) {
     return request.nextUrl.origin;
   }
 
-  const protocol = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
+  const protocol =
+    request.headers.get("x-forwarded-proto") ??
+    request.nextUrl.protocol.replace(":", "");
 
   return `${protocol}://${host}`;
 }
@@ -95,7 +101,11 @@ function isCsrfSafeApiRequest(request: NextRequest) {
   const sameOrigin = getSameOrigin(request);
 
   // Same-origin browser writes send Origin. Non-browser callers may omit it, so this guard rejects explicit mismatches.
-  return !requestOrigin || requestOrigin === sameOrigin || requestOrigin === request.nextUrl.origin;
+  return (
+    !requestOrigin ||
+    requestOrigin === sameOrigin ||
+    requestOrigin === request.nextUrl.origin
+  );
 }
 
 export function middleware(request: NextRequest) {

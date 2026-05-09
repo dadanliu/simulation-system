@@ -1,7 +1,10 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
-import { PermissionEntity, PermissionSchema } from "../permission/schemas/permission.schema";
+import {
+  PermissionEntity,
+  PermissionSchema
+} from "../permission/schemas/permission.schema";
 import { PermissionService } from "../permission/permission.service";
 import { PermissionsGuard } from "../permission/permissions.guard";
 import { RoleEntity, RoleSchema } from "../role/schemas/role.schema";
@@ -14,7 +17,10 @@ import { GetCurrentUserService } from "./get-current-user";
 import { LoginAuditLogService } from "./login-audit-log.service";
 import { LoginRiskService } from "./login-risk.service";
 import { RbacSeedService } from "./rbac-seed.service";
-import { LoginAuditLogEntity, LoginAuditLogSchema } from "./schemas/login-audit-log.schema";
+import {
+  LoginAuditLogEntity,
+  LoginAuditLogSchema
+} from "./schemas/login-audit-log.schema";
 import { SessionStoreService } from "./session-store.service";
 
 @Module({

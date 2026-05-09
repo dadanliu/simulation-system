@@ -2,7 +2,8 @@ const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const E2E_MONGODB_URI = process.env.E2E_MONGODB_URI ?? "mongodb://127.0.0.1:27018/next-bff-test";
+const E2E_MONGODB_URI =
+  process.env.E2E_MONGODB_URI ?? "mongodb://127.0.0.1:27018/next-bff-test";
 const E2E_REDIS_URL = process.env.E2E_REDIS_URL ?? "redis://127.0.0.1:6379";
 const E2E_DIR = path.resolve(".dev/e2e");
 const mongoUrl = new URL(E2E_MONGODB_URI);
@@ -59,7 +60,17 @@ const services = [
   {
     name: "client",
     command: "pnpm",
-    args: ["--filter", "@next-bff/client", "exec", "next", "dev", "-H", "127.0.0.1", "-p", "3200"],
+    args: [
+      "--filter",
+      "@next-bff/client",
+      "exec",
+      "next",
+      "dev",
+      "-H",
+      "127.0.0.1",
+      "-p",
+      "3200"
+    ],
     env: {
       BFF_BASE_URL: "http://127.0.0.1:3201",
       NEXT_INTERNAL_ORIGIN: "http://127.0.0.1:3200",

@@ -1,7 +1,17 @@
-import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
+import {
+  expect,
+  test,
+  type APIRequestContext,
+  type Browser,
+  type Page
+} from "@playwright/test";
 
-const bffBaseUrl = process.env.PLAYWRIGHT_BFF_BASE_URL ?? "http://127.0.0.1:3201";
-const tinyPng = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=", "base64");
+const bffBaseUrl =
+  process.env.PLAYWRIGHT_BFF_BASE_URL ?? "http://127.0.0.1:3201";
+const tinyPng = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=",
+  "base64"
+);
 
 async function resetTestData(request: APIRequestContext) {
   let lastStatus = 0;
@@ -25,7 +35,9 @@ async function resetTestData(request: APIRequestContext) {
     await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
 
-  throw new Error(`test data reset failed with status ${lastStatus}${lastError ? `: ${lastError}` : ""}`);
+  throw new Error(
+    `test data reset failed with status ${lastStatus}${lastError ? `: ${lastError}` : ""}`
+  );
 }
 
 async function login(page: Page, username = "admin", password = "admin123") {
@@ -37,7 +49,11 @@ async function login(page: Page, username = "admin", password = "admin123") {
   await expect(page.locator("h1", { hasText: "商品列表" })).toBeVisible();
 }
 
-async function loginWithNewPage(browser: Browser, username: string, password: string) {
+async function loginWithNewPage(
+  browser: Browser,
+  username: string,
+  password: string
+) {
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -56,7 +72,9 @@ test.beforeEach(async ({ request }) => {
 test("登录后访问商品列表", async ({ page }) => {
   await login(page);
 
-  await expect(page.getByRole("link", { name: "北极光蓝牙音箱" })).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "北极光蓝牙音箱" })
+  ).toBeVisible();
   await expect(page.getByRole("link", { name: "风暴机械键盘" })).toBeVisible();
 });
 
@@ -91,21 +109,36 @@ test("创建带图商品后列表展示图片", async ({ page }) => {
 });
 
 test("operator 修改状态后 admin 可以查看审计", async ({ browser }) => {
-  const { context: operatorContext, page: operatorPage } = await loginWithNewPage(browser, "operator", "operator123");
+  const { context: operatorContext, page: operatorPage } =
+    await loginWithNewPage(browser, "operator", "operator123");
 
   await operatorPage.goto("/present/commodity/10002");
-  await expect(operatorPage.locator("h1", { hasText: "商品详情" })).toBeVisible();
+  await expect(
+    operatorPage.locator("h1", { hasText: "商品详情" })
+  ).toBeVisible();
   await operatorPage.getByLabel("目标状态").selectOption("on_sale");
   await operatorPage.getByLabel("变更原因 *").fill("E2E 审核通过");
   await operatorPage.getByRole("button", { name: "提交状态变更" }).click();
-  await expect(operatorPage.getByText("状态已更新，审计日志已写入")).toBeVisible();
+  await expect(
+    operatorPage.getByText("状态已更新，审计日志已写入")
+  ).toBeVisible();
   await operatorContext.close();
 
-  const { context: adminContext, page: adminPage } = await loginWithNewPage(browser, "admin", "admin123");
+  const { context: adminContext, page: adminPage } = await loginWithNewPage(
+    browser,
+    "admin",
+    "admin123"
+  );
 
-  await adminPage.goto("/present/commodity/audit?action=status_change&targetId=10002&pageSize=20");
-  await expect(adminPage.locator("h2", { hasText: "商品审计日志" })).toBeVisible();
-  const auditRow = adminPage.getByRole("row", { name: /u_operator_001.*状态变更.*10002.*E2E 审核通过/ });
+  await adminPage.goto(
+    "/present/commodity/audit?action=status_change&targetId=10002&pageSize=20"
+  );
+  await expect(
+    adminPage.locator("h2", { hasText: "商品审计日志" })
+  ).toBeVisible();
+  const auditRow = adminPage.getByRole("row", {
+    name: /u_operator_001.*状态变更.*10002.*E2E 审核通过/
+  });
 
   await expect(auditRow).toBeVisible();
   await expect(auditRow.locator("td").nth(7)).toHaveText(/\S/);
@@ -123,5 +156,7 @@ test("admin 删除商品后列表不可见", async ({ page }) => {
   await page.getByRole("button", { name: "删除商品" }).click();
 
   await expect(page).toHaveURL(/\/present\/commodity\/list/);
-  await expect(page.getByRole("link", { name: "北极光蓝牙音箱" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "北极光蓝牙音箱" })).toHaveCount(
+    0
+  );
 });

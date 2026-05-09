@@ -2,7 +2,10 @@ import { Injectable, type OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { isCommodityStatus, validateCommodityStatusTransition } from "./commodity-status-rules";
+import {
+  isCommodityStatus,
+  validateCommodityStatusTransition
+} from "./commodity-status-rules";
 import { mockBusinessError, mockSuccess } from "./mock-response";
 import { Commodity, type CommodityDocument } from "./schemas/commodity.schema";
 
@@ -112,13 +115,17 @@ const defaultCommodities: MockCommodity[] = [
 ];
 
 const COMMODITY_LIST_MAX_PAGE_SIZE = 100;
-const DEFAULT_SORT_FIELD: NonNullable<ListCommoditiesQuery["sortField"]> = "createdAt";
-const SORT_FIELD_WHITELIST = new Set<NonNullable<ListCommoditiesQuery["sortField"]>>(["createdAt", "name", "price", "status", "stock"]);
+const DEFAULT_SORT_FIELD: NonNullable<ListCommoditiesQuery["sortField"]> =
+  "createdAt";
+const SORT_FIELD_WHITELIST = new Set<
+  NonNullable<ListCommoditiesQuery["sortField"]>
+>(["createdAt", "name", "price", "status", "stock"]);
 
 @Injectable()
 export class CommodityService implements OnModuleInit {
   constructor(
-    @InjectModel(Commodity.name) private readonly commodityModel: Model<CommodityDocument>,
+    @InjectModel(Commodity.name)
+    private readonly commodityModel: Model<CommodityDocument>,
     private readonly configService: ConfigService
   ) {}
 
@@ -179,15 +186,22 @@ export class CommodityService implements OnModuleInit {
     const priceMax = this.toOptionalNumber(query.priceMax);
     const stockMin = this.toOptionalNumber(query.stockMin);
     const stockMax = this.toOptionalNumber(query.stockMax);
-    const createdAtFrom = query.createdAtFrom ? new Date(query.createdAtFrom) : undefined;
-    const createdAtTo = query.createdAtTo ? new Date(query.createdAtTo) : undefined;
+    const createdAtFrom = query.createdAtFrom
+      ? new Date(query.createdAtFrom)
+      : undefined;
+    const createdAtTo = query.createdAtTo
+      ? new Date(query.createdAtTo)
+      : undefined;
 
     const filters: Record<string, unknown> = {
       deletedAt: null
     };
 
     if (keyword) {
-      filters.$or = [{ name: { $regex: keyword, $options: "i" } }, { id: { $regex: keyword, $options: "i" } }];
+      filters.$or = [
+        { name: { $regex: keyword, $options: "i" } },
+        { id: { $regex: keyword, $options: "i" } }
+      ];
     }
 
     if (query.status) {
@@ -208,10 +222,17 @@ export class CommodityService implements OnModuleInit {
       };
     }
 
-    if ((createdAtFrom && !Number.isNaN(createdAtFrom.getTime())) || (createdAtTo && !Number.isNaN(createdAtTo.getTime()))) {
+    if (
+      (createdAtFrom && !Number.isNaN(createdAtFrom.getTime())) ||
+      (createdAtTo && !Number.isNaN(createdAtTo.getTime()))
+    ) {
       filters.createdAt = {
-        ...(createdAtFrom && !Number.isNaN(createdAtFrom.getTime()) ? { $gte: createdAtFrom } : {}),
-        ...(createdAtTo && !Number.isNaN(createdAtTo.getTime()) ? { $lte: createdAtTo } : {})
+        ...(createdAtFrom && !Number.isNaN(createdAtFrom.getTime())
+          ? { $gte: createdAtFrom }
+          : {}),
+        ...(createdAtTo && !Number.isNaN(createdAtTo.getTime())
+          ? { $lte: createdAtTo }
+          : {})
       };
     }
 
@@ -225,7 +246,12 @@ export class CommodityService implements OnModuleInit {
     const sort = this.buildSort(sortField, sortDirection);
 
     const [commodities, total] = await Promise.all([
-      this.commodityModel.find(filters).sort(sort).skip(offset).limit(limit).lean(),
+      this.commodityModel
+        .find(filters)
+        .sort(sort)
+        .skip(offset)
+        .limit(limit)
+        .lean(),
       this.commodityModel.countDocuments(filters)
     ]);
 
@@ -240,7 +266,9 @@ export class CommodityService implements OnModuleInit {
   }
 
   async getCommodityById(id: string) {
-    const commodity = await this.commodityModel.findOne({ id, deletedAt: null }).lean();
+    const commodity = await this.commodityModel
+      .findOne({ id, deletedAt: null })
+      .lean();
 
     if (!commodity) {
       return mockBusinessError(20001, "commodity not found");
@@ -268,7 +296,10 @@ export class CommodityService implements OnModuleInit {
     }
 
     if (!Number.isInteger(stock) || stock < 0) {
-      return mockBusinessError(20004, "commodity stock must be a non-negative integer");
+      return mockBusinessError(
+        20004,
+        "commodity stock must be a non-negative integer"
+      );
     }
 
     if (!status || !isCommodityStatus(status)) {
@@ -307,7 +338,10 @@ export class CommodityService implements OnModuleInit {
 
   async deleteCommodity(id: string, deletedBy = "") {
     const deletedAt = new Date();
-    const commodity = await this.commodityModel.findOne({ id, deletedAt: null });
+    const commodity = await this.commodityModel.findOne({
+      id,
+      deletedAt: null
+    });
 
     if (!commodity) {
       return mockBusinessError(20001, "commodity not found");
@@ -326,7 +360,10 @@ export class CommodityService implements OnModuleInit {
   }
 
   async updateCommodity(id: string, body: UpdateCommodityBody = {}) {
-    const commodity = await this.commodityModel.findOne({ id, deletedAt: null });
+    const commodity = await this.commodityModel.findOne({
+      id,
+      deletedAt: null
+    });
     const name = body.name?.trim();
     const description = body.description?.trim() ?? "";
     const imageFileId = body.imageFileId?.trim() ?? "";
@@ -347,7 +384,10 @@ export class CommodityService implements OnModuleInit {
     }
 
     if (!Number.isInteger(stock) || stock < 0) {
-      return mockBusinessError(20004, "commodity stock must be a non-negative integer");
+      return mockBusinessError(
+        20004,
+        "commodity stock must be a non-negative integer"
+      );
     }
 
     const duplicatedCommodity = await this.commodityModel.exists({
@@ -377,7 +417,10 @@ export class CommodityService implements OnModuleInit {
   }
 
   async restoreCommodity(id: string) {
-    const commodity = await this.commodityModel.findOne({ id, deletedAt: { $ne: null } });
+    const commodity = await this.commodityModel.findOne({
+      id,
+      deletedAt: { $ne: null }
+    });
 
     if (!commodity) {
       return mockBusinessError(20001, "commodity not found");
@@ -395,8 +438,14 @@ export class CommodityService implements OnModuleInit {
     });
   }
 
-  async updateCommodityStatus(id: string, body: UpdateCommodityStatusBody = {}) {
-    const commodity = await this.commodityModel.findOne({ id, deletedAt: null });
+  async updateCommodityStatus(
+    id: string,
+    body: UpdateCommodityStatusBody = {}
+  ) {
+    const commodity = await this.commodityModel.findOne({
+      id,
+      deletedAt: null
+    });
     const reason = body.reason?.trim();
 
     if (!commodity) {
@@ -411,7 +460,10 @@ export class CommodityService implements OnModuleInit {
       return mockBusinessError(20010, "target status is invalid");
     }
 
-    const transitionResult = validateCommodityStatusTransition(commodity.status, body.status);
+    const transitionResult = validateCommodityStatusTransition(
+      commodity.status,
+      body.status
+    );
 
     if (!transitionResult.ok) {
       return mockBusinessError(transitionResult.code, transitionResult.message);
@@ -439,7 +491,10 @@ export class CommodityService implements OnModuleInit {
   }
 
   private toPageSize(value: string | undefined, fallback: number) {
-    return Math.min(this.toPositiveInteger(value, fallback), COMMODITY_LIST_MAX_PAGE_SIZE);
+    return Math.min(
+      this.toPositiveInteger(value, fallback),
+      COMMODITY_LIST_MAX_PAGE_SIZE
+    );
   }
 
   private toNonNegativeInteger(value: string | undefined, fallback: number) {
@@ -462,12 +517,20 @@ export class CommodityService implements OnModuleInit {
   }
 
   private async nextCommodityId() {
-    const commodities = await this.commodityModel.find({}, { id: 1, _id: 0 }).lean();
-    const maxId = commodities.reduce((max, commodity) => Math.max(max, Number(commodity.id)), 10000);
+    const commodities = await this.commodityModel
+      .find({}, { id: 1, _id: 0 })
+      .lean();
+    const maxId = commodities.reduce(
+      (max, commodity) => Math.max(max, Number(commodity.id)),
+      10000
+    );
     return String(maxId + 1);
   }
 
-  private buildSort(sortField: NonNullable<ListCommoditiesQuery["sortField"]>, sortDirection: 1 | -1): Record<string, 1 | -1> {
+  private buildSort(
+    sortField: NonNullable<ListCommoditiesQuery["sortField"]>,
+    sortDirection: 1 | -1
+  ): Record<string, 1 | -1> {
     // 主排序字段允许按 UI 选择切换；id 作为稳定的次排序字段，
     // 避免相同 createdAt / price / stock 等值时，分页结果顺序不确定。
     return {
@@ -476,8 +539,12 @@ export class CommodityService implements OnModuleInit {
     };
   }
 
-  private toSortField(value: ListCommoditiesQuery["sortField"]): NonNullable<ListCommoditiesQuery["sortField"]> {
-    return value && SORT_FIELD_WHITELIST.has(value) ? value : DEFAULT_SORT_FIELD;
+  private toSortField(
+    value: ListCommoditiesQuery["sortField"]
+  ): NonNullable<ListCommoditiesQuery["sortField"]> {
+    return value && SORT_FIELD_WHITELIST.has(value)
+      ? value
+      : DEFAULT_SORT_FIELD;
   }
 
   private toCommodityView(commodity: {
@@ -498,7 +565,9 @@ export class CommodityService implements OnModuleInit {
     return {
       createdAt: new Date(commodity.createdAt).toISOString(),
       createdBy: commodity.createdBy,
-      deletedAt: commodity.deletedAt ? new Date(commodity.deletedAt).toISOString() : null,
+      deletedAt: commodity.deletedAt
+        ? new Date(commodity.deletedAt).toISOString()
+        : null,
       deletedBy: commodity.deletedBy,
       description: commodity.description,
       id: commodity.id,

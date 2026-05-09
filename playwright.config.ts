@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const clientBaseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3200";
+const clientBaseUrl =
+  process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3200";
 
 export default defineConfig({
   expect: {
@@ -17,7 +18,9 @@ export default defineConfig({
       }
     }
   ],
-  reporter: process.env.CI ? [["github"], ["list"]] : [["list"], ["html", { open: "never" }]],
+  reporter: process.env.CI
+    ? [["github"], ["list"]]
+    : [["list"], ["html", { open: "never" }]],
   retries: process.env.CI ? 1 : 0,
   testDir: "./e2e",
   timeout: 60_000,

@@ -3,7 +3,11 @@ import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
-const appSourceFiles = ["apps/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}", "scripts/**/*.js", "eslint.config.mjs"];
+const appSourceFiles = [
+  "apps/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+  "scripts/**/*.js",
+  "eslint.config.mjs"
+];
 const clientSourceFiles = ["apps/client/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}"];
 const nodeSourceFiles = [
   "apps/bff/**/*.{js,ts,mjs,cjs,mts,cts}",
@@ -16,7 +20,9 @@ const scopedNextConfigs = nextCoreWebVitals
   .filter((config) => !config.ignores)
   .map((config) => ({
     ...config,
-    files: config.files?.map((pattern) => `apps/client/${pattern}`) ?? clientSourceFiles,
+    files:
+      config.files?.map((pattern) => `apps/client/${pattern}`) ??
+      clientSourceFiles,
     settings: {
       ...config.settings,
       next: {
@@ -28,7 +34,15 @@ const scopedNextConfigs = nextCoreWebVitals
 
 export default [
   {
-    ignores: ["**/node_modules/**", "**/dist/**", "apps/client/.next/**", "apps/client/next-env.d.ts", "pnpm-lock.yaml"]
+    ignores: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "apps/client/.next/**",
+      "apps/client/next-env.d.ts",
+      "playwright-report/**",
+      "pnpm-lock.yaml",
+      "test-results/**"
+    ]
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

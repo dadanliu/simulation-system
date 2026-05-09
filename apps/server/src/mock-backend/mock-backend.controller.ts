@@ -1,4 +1,17 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  NotFoundException,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+  UploadedFile,
+  UseInterceptors
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
@@ -84,7 +97,10 @@ export class MockBackendController {
   }
 
   @Patch("commodity/:id/status")
-  updateCommodityStatus(@Param("id") id: string, @Body() body: UpdateCommodityStatusBody) {
+  updateCommodityStatus(
+    @Param("id") id: string,
+    @Body() body: UpdateCommodityStatusBody
+  ) {
     return this.commodityService.updateCommodityStatus(id, body);
   }
 
@@ -95,7 +111,10 @@ export class MockBackendController {
 
   @Post("upload")
   @UseInterceptors(FileInterceptor("file"))
-  uploadFile(@UploadedFile() file: UploadedMemoryFile | undefined, @Body() body: UploadFileBody) {
+  uploadFile(
+    @UploadedFile() file: UploadedMemoryFile | undefined,
+    @Body() body: UploadFileBody
+  ) {
     return this.uploadService.uploadFile(file, body.scene);
   }
 
@@ -128,6 +147,9 @@ export class MockBackendController {
   }
 
   private isTestResetEnabled() {
-    return this.configService.get<string>("APP_ENV") === "test" || this.configService.get<string>("E2E_TEST_RESET_ENABLED") === "true";
+    return (
+      this.configService.get<string>("APP_ENV") === "test" ||
+      this.configService.get<string>("E2E_TEST_RESET_ENABLED") === "true"
+    );
   }
 }
