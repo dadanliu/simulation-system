@@ -51,13 +51,15 @@ export class UploadService {
       userId: user.id
     });
 
+    const fileId = result.fileId ?? result.uploadId;
+
     return {
-      fileId: result.fileId ?? result.uploadId,
+      fileId,
       mimeType: result.mimeType ?? result.fileType,
       scanStatus: result.scanStatus,
       scene: result.scene,
       size: result.size ?? result.fileSize,
-      url: result.url
+      url: `/api/files/${encodeURIComponent(fileId)}`
     } satisfies ProductImageUploadResult;
   }
 

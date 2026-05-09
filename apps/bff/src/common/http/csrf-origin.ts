@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { CSRF_HEADER_NAME, getCsrfTokenFromRequest } from "./csrf-token";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
-const CSRF_EXEMPT_PATHS = new Set(["/api/auth/csrf"]);
+const CSRF_EXEMPT_PATHS = new Set(["/api/auth/csrf", "/api/test/reset"]);
 
 type RequestWithTraceId = Request & {
   traceId?: string;

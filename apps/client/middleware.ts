@@ -70,6 +70,18 @@ function getRequestOrigin(request: NextRequest) {
   }
 }
 
+function getSameOrigin(request: NextRequest) {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+
+  if (!host) {
+    return request.nextUrl.origin;
+  }
+
+  const protocol = request.headers.get("x-forwarded-proto") ?? request.nextUrl.protocol.replace(":", "");
+
+  return `${protocol}://${host}`;
+}
+
 function isCsrfSafeApiRequest(request: NextRequest) {
   if (!request.nextUrl.pathname.startsWith(API_PATH_PREFIX)) {
     return true;
@@ -80,9 +92,10 @@ function isCsrfSafeApiRequest(request: NextRequest) {
   }
 
   const requestOrigin = getRequestOrigin(request);
+  const sameOrigin = getSameOrigin(request);
 
   // Same-origin browser writes send Origin. Non-browser callers may omit it, so this guard rejects explicit mismatches.
-  return !requestOrigin || requestOrigin === request.nextUrl.origin;
+  return !requestOrigin || requestOrigin === sameOrigin || requestOrigin === request.nextUrl.origin;
 }
 
 export function middleware(request: NextRequest) {

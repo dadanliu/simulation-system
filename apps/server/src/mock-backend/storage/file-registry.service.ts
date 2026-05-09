@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import * as path from "node:path";
 import type { StoredFile } from "./storage.types";
 
@@ -22,6 +22,10 @@ export class FileRegistryService {
     registry[file.fileId] = file;
     mkdirSync(path.dirname(this.registryPath), { recursive: true });
     writeFileSync(this.registryPath, JSON.stringify(registry, null, 2));
+  }
+
+  clear() {
+    rmSync(this.registryPath, { force: true });
   }
 
   private read(): Record<string, StoredFile> {

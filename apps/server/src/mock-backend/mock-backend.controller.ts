@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, NotFoundException, Param, Patch, Post, Query, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import {
@@ -9,6 +10,7 @@ import {
   type UpdateCommodityStatusBody
 } from "./commodity.service";
 import { MockBackendService } from "./mock-backend.service";
+import { FileRegistryService } from "./storage/file-registry.service";
 import { UploadService, type UploadedMemoryFile } from "./upload.service";
 import { UsersService } from "./users.service";
 
@@ -30,7 +32,9 @@ export class MockBackendController {
     private readonly mockBackendService: MockBackendService,
     private readonly usersService: UsersService,
     private readonly commodityService: CommodityService,
-    private readonly uploadService: UploadService
+    private readonly uploadService: UploadService,
+    private readonly fileRegistryService: FileRegistryService,
+    private readonly configService: ConfigService
   ) {}
 
   @Get("health")
@@ -106,5 +110,24 @@ export class MockBackendController {
     response.setHeader("Cache-Control", "private, no-store");
     response.setHeader("Content-Type", access.mimeType);
     response.send(access.body);
+  }
+
+  @Post("test/reset")
+  async resetForTest() {
+    if (!this.isTestResetEnabled()) {
+      throw new NotFoundException("not found");
+    }
+
+    await this.commodityService.resetForTest();
+    this.fileRegistryService.clear();
+
+    return {
+      success: true,
+      message: "mock backend test data reset"
+    };
+  }
+
+  private isTestResetEnabled() {
+    return this.configService.get<string>("APP_ENV") === "test" || this.configService.get<string>("E2E_TEST_RESET_ENABLED") === "true";
   }
 }

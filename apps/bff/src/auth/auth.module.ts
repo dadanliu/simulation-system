@@ -40,6 +40,6 @@ import { SessionStoreService } from "./session-store.service";
     PermissionsGuard,
     RbacSeedService
   ],
-  exports: [GetCurrentUserService, AuthGuard]
+  exports: [GetCurrentUserService, AuthGuard, RbacSeedService]
 })
 export class AuthModule {}

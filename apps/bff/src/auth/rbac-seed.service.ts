@@ -24,6 +24,15 @@ export class RbacSeedService implements OnModuleInit {
       return;
     }
 
+    await this.seedRbacData();
+  }
+
+  async resetForTest() {
+    await Promise.all([this.permissionModel.deleteMany({}), this.roleModel.deleteMany({}), this.userModel.deleteMany({})]);
+    await this.seedRbacData();
+  }
+
+  private async seedRbacData() {
     await this.migrateLegacyPlaintextPasswords();
 
     const seededUsers = await Promise.all(
@@ -38,13 +47,9 @@ export class RbacSeedService implements OnModuleInit {
     );
 
     await Promise.all([
-      ...mockPermissions.map((permission) =>
-        this.permissionModel.updateOne({ code: permission.code }, { $set: permission }, { upsert: true })
-      ),
+      ...mockPermissions.map((permission) => this.permissionModel.updateOne({ code: permission.code }, { $set: permission }, { upsert: true })),
       ...mockRoles.map((role) => this.roleModel.updateOne({ code: role.code }, { $set: role }, { upsert: true })),
-      ...seededUsers.map((user) =>
-        this.userModel.updateOne({ id: user.id }, { $set: user, $unset: { password: "" } }, { upsert: true })
-      )
+      ...seededUsers.map((user) => this.userModel.updateOne({ id: user.id }, { $set: user, $unset: { password: "" } }, { upsert: true }))
     ]);
   }
 
@@ -71,10 +76,7 @@ export class RbacSeedService implements OnModuleInit {
 
     await Promise.all(
       legacyUsers.map(async (user) =>
-        this.userModel.updateOne(
-          { id: user.id },
-          { $set: { passwordHash: await hashPassword(user.password) }, $unset: { password: "" } }
-        )
+        this.userModel.updateOne({ id: user.id }, { $set: { passwordHash: await hashPassword(user.password) }, $unset: { password: "" } })
       )
     );
   }

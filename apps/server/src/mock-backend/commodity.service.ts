@@ -113,13 +113,7 @@ const defaultCommodities: MockCommodity[] = [
 
 const COMMODITY_LIST_MAX_PAGE_SIZE = 100;
 const DEFAULT_SORT_FIELD: NonNullable<ListCommoditiesQuery["sortField"]> = "createdAt";
-const SORT_FIELD_WHITELIST = new Set<NonNullable<ListCommoditiesQuery["sortField"]>>([
-  "createdAt",
-  "name",
-  "price",
-  "status",
-  "stock"
-]);
+const SORT_FIELD_WHITELIST = new Set<NonNullable<ListCommoditiesQuery["sortField"]>>(["createdAt", "name", "price", "status", "stock"]);
 
 @Injectable()
 export class CommodityService implements OnModuleInit {
@@ -133,12 +127,25 @@ export class CommodityService implements OnModuleInit {
       return;
     }
 
+    await this.seedDefaultCommoditiesIfEmpty();
+  }
+
+  async resetForTest() {
+    await this.commodityModel.deleteMany({});
+    await this.seedDefaultCommodities();
+  }
+
+  private async seedDefaultCommoditiesIfEmpty() {
     const total = await this.commodityModel.countDocuments();
 
     if (total > 0) {
       return;
     }
 
+    await this.seedDefaultCommodities();
+  }
+
+  private async seedDefaultCommodities() {
     await this.commodityModel.insertMany(
       defaultCommodities.map((commodity) => ({
         ...commodity,
@@ -460,10 +467,7 @@ export class CommodityService implements OnModuleInit {
     return String(maxId + 1);
   }
 
-  private buildSort(
-    sortField: NonNullable<ListCommoditiesQuery["sortField"]>,
-    sortDirection: 1 | -1
-  ): Record<string, 1 | -1> {
+  private buildSort(sortField: NonNullable<ListCommoditiesQuery["sortField"]>, sortDirection: 1 | -1): Record<string, 1 | -1> {
     // 主排序字段允许按 UI 选择切换；id 作为稳定的次排序字段，
     // 避免相同 createdAt / price / stock 等值时，分页结果顺序不确定。
     return {

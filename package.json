@@ -32,6 +32,8 @@
     "start:all": "pnpm -r --parallel --if-present run start",
     "test:bff": "pnpm --filter @next-bff/bff test",
     "test:bff:e2e": "pnpm --filter @next-bff/bff test:e2e",
+    "test:client:e2e": "playwright test",
+    "test:client:e2e:headed": "playwright test --headed",
     "lint": "pnpm lint:all",
     "lint:client": "eslint apps/client --max-warnings=0",
     "lint:bff": "eslint apps/bff --max-warnings=0",
@@ -45,6 +47,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.59.1",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.4",
     "globals": "^16.4.0",

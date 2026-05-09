@@ -1,6 +1,7 @@
 {
   "editor.detectIndentation": false,
   "editor.insertSpaces": true,
+  "editor.rulers": [160],
   "editor.tabSize": 2,
   "prettier.prettierPath": "./node_modules/prettier/index.cjs",
   "prettier.requireConfig": true,
