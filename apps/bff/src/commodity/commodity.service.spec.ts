@@ -85,6 +85,8 @@ describe("CommodityService", () => {
   });
 
   it("forwards combined list filters with stable sort query", async () => {
+    const request = { traceId: "trace-list" } as never;
+
     apiClientService.request.mockResolvedValue({
       list: [commodity],
       pagination: {
@@ -95,7 +97,7 @@ describe("CommodityService", () => {
     });
 
     await expect(
-      service.listCommodities({ traceId: "trace-list" } as never, user, {
+      service.listCommodities(request, user, {
         createdFrom: "2026-04-01T00:00:00.000Z",
         createdTo: "2026-04-30T23:59:59.999Z",
         keyword: "键盘",
@@ -142,9 +144,18 @@ describe("CommodityService", () => {
         }
       }
     );
+    expect(request).toMatchObject({
+      commodityListCacheDebug: {
+        keyHash: expect.any(String),
+        refresh: "none",
+        source: "backend",
+        state: "miss"
+      }
+    });
   });
 
   it("returns fresh cached commodity list without calling backend", async () => {
+    const request = { traceId: "trace-cache" } as never;
     const cachedList = {
       list: [commodity],
       pagination: {
@@ -161,7 +172,7 @@ describe("CommodityService", () => {
     });
 
     await expect(
-      service.listCommodities({ traceId: "trace-cache" } as never, user, {
+      service.listCommodities(request, user, {
         page: 1,
         pageSize: 10,
         sortBy: "createdAt" as never,
@@ -170,6 +181,57 @@ describe("CommodityService", () => {
     ).resolves.toEqual(cachedList);
     expect(apiClientService.request).not.toHaveBeenCalled();
     expect(commodityCacheService.writeCommodityList).not.toHaveBeenCalled();
+    expect(request).toMatchObject({
+      commodityListCacheDebug: {
+        keyHash: expect.any(String),
+        refresh: "none",
+        source: "redis",
+        state: "fresh"
+      }
+    });
+  });
+
+  it("returns stale cached commodity list and schedules background refresh", async () => {
+    const request = { traceId: "trace-stale" } as never;
+    const cachedList = {
+      list: [commodity],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 1
+      }
+    };
+
+    commodityCacheService.readCommodityList.mockResolvedValue({
+      data: cachedList,
+      key: "stale-list-key",
+      state: "stale"
+    });
+    apiClientService.request.mockResolvedValue({
+      list: [commodity],
+      pagination: {
+        page: 1,
+        pageSize: 10,
+        total: 1
+      }
+    });
+
+    await expect(
+      service.listCommodities(request, user, {
+        page: 1,
+        pageSize: 10,
+        sortBy: "createdAt" as never,
+        sortOrder: "desc" as never
+      })
+    ).resolves.toEqual(cachedList);
+    expect(request).toMatchObject({
+      commodityListCacheDebug: {
+        keyHash: expect.any(String),
+        refresh: "background",
+        source: "redis",
+        state: "stale"
+      }
+    });
   });
 
   it("creates commodity through backend and invalidates list cache", async () => {

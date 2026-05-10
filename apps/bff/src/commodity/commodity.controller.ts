@@ -10,6 +10,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards
 } from "@nestjs/common";
 import {
@@ -20,14 +21,17 @@ import {
   ApiResponse,
   ApiTags
 } from "@nestjs/swagger";
-import type { Request } from "express";
+import type { Request, Response } from "express";
 import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { ErrorResponseDto } from "../common/swagger/error-response.dto";
 import { RequirePermissions } from "../permission/permissions.decorator";
 import { PermissionsGuard } from "../permission/permissions.guard";
 import type { AuthUser } from "../user/user.types";
-import { CommodityService } from "./commodity.service";
+import {
+  CommodityService,
+  type CommodityListCacheDebug
+} from "./commodity.service";
 import { CreateCommodityDto } from "./dto/create-commodity.dto";
 import { DeleteCommodityDto } from "./dto/delete-commodity.dto";
 import { QueryAuditLogDto } from "./dto/query-audit-log.dto";
@@ -36,6 +40,27 @@ import { RestoreCommodityDto } from "./dto/restore-commodity.dto";
 import { UpdateCommodityDto } from "./dto/update-commodity.dto";
 import { UpdateCommodityStatusDto } from "./dto/update-commodity-status.dto";
 import { ParseCommodityIdPipe as CommodityIdPipe } from "./pipes/parse-commodity-id.pipe";
+
+type RequestWithCommodityListCacheDebug = Request & {
+  commodityListCacheDebug?: CommodityListCacheDebug;
+};
+
+function setCommodityListCacheHeaders(request: Request, response: Response) {
+  const cacheDebug = (request as RequestWithCommodityListCacheDebug)
+    .commodityListCacheDebug;
+
+  response.setHeader("Cache-Control", "no-store");
+  response.setHeader("X-Cache-Layer", "bff-redis");
+
+  if (!cacheDebug) {
+    return;
+  }
+
+  response.setHeader("X-Commodity-List-Cache-State", cacheDebug.state);
+  response.setHeader("X-Commodity-List-Cache-Source", cacheDebug.source);
+  response.setHeader("X-Commodity-List-Cache-Refresh", cacheDebug.refresh);
+  response.setHeader("X-Commodity-List-Cache-Key", cacheDebug.keyHash);
+}
 
 @ApiTags("Commodity")
 @Controller("api/commodity")
@@ -61,10 +86,19 @@ export class CommodityController {
   })
   async listCommodities(
     @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
     @CurrentUser() user: AuthUser,
     @Query() query: QueryCommodityListDto
   ) {
-    return this.commodityService.listCommodities(request, user, query);
+    const data = await this.commodityService.listCommodities(
+      request,
+      user,
+      query
+    );
+
+    setCommodityListCacheHeaders(request, response);
+
+    return data;
   }
 
   @Get("audit-logs")

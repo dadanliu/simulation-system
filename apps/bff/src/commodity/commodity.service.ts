@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import type { Request } from "express";
+import { createHash } from "node:crypto";
 import { ApiClientService } from "../bff/api-client.service";
 import { BffBusinessException } from "../bff/errors";
 import type { AuthUser } from "../user/user.types";
@@ -13,6 +14,17 @@ import type { QueryCommodityListDto } from "./dto/query-commodity-list.dto";
 import type { RestoreCommodityDto } from "./dto/restore-commodity.dto";
 import type { UpdateCommodityDto } from "./dto/update-commodity.dto";
 import type { UpdateCommodityStatusDto } from "./dto/update-commodity-status.dto";
+
+export type CommodityListCacheDebug = {
+  keyHash: string;
+  refresh: "background" | "none";
+  source: "backend" | "redis";
+  state: "fresh" | "miss" | "stale";
+};
+
+type RequestWithCommodityListCacheDebug = Request & {
+  commodityListCacheDebug?: CommodityListCacheDebug;
+};
 
 @Injectable()
 export class CommodityService {
@@ -61,10 +73,22 @@ export class CommodityService {
     );
 
     if (cachedList.data && cachedList.state === "fresh") {
+      this.setCommodityListCacheDebug(request, cachedList.key, {
+        refresh: "none",
+        source: "redis",
+        state: "fresh"
+      });
+
       return cachedList.data;
     }
 
     if (cachedList.data && cachedList.state === "stale") {
+      this.setCommodityListCacheDebug(request, cachedList.key, {
+        refresh: "background",
+        source: "redis",
+        state: "stale"
+      });
+
       void this.refreshCommodityListCache(
         request,
         user,
@@ -84,6 +108,11 @@ export class CommodityService {
       }
     );
     await this.commodityCacheService.writeCommodityList(cachedList.key, data);
+    this.setCommodityListCacheDebug(request, cachedList.key, {
+      refresh: "none",
+      source: "backend",
+      state: "miss"
+    });
 
     return data;
   }
@@ -340,5 +369,22 @@ export class CommodityService {
     );
 
     await this.commodityCacheService.writeCommodityList(cacheKey, data);
+  }
+
+  private setCommodityListCacheDebug(
+    request: Request,
+    cacheKey: string,
+    debug: Omit<CommodityListCacheDebug, "keyHash">
+  ) {
+    const requestWithCacheDebug = request as RequestWithCommodityListCacheDebug;
+
+    requestWithCacheDebug.commodityListCacheDebug = {
+      ...debug,
+      keyHash: this.hashCommodityListCacheKey(cacheKey)
+    };
+  }
+
+  private hashCommodityListCacheKey(cacheKey: string) {
+    return createHash("sha256").update(cacheKey).digest("hex").slice(0, 12);
   }
 }

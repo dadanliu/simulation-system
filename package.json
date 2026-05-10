@@ -16,6 +16,7 @@
     "simulate:cookie-hijack": "node scripts/simulate-cookie-hijack.js",
     "simulate:browser-mitm": "node scripts/simulate-cookie-browser-mitm.js",
     "simulate:cookie-replay": "node scripts/simulate-cookie-replay-attack.js",
+    "warmup:commodity-cache": "node scripts/warmup-commodity-cache.js",
     "stop:all": "node scripts/stop-all.js",
     "restart:all": "node scripts/restart-all.js",
     "restart:devall": "node scripts/restart-devall.js",

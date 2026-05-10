@@ -10,6 +10,12 @@ import { writeStructuredLog } from "../logging/structured-log";
 import { recordHttpRequestMetric } from "../metrics/http-metrics";
 
 type RequestWithTraceId = {
+  commodityListCacheDebug?: {
+    keyHash: string;
+    refresh: string;
+    source: string;
+    state: string;
+  };
   method?: string;
   originalUrl?: string;
   requestStartedAt?: number;
@@ -42,7 +48,17 @@ export class RequestLoggingInterceptor implements NestInterceptor {
           method,
           path,
           status: statusCode,
-          traceId
+          traceId,
+          ...(request.commodityListCacheDebug
+            ? {
+                commodityListCacheKey: request.commodityListCacheDebug.keyHash,
+                commodityListCacheRefresh:
+                  request.commodityListCacheDebug.refresh,
+                commodityListCacheSource:
+                  request.commodityListCacheDebug.source,
+                commodityListCacheState: request.commodityListCacheDebug.state
+              }
+            : {})
         },
         level: statusCode >= 500 ? "warn" : "info"
       });

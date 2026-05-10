@@ -193,6 +193,57 @@ describe("CommodityController e2e", () => {
     expect(mocks.commodityService.listCommodities).not.toHaveBeenCalled();
   });
 
+  it("exposes commodity list cache troubleshooting headers", async () => {
+    mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
+    mocks.commodityService.listCommodities.mockImplementation((request) => {
+      request.commodityListCacheDebug = {
+        keyHash: "cacheabc1234",
+        refresh: "none",
+        source: "backend",
+        state: "miss"
+      };
+
+      return Promise.resolve({
+        list: [commodity],
+        pagination: {
+          page: 1,
+          pageSize: 20,
+          total: 1
+        }
+      });
+    });
+
+    const response = await request(app.getHttpServer())
+      .get("/api/commodity/list")
+      .set("Cookie", "next_bff_session=session-admin")
+      .set("x-trace-id", "trace-list-cache")
+      .expect(200);
+
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.headers["x-cache-layer"]).toBe("bff-redis");
+    expect(response.headers["x-commodity-list-cache-state"]).toBe("miss");
+    expect(response.headers["x-commodity-list-cache-source"]).toBe("backend");
+    expect(response.headers["x-commodity-list-cache-refresh"]).toBe("none");
+    expect(response.headers["x-commodity-list-cache-key"]).toBe("cacheabc1234");
+    expect(response.body).toMatchObject({
+      data: {
+        list: [
+          {
+            id: commodity.id,
+            name: commodity.name
+          }
+        ],
+        pagination: {
+          page: 1,
+          pageSize: 20,
+          total: 1
+        }
+      },
+      traceId: "trace-list-cache"
+    });
+    expectPermissionCheck(["admin"], ["commodity:read"]);
+  });
+
   it("returns a unified 404 response when commodity detail is missing", async () => {
     mocks.getCurrentUserService.execute.mockResolvedValue(adminUser);
     mocks.commodityService.getCommodity.mockRejectedValue(
