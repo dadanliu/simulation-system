@@ -6,6 +6,8 @@ const DEFAULTS = {
   BFF_PORT: "3001",
   BFF_PUBLIC_BASE_URL: "http://localhost:3001",
   COOKIE_SECURE: undefined,
+  COMMODITY_LIST_CACHE_STALE_SECONDS: "30",
+  COMMODITY_LIST_CACHE_TTL_SECONDS: "5",
   CSRF_ALLOWED_ORIGINS: "http://localhost:3000",
   FILE_CACHE_DETAIL_MAX_AGE_SECONDS: "31536000",
   FILE_CACHE_DETAIL_STALE_WHILE_REVALIDATE_SECONDS: "86400",
@@ -150,6 +152,8 @@ export function validateBffEnv(input: RawConfig) {
   requireUrl(config, "BFF_PUBLIC_BASE_URL", errors);
   requireUrl(config, "REDIS_URL", errors);
   requirePositiveInteger(config, "BFF_PORT", errors);
+  requirePositiveInteger(config, "COMMODITY_LIST_CACHE_STALE_SECONDS", errors);
+  requirePositiveInteger(config, "COMMODITY_LIST_CACHE_TTL_SECONDS", errors);
   requirePositiveInteger(config, "SESSION_TTL_SECONDS", errors);
   requirePositiveInteger(config, "FILE_CACHE_DETAIL_MAX_AGE_SECONDS", errors);
   requirePositiveInteger(

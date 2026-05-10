@@ -5,6 +5,7 @@ import { BffBusinessException } from "../bff/errors";
 import type { AuthUser } from "../user/user.types";
 import type { Commodity, CommodityListData } from "./commodity.types";
 import { AuditLogService } from "./audit-log.service";
+import { CommodityCacheService } from "./commodity-cache.service";
 import type { CreateCommodityDto } from "./dto/create-commodity.dto";
 import type { DeleteCommodityDto } from "./dto/delete-commodity.dto";
 import type { QueryAuditLogDto } from "./dto/query-audit-log.dto";
@@ -17,7 +18,8 @@ import type { UpdateCommodityStatusDto } from "./dto/update-commodity-status.dto
 export class CommodityService {
   constructor(
     private readonly apiClientService: ApiClientService,
-    private readonly auditLogService: AuditLogService
+    private readonly auditLogService: AuditLogService,
+    private readonly commodityCacheService: CommodityCacheService
   ) {}
 
   async listCommodities(
@@ -53,6 +55,25 @@ export class CommodityService {
     const backendPath = searchParams.size
       ? `/api/commodity/list?${searchParams.toString()}`
       : "/api/commodity/list";
+    const cachedList = await this.commodityCacheService.readCommodityList(
+      user,
+      backendPath
+    );
+
+    if (cachedList.data && cachedList.state === "fresh") {
+      return cachedList.data;
+    }
+
+    if (cachedList.data && cachedList.state === "stale") {
+      void this.refreshCommodityListCache(
+        request,
+        user,
+        backendPath,
+        cachedList.key
+      ).catch(() => undefined);
+
+      return cachedList.data;
+    }
 
     const data = await this.apiClientService.request<CommodityListData>(
       request,
@@ -62,6 +83,7 @@ export class CommodityService {
         userId: user.id
       }
     );
+    await this.commodityCacheService.writeCommodityList(cachedList.key, data);
 
     return data;
   }
@@ -112,6 +134,7 @@ export class CommodityService {
       commodity,
       request.traceId ?? ""
     );
+    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -157,6 +180,7 @@ export class CommodityService {
       body.reason.trim(),
       request.traceId ?? ""
     );
+    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -199,6 +223,7 @@ export class CommodityService {
       body.reason.trim(),
       request.traceId ?? ""
     );
+    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -244,6 +269,7 @@ export class CommodityService {
       data.after,
       request.traceId ?? ""
     );
+    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -291,10 +317,28 @@ export class CommodityService {
       body.reason,
       request.traceId ?? ""
     );
+    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
       commodity: data.after
     };
+  }
+
+  private async refreshCommodityListCache(
+    request: Request,
+    user: AuthUser,
+    backendPath: string,
+    cacheKey: string
+  ) {
+    const data = await this.apiClientService.request<CommodityListData>(
+      request,
+      backendPath,
+      {
+        userId: user.id
+      }
+    );
+
+    await this.commodityCacheService.writeCommodityList(cacheKey, data);
   }
 }

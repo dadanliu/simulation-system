@@ -28,6 +28,8 @@ describe("validateBffEnv", () => {
       BACKEND_BASE_URL: "http://localhost:3002",
       BFF_PORT: "3001",
       COOKIE_SECURE: undefined,
+      COMMODITY_LIST_CACHE_STALE_SECONDS: "30",
+      COMMODITY_LIST_CACHE_TTL_SECONDS: "5",
       CSRF_ALLOWED_ORIGINS: "http://localhost:3000",
       APP_ENV: "development",
       MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff-dev",
