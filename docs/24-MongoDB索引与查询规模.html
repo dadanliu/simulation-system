@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>9.3 MongoDB 索引与查询规模</title>
+    <style>
+      :root {
+        --bg: #f7f9fc;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #5f6b7a;
+        --line: #d8e0ea;
+        --blue: #2563eb;
+        --green: #059669;
+        --orange: #d97706;
+        --red: #dc2626;
+        --purple: #7c3aed;
+        --soft-blue: #eaf2ff;
+        --soft-green: #e8f7ef;
+        --soft-orange: #fff4df;
+        --soft-red: #fff0f0;
+        --soft-purple: #f2edff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+        line-height: 1.65;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 20px 72px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.25;
+      }
+
+      h1 {
+        font-size: 34px;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin-top: 34px;
+        font-size: 24px;
+      }
+
+      h3 {
+        margin-top: 22px;
+        font-size: 18px;
+      }
+
+      p {
+        margin: 10px 0;
+      }
+
+      code {
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: #eef2f7;
+        color: #111827;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+        font-size: 0.92em;
+      }
+
+      pre {
+        overflow-x: auto;
+        margin: 12px 0 0;
+        padding: 14px;
+        border-radius: 8px;
+        background: #0f172a;
+        color: #e5e7eb;
+      }
+
+      pre code {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+      }
+
+      .lead {
+        max-width: 920px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .panel {
+        margin-top: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 20px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .stat {
+        border-left: 4px solid var(--blue);
+        background: var(--soft-blue);
+      }
+
+      .stat.green {
+        border-color: var(--green);
+        background: var(--soft-green);
+      }
+
+      .stat.orange {
+        border-color: var(--orange);
+        background: var(--soft-orange);
+      }
+
+      .stat h3 {
+        margin-top: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      th,
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #eef3f9;
+        color: #263548;
+        font-weight: 700;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .tag {
+        display: inline-block;
+        margin: 2px 4px 2px 0;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #eef2f7;
+        color: #334155;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .ok {
+        background: var(--soft-green);
+        color: #047857;
+      }
+
+      .warn {
+        background: var(--soft-orange);
+        color: #a16207;
+      }
+
+      .danger {
+        background: var(--soft-red);
+        color: #b91c1c;
+      }
+
+      .svg-wrap {
+        overflow-x: auto;
+        padding: 8px 0;
+      }
+
+      svg {
+        display: block;
+        min-width: 980px;
+        max-width: 100%;
+        height: auto;
+      }
+
+      .node {
+        fill: #fff;
+        stroke: #cbd5e1;
+        stroke-width: 1.4;
+      }
+
+      .node-blue {
+        fill: var(--soft-blue);
+        stroke: #93b7ff;
+      }
+
+      .node-green {
+        fill: var(--soft-green);
+        stroke: #83d4ad;
+      }
+
+      .node-orange {
+        fill: var(--soft-orange);
+        stroke: #f0bd6a;
+      }
+
+      .node-red {
+        fill: var(--soft-red);
+        stroke: #f5a3a3;
+      }
+
+      .node-purple {
+        fill: var(--soft-purple);
+        stroke: #bba6ff;
+      }
+
+      .arrow {
+        stroke: #64748b;
+        stroke-width: 2;
+        marker-end: url(#arrow);
+        fill: none;
+      }
+
+      .arrow-green {
+        stroke: var(--green);
+      }
+
+      .arrow-red {
+        stroke: var(--red);
+      }
+
+      .arrow-orange {
+        stroke: var(--orange);
+      }
+
+      .label {
+        fill: #1f2937;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .small {
+        fill: #526172;
+        font-size: 12px;
+      }
+
+      @media (max-width: 820px) {
+        main {
+          padding: 28px 14px 52px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .grid.three {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>9.3 MongoDB 索引与查询规模</h1>
+        <p class="lead">
+          商品列表不是只把数据查出来再渲染。筛选、排序、分页都会影响数据库扫描成本。
+          本次把商品列表的核心查询索引显式命名，并在查询时记录
+          query、page、sort、traceId 和候选索引，方便前端和后端一起排查慢列表。
+        </p>
+      </header>
+
+      <section class="grid three">
+        <div class="panel stat">
+          <h3>状态筛选</h3>
+          <p><code>deletedAt + status</code> 支持未删除商品的状态筛选。</p>
+        </div>
+        <div class="panel stat green">
+          <h3>时间排序</h3>
+          <p>
+            <code>deletedAt + createdAt + id</code>
+            支持默认创建时间排序和稳定分页。
+          </p>
+        </div>
+        <div class="panel stat orange">
+          <h3>组合查询</h3>
+          <p>
+            <code>deletedAt + status + createdAt + id</code> 支持状态 tab
+            下按时间分页。
+          </p>
+        </div>
+      </section>
+
+      <h2>一、先解释概念</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>概念</th>
+              <th>简单解释</th>
+              <th>当前系统里的含义</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>索引</td>
+              <td>数据库为某些字段建立的查找目录。</td>
+              <td>让 MongoDB 不用全表扫描商品集合。</td>
+            </tr>
+            <tr>
+              <td>复合索引</td>
+              <td>多个字段组成一个索引，字段顺序会影响能不能用上。</td>
+              <td>状态 + 创建时间组合查询用复合索引。</td>
+            </tr>
+            <tr>
+              <td>稳定分页</td>
+              <td>排序结果相同的数据也要有固定次序，避免翻页重复或漏数据。</td>
+              <td>
+                <code>createdAt</code> 相同时用 <code>id</code> 做次排序。
+              </td>
+            </tr>
+            <tr>
+              <td>offset 分页</td>
+              <td>用 <code>skip + limit</code> 跳过前面的数据再取一页。</td>
+              <td>当前仍使用 offset；页码越深，数据库跳过成本越高。</td>
+            </tr>
+            <tr>
+              <td>候选索引</td>
+              <td>代码根据查询形态判断最可能匹配的索引。</td>
+              <td>
+                日志字段 <code>candidateIndex</code> 用来辅助排查，不等同于
+                MongoDB 最终执行计划。
+              </td>
+            </tr>
+            <tr>
+              <td>traceId</td>
+              <td>一次请求的链路编号。</td>
+              <td>
+                BFF 调 backend 时透传，backend 查询日志也带同一个 traceId。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>二、当前商品索引为什么存在</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>索引名</th>
+              <th>字段</th>
+              <th>支持的查询</th>
+              <th>为什么这样设计</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>idx_commodities_active_status</code></td>
+              <td><code>{ deletedAt: 1, status: 1 }</code></td>
+              <td>只看某个状态的未删除商品。</td>
+              <td>
+                列表默认过滤软删除数据，所以把
+                <code>deletedAt</code> 放在索引前面。
+              </td>
+            </tr>
+            <tr>
+              <td><code>idx_commodities_active_created_at_id</code></td>
+              <td><code>{ deletedAt: 1, createdAt: -1, id: -1 }</code></td>
+              <td>默认按创建时间倒序分页。</td>
+              <td>
+                <code>id</code>
+                是次排序字段，避免创建时间相同导致分页顺序不稳定。
+              </td>
+            </tr>
+            <tr>
+              <td><code>idx_commodities_active_status_created_at_id</code></td>
+              <td>
+                <code>{ deletedAt: 1, status: 1, createdAt: -1, id: -1 }</code>
+              </td>
+              <td>状态 tab 里按创建时间排序分页。</td>
+              <td>
+                先过滤未删除和状态，再按时间有序取一页，减少扫描和内存排序。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>三、查询路径图</h2>
+      <div class="panel">
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1120 530"
+            role="img"
+            aria-label="MongoDB 商品查询索引路径图"
+          >
+            <defs>
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="40"
+              y="70"
+              width="180"
+              height="82"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="130" y="104" text-anchor="middle" class="label">
+              前端 query
+            </text>
+            <text x="130" y="128" text-anchor="middle" class="small">
+              status/page/sort
+            </text>
+
+            <rect
+              x="275"
+              y="70"
+              width="180"
+              height="82"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="365" y="104" text-anchor="middle" class="label">
+              BFF 转换
+            </text>
+            <text x="365" y="128" text-anchor="middle" class="small">
+              limit/offset/sortField
+            </text>
+
+            <rect
+              x="510"
+              y="70"
+              width="190"
+              height="82"
+              rx="8"
+              class="node"
+            ></rect>
+            <text x="605" y="104" text-anchor="middle" class="label">
+              backend 组装
+            </text>
+            <text x="605" y="128" text-anchor="middle" class="small">
+              filters + sort
+            </text>
+
+            <rect
+              x="760"
+              y="35"
+              width="250"
+              height="82"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="885" y="68" text-anchor="middle" class="label">
+              命中候选索引
+            </text>
+            <text x="885" y="92" text-anchor="middle" class="small">
+              status / createdAt / compound
+            </text>
+
+            <rect
+              x="760"
+              y="170"
+              width="250"
+              height="82"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="885" y="203" text-anchor="middle" class="label">
+              无合适索引
+            </text>
+            <text x="885" y="227" text-anchor="middle" class="small">
+              扫描更多数据或内存排序
+            </text>
+
+            <rect
+              x="310"
+              y="335"
+              width="520"
+              height="96"
+              rx="8"
+              fill="#eef3f9"
+              stroke="#d8e0ea"
+            ></rect>
+            <text x="335" y="370" class="small">
+              backend 日志事件：commodity_list_query_planned
+            </text>
+            <text x="335" y="398" class="small">
+              字段：traceId、page、limit、offset、sortField、sortDirection、candidateIndex、hasStatusFilter
+            </text>
+
+            <path d="M 220 111 H 275" class="arrow"></path>
+            <path d="M 455 111 H 510" class="arrow"></path>
+            <path
+              d="M 700 111 C 730 111 730 76 760 76"
+              class="arrow arrow-orange"
+            ></path>
+            <path
+              d="M 700 111 C 735 111 735 211 760 211"
+              class="arrow arrow-red"
+            ></path>
+          </svg>
+        </div>
+      </div>
+
+      <h2>四、新增筛选项前要问后端什么</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>问题</th>
+              <th>为什么要问</th>
+              <th>例子</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>这个筛选项选择性高吗？</td>
+              <td>选择性低的字段即使有索引，也可能过滤不掉多少数据。</td>
+              <td>
+                <code>status</code> 只有 3
+                个值，单独筛选能力有限，但配合时间排序有价值。
+              </td>
+            </tr>
+            <tr>
+              <td>会和哪些字段组合查询？</td>
+              <td>复合索引必须按常见组合设计。</td>
+              <td><code>status + createdAt</code> 是状态 tab 最常见查询。</td>
+            </tr>
+            <tr>
+              <td>排序字段是什么？</td>
+              <td>能过滤不代表能高效排序，不匹配索引可能触发内存排序。</td>
+              <td>默认排序是 <code>createdAt desc, id desc</code>。</td>
+            </tr>
+            <tr>
+              <td>分页会不会很深？</td>
+              <td>offset 深页会跳过很多数据，索引也不能完全消除 skip 成本。</td>
+              <td>如果经常访问第 1000 页，应考虑 cursor 分页。</td>
+            </tr>
+            <tr>
+              <td>这个字段是否会频繁更新？</td>
+              <td>索引字段更新越频繁，写入维护索引的成本越高。</td>
+              <td>
+                库存 <code>stock</code> 变化频繁，不能随便为每种筛选都加索引。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>五、索引的问题：什么时候加，什么时候不加</h2>
+      <div class="panel">
+        <p>
+          索引的本质是“额外维护一份查找目录”。它可以让读更快，但会占空间，也会让写入、更新、删除多做维护工作。
+          所以索引不是越多越好，而是要围绕高频查询和明确排序来设计。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>问题</th>
+              <th>为什么是问题</th>
+              <th>什么情况会加</th>
+              <th>什么情况不加</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>占用存储和内存</td>
+              <td>索引是额外数据结构，会占磁盘，也可能占用内存缓存。</td>
+              <td>
+                高频列表每天都按
+                <code>status + createdAt</code> 查询，且数据量持续增长。
+              </td>
+              <td>只为一次临时运营查询加索引，或者字段几乎没人查。</td>
+            </tr>
+            <tr>
+              <td>写入变慢</td>
+              <td>商品创建、状态变更、软删除时，相关索引也要同步更新。</td>
+              <td>
+                读请求远多于写请求，比如后台列表被频繁打开，商品状态变化相对少。
+              </td>
+              <td>字段频繁变化，例如库存每秒大量更新，且查询收益不明确。</td>
+            </tr>
+            <tr>
+              <td>索引不匹配就用不上</td>
+              <td>
+                查询条件、排序字段和复合索引顺序不匹配时，MongoDB
+                可能仍要扫描或内存排序。
+              </td>
+              <td>
+                常见查询固定为
+                <code>deletedAt + status + createdAt desc</code>，
+                就加同方向的复合索引。
+              </td>
+              <td>
+                UI
+                允许任意字段自由组合排序，但没有稳定高频模式，盲目组合索引会失控。
+              </td>
+            </tr>
+            <tr>
+              <td>低选择性字段收益有限</td>
+              <td>字段取值很少，过滤不掉多少数据，单独索引收益可能有限。</td>
+              <td>
+                <code>status</code> 虽然只有 3 个值，但状态 tab 会继续按
+                <code>createdAt</code> 排序，所以加
+                <code>status + createdAt</code> 组合索引。
+              </td>
+              <td>
+                只按
+                <code>enabled=true</code>
+                这种大多数记录都满足的字段查，而且没有排序或其他过滤条件。
+              </td>
+            </tr>
+            <tr>
+              <td>组合索引爆炸</td>
+              <td>
+                每新增一个筛选项都和其他字段组合建索引，会快速产生大量索引。
+              </td>
+              <td>
+                产品确认这是核心入口，比如状态、创建时间是列表默认筛选和排序。
+              </td>
+              <td>
+                筛选项很多但使用率低，比如颜色、产地、活动标签都偶尔查一次。
+              </td>
+            </tr>
+            <tr>
+              <td>深分页仍然慢</td>
+              <td>
+                <code>skip(offset)</code> 很大时，即使有索引也要跳过很多记录。
+              </td>
+              <td>
+                索引用来保证排序稳定，比如
+                <code>createdAt + id</code>；再评估是否升级 cursor 分页。
+              </td>
+              <td>
+                只为了第 1000 页更快而继续堆索引。深页问题更应该考虑 cursor
+                分页或限制深翻页。
+              </td>
+            </tr>
+            <tr>
+              <td>可能放大缓存 miss 压力</td>
+              <td>缓存失效后大量请求回源，如果索引不合适，DB 压力会被放大。</td>
+              <td>
+                大促前明确热点列表，比如
+                <code>on_sale + createdAt desc</code>，加索引并做缓存预热。
+              </td>
+              <td>
+                没有稳定热点，只靠“可能会有人查”就加索引，维护成本会高于收益。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>六、前端渲染慢和 DB 查询慢怎么区分</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>现象</th>
+              <th>更可能的问题</th>
+              <th>排查方式</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Network 等待时间很长，BFF/backend 日志 durationMs 也长</td>
+              <td>服务端或 DB 查询慢。</td>
+              <td>
+                用 traceId 查 backend 日志，看
+                <code>commodity_list_query_planned</code> 和 MongoDB span。
+              </td>
+            </tr>
+            <tr>
+              <td>Network 很快，但页面卡顿、滚动掉帧</td>
+              <td>前端渲染慢。</td>
+              <td>
+                看 React 组件数量、图片尺寸、Web Vitals、浏览器 Performance。
+              </td>
+            </tr>
+            <tr>
+              <td>第一页快，深页慢</td>
+              <td>offset 分页跳过成本变高。</td>
+              <td>把 page、pageSize、offset 给后端，评估 cursor 分页。</td>
+            </tr>
+            <tr>
+              <td>无筛选快，某个筛选慢</td>
+              <td>新增筛选项没有合适索引。</td>
+              <td>
+                把 query、sort、traceId 给后端，看 candidateIndex 是否是
+                <code>no_matching_compound_index</code>。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>七、用 query、page、sort、traceId 辅助排查</h2>
+      <div class="panel">
+        <p>前端反馈慢查询时，至少给后端这些信息：</p>
+        <pre><code>{
+  "traceId": "trace-commodity-list-001",
+  "query": {
+    "status": "on_sale",
+    "createdFrom": "2026-04-01T00:00:00.000Z",
+    "createdTo": "2026-04-30T23:59:59.999Z"
+  },
+  "page": 20,
+  "pageSize": 20,
+  "sortBy": "createdAt",
+  "sortOrder": "desc"
+}</code></pre>
+        <p>后端可以用同一个 <code>traceId</code> 查到：</p>
+        <table>
+          <thead>
+            <tr>
+              <th>字段</th>
+              <th>用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>candidateIndex</code></td>
+              <td>判断是否匹配状态、创建时间、复合索引。</td>
+            </tr>
+            <tr>
+              <td><code>page / limit / offset</code></td>
+              <td>判断是不是深分页造成扫描成本变高。</td>
+            </tr>
+            <tr>
+              <td><code>sortField / sortDirection</code></td>
+              <td>判断排序是否能走索引。</td>
+            </tr>
+            <tr>
+              <td><code>hasKeyword / hasPriceRange / hasStockRange</code></td>
+              <td>判断是否用了暂未重点优化的筛选项。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>八、验收对照</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>验收项</th>
+              <th>当前实现</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>能解释当前商品索引为什么存在</td>
+              <td>
+                第二节解释三个商品索引分别对应状态筛选、默认排序、组合查询。
+              </td>
+            </tr>
+            <tr>
+              <td>能说明新增筛选项时要问后端什么问题</td>
+              <td>第四节列出选择性、组合查询、排序、深分页、写入成本。</td>
+            </tr>
+            <tr>
+              <td>能区分前端渲染慢和 DB 查询慢</td>
+              <td>
+                第五节用 Network、日志 duration、Web Vitals 和 page 深度区分。
+              </td>
+            </tr>
+            <tr>
+              <td>能用 query、page、sort、traceId 辅助后端排查</td>
+              <td>第六节给出需要提交给后端的最小排查信息。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>

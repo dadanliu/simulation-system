@@ -3,6 +3,7 @@ import { Injectable, type OnModuleInit } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
+import { writeStructuredLog } from "../common/logging/structured-log";
 import { runObservedSpan } from "../common/tracing/observed-span";
 import {
   isCommodityStatus,
@@ -119,9 +120,13 @@ const defaultCommodities: MockCommodity[] = [
 const COMMODITY_LIST_MAX_PAGE_SIZE = 100;
 const DEFAULT_SORT_FIELD: NonNullable<ListCommoditiesQuery["sortField"]> =
   "createdAt";
+const CREATED_AT_INDEX_NAME = "idx_commodities_active_created_at_id";
 const SORT_FIELD_WHITELIST = new Set<
   NonNullable<ListCommoditiesQuery["sortField"]>
 >(["createdAt", "name", "price", "status", "stock"]);
+const STATUS_CREATED_AT_INDEX_NAME =
+  "idx_commodities_active_status_created_at_id";
+const STATUS_INDEX_NAME = "idx_commodities_active_status";
 
 @Injectable()
 export class CommodityService implements OnModuleInit {
@@ -180,7 +185,7 @@ export class CommodityService implements OnModuleInit {
     return true;
   }
 
-  async listCommodities(query: ListCommoditiesQuery = {}) {
+  async listCommodities(query: ListCommoditiesQuery = {}, traceId = "") {
     const offset = this.toNonNegativeInteger(query.offset, 0);
     const limit = this.toPageSize(query.limit, 10);
     const keyword = query.keyword?.trim();
@@ -246,6 +251,31 @@ export class CommodityService implements OnModuleInit {
     const sortField = this.toSortField(query.sortField);
     const sortDirection = query.sortDirection === "asc" ? 1 : -1;
     const sort = this.buildSort(sortField, sortDirection);
+    const candidateIndex = this.selectCandidateIndex({
+      hasStatusFilter: Boolean(query.status),
+      sortField
+    });
+    const page = Math.floor(offset / limit) + 1;
+
+    writeStructuredLog({
+      context: CommodityService.name,
+      event: "commodity_list_query_planned",
+      fields: {
+        candidateIndex,
+        hasCreatedAtRange: Boolean(filters.createdAt),
+        hasKeyword: Boolean(keyword),
+        hasPriceRange: Boolean(filters.price),
+        hasStatusFilter: Boolean(query.status),
+        hasStockRange: Boolean(filters.stock),
+        limit,
+        offset,
+        page,
+        sortDirection,
+        sortField,
+        traceId
+      },
+      level: "info"
+    });
 
     const [commodities, total] = await runObservedSpan(
       "MongoDB commodities list",
@@ -253,10 +283,18 @@ export class CommodityService implements OnModuleInit {
         "db.collection.name": "commodities",
         "db.operation.name": "find_and_count",
         "db.system.name": "mongodb",
+        "next_bff.commodity.candidate_index": candidateIndex,
+        "next_bff.commodity.has_created_at_range": Boolean(filters.createdAt),
+        "next_bff.commodity.has_keyword": Boolean(keyword),
+        "next_bff.commodity.has_price_range": Boolean(filters.price),
+        "next_bff.commodity.has_status_filter": Boolean(query.status),
+        "next_bff.commodity.has_stock_range": Boolean(filters.stock),
         "next_bff.commodity.limit": limit,
         "next_bff.commodity.offset": offset,
+        "next_bff.commodity.page": page,
         "next_bff.commodity.sort_direction": sortDirection,
-        "next_bff.commodity.sort_field": sortField
+        "next_bff.commodity.sort_field": sortField,
+        "next_bff.trace_id": traceId
       },
       () =>
         Promise.all([
@@ -274,7 +312,7 @@ export class CommodityService implements OnModuleInit {
     return mockSuccess({
       list: commodities.map((commodity) => this.toCommodityView(commodity)),
       pagination: {
-        page: Math.floor(offset / limit) + 1,
+        page,
         pageSize: limit,
         total
       }
@@ -561,6 +599,25 @@ export class CommodityService implements OnModuleInit {
     return value && SORT_FIELD_WHITELIST.has(value)
       ? value
       : DEFAULT_SORT_FIELD;
+  }
+
+  private selectCandidateIndex(input: {
+    hasStatusFilter: boolean;
+    sortField: NonNullable<ListCommoditiesQuery["sortField"]>;
+  }) {
+    if (input.hasStatusFilter && input.sortField === "createdAt") {
+      return STATUS_CREATED_AT_INDEX_NAME;
+    }
+
+    if (input.sortField === "createdAt") {
+      return CREATED_AT_INDEX_NAME;
+    }
+
+    if (input.hasStatusFilter) {
+      return STATUS_INDEX_NAME;
+    }
+
+    return "no_matching_compound_index";
   }
 
   private toCommodityView(commodity: {

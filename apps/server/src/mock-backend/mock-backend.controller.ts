@@ -8,13 +8,14 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
   UploadedFile,
   UseInterceptors
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { FileInterceptor } from "@nestjs/platform-express";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import {
   CommodityService,
   type CreateCommodityBody,
@@ -66,8 +67,11 @@ export class MockBackendController {
   }
 
   @Get("commodity/list")
-  getCommodities(@Query() query: ListCommoditiesQuery) {
-    return this.commodityService.listCommodities(query);
+  getCommodities(
+    @Query() query: ListCommoditiesQuery,
+    @Req() request: Request & { traceId?: string }
+  ) {
+    return this.commodityService.listCommodities(query, request.traceId ?? "");
   }
 
   @Get("commodity/:id")

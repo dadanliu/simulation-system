@@ -50,6 +50,15 @@ export class Commodity {
 
 export const CommoditySchema = SchemaFactory.createForClass(Commodity);
 
-CommoditySchema.index({ status: 1 });
-CommoditySchema.index({ createdAt: -1 });
-CommoditySchema.index({ status: 1, createdAt: -1 });
+CommoditySchema.index(
+  { deletedAt: 1, status: 1 },
+  { name: "idx_commodities_active_status" }
+);
+CommoditySchema.index(
+  { deletedAt: 1, createdAt: -1, id: -1 },
+  { name: "idx_commodities_active_created_at_id" }
+);
+CommoditySchema.index(
+  { deletedAt: 1, status: 1, createdAt: -1, id: -1 },
+  { name: "idx_commodities_active_status_created_at_id" }
+);
