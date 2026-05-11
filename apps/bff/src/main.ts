@@ -9,6 +9,7 @@ import { createCsrfOriginMiddleware } from "./common/http/csrf-origin";
 import { traceIdMiddleware } from "./common/http/trace-id";
 import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
 import { SuccessResponseInterceptor } from "./common/interceptors/success-response.interceptor";
+import { HealthService } from "./health/health.service";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,6 +23,7 @@ async function bootstrap() {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
 
   SwaggerModule.setup("api/docs", app, swaggerDocument);
+  app.enableShutdownHooks();
   app.use(traceIdMiddleware);
   app.use(
     createCsrfOriginMiddleware(
@@ -48,6 +50,8 @@ async function bootstrap() {
     app.get(RequestLoggingInterceptor),
     app.get(SuccessResponseInterceptor)
   );
+  await app.init();
+  await app.get(HealthService).assertStartupReady();
   await app.listen(Number(configService.getOrThrow<string>("BFF_PORT")));
 }
 

@@ -7,9 +7,13 @@ import { MongooseModule } from "@nestjs/mongoose";
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
+        serverSelectionTimeoutMS: Number(
+          configService.get<string>("HEALTH_CHECK_TIMEOUT_MS", "2000")
+        ),
         uri: configService.getOrThrow<string>("MONGODB_URI")
       })
     })
-  ]
+  ],
+  exports: [MongooseModule]
 })
 export class DatabaseModule {}

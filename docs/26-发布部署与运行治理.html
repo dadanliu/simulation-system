@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>10. 发布、部署与运行治理</title>
+    <style>
+      :root {
+        --bg: #f6f8fb;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #5f6b7a;
+        --line: #d8e0ea;
+        --blue: #2563eb;
+        --green: #059669;
+        --orange: #d97706;
+        --red: #dc2626;
+        --purple: #7c3aed;
+        --soft-blue: #eaf2ff;
+        --soft-green: #e8f7ef;
+        --soft-orange: #fff4df;
+        --soft-red: #fff0f0;
+        --soft-purple: #f2edff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+        line-height: 1.65;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 20px 72px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.25;
+      }
+
+      h1 {
+        font-size: 34px;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin-top: 34px;
+        font-size: 24px;
+      }
+
+      h3 {
+        margin-top: 22px;
+        font-size: 18px;
+      }
+
+      p {
+        margin: 10px 0;
+      }
+
+      code {
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: #eef2f7;
+        color: #111827;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+        font-size: 0.92em;
+      }
+
+      pre {
+        overflow-x: auto;
+        margin: 12px 0 0;
+        padding: 14px;
+        border-radius: 8px;
+        background: #0f172a;
+        color: #e5e7eb;
+      }
+
+      pre code {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+      }
+
+      .lead {
+        max-width: 940px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .panel {
+        margin-top: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 20px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .stat {
+        border-left: 4px solid var(--blue);
+        background: var(--soft-blue);
+      }
+
+      .stat.green {
+        border-color: var(--green);
+        background: var(--soft-green);
+      }
+
+      .stat.orange {
+        border-color: var(--orange);
+        background: var(--soft-orange);
+      }
+
+      .stat h3 {
+        margin-top: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f1f5f9;
+      }
+
+      .svg-wrap {
+        overflow-x: auto;
+        margin-top: 14px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      svg {
+        display: block;
+        width: 100%;
+        min-width: 960px;
+        height: auto;
+      }
+
+      .node {
+        fill: #ffffff;
+        stroke: #94a3b8;
+        stroke-width: 1.5;
+      }
+
+      .node-blue {
+        fill: var(--soft-blue);
+        stroke: var(--blue);
+      }
+
+      .node-green {
+        fill: var(--soft-green);
+        stroke: var(--green);
+      }
+
+      .node-orange {
+        fill: var(--soft-orange);
+        stroke: var(--orange);
+      }
+
+      .node-red {
+        fill: var(--soft-red);
+        stroke: var(--red);
+      }
+
+      .node-purple {
+        fill: var(--soft-purple);
+        stroke: var(--purple);
+      }
+
+      .arrow {
+        fill: none;
+        stroke: #64748b;
+        stroke-width: 2;
+        marker-end: url(#arrow);
+      }
+
+      .label {
+        fill: var(--text);
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .small {
+        fill: var(--muted);
+        font-size: 13px;
+      }
+
+      @media (max-width: 800px) {
+        .grid.three {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>10. 发布、部署与运行治理</h1>
+      <p class="lead">
+        这一章解决的是“代码怎么从仓库变成线上服务，以及线上服务怎么证明自己还能接流量”。当前系统把
+        client、BFF、backend 分开构建；把构建时变量和运行时变量分开；用
+        version、commit sha、release note 追踪发布；用 live/ready
+        支持滚动发布和快速回滚。
+      </p>
+
+      <section class="grid three">
+        <div class="panel stat">
+          <h3>构建边界</h3>
+          <p>
+            <code>pnpm build:client</code>、<code>pnpm build:bff</code>、<code
+              >pnpm build:server</code
+            >
+            分别产出三个可部署单元。
+          </p>
+        </div>
+        <div class="panel stat green">
+          <h3>运行校验</h3>
+          <p>
+            <code>APP_ENV=production</code>
+            时，缺少发布变量或依赖不可用会失败，不会静默启动。
+          </p>
+        </div>
+        <div class="panel stat orange">
+          <h3>发布治理</h3>
+          <p>
+            <code>/api/health/ready</code> 控制是否接流量，错误率升高时用 commit
+            sha 判断回滚目标。
+          </p>
+        </div>
+      </section>
+
+      <h2>一、当前构建过程怎么跑</h2>
+      <div class="panel">
+        <p>
+          根目录的 <code>pnpm build:all</code> 会让 workspace 中所有有
+          <code>build</code>
+          脚本的包各自构建。这里不是把三端打成一个大包，而是保留三个清晰产物边界。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 520"
+            role="img"
+            aria-label="当前 monorepo 构建产物边界"
+          >
+            <defs>
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="50"
+              y="55"
+              width="250"
+              height="105"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="175" y="90" text-anchor="middle" class="label">
+              根目录命令
+            </text>
+            <text x="175" y="118" text-anchor="middle" class="small">
+              pnpm build:all
+            </text>
+            <text x="175" y="140" text-anchor="middle" class="small">
+              pnpm -r --if-present run build
+            </text>
+
+            <rect
+              x="395"
+              y="30"
+              width="240"
+              height="115"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="515" y="66" text-anchor="middle" class="label">
+              client
+            </text>
+            <text x="515" y="94" text-anchor="middle" class="small">
+              apps/client
+            </text>
+            <text x="515" y="118" text-anchor="middle" class="small">
+              next build
+            </text>
+
+            <rect
+              x="395"
+              y="195"
+              width="240"
+              height="115"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="515" y="231" text-anchor="middle" class="label">BFF</text>
+            <text x="515" y="259" text-anchor="middle" class="small">
+              apps/bff
+            </text>
+            <text x="515" y="283" text-anchor="middle" class="small">
+              nest build
+            </text>
+
+            <rect
+              x="395"
+              y="360"
+              width="240"
+              height="115"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="515" y="396" text-anchor="middle" class="label">
+              backend
+            </text>
+            <text x="515" y="424" text-anchor="middle" class="small">
+              apps/server
+            </text>
+            <text x="515" y="448" text-anchor="middle" class="small">
+              nest build
+            </text>
+
+            <rect
+              x="770"
+              y="30"
+              width="320"
+              height="115"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="930" y="66" text-anchor="middle" class="label">
+              Next 产物
+            </text>
+            <text x="930" y="94" text-anchor="middle" class="small">
+              .next / server routes / static assets
+            </text>
+            <text x="930" y="118" text-anchor="middle" class="small">
+              运行：pnpm start:client
+            </text>
+
+            <rect
+              x="770"
+              y="195"
+              width="320"
+              height="115"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="930" y="231" text-anchor="middle" class="label">
+              BFF 产物
+            </text>
+            <text x="930" y="259" text-anchor="middle" class="small">
+              apps/bff/dist
+            </text>
+            <text x="930" y="283" text-anchor="middle" class="small">
+              运行：pnpm start:bff
+            </text>
+
+            <rect
+              x="770"
+              y="360"
+              width="320"
+              height="115"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="930" y="396" text-anchor="middle" class="label">
+              backend 产物
+            </text>
+            <text x="930" y="424" text-anchor="middle" class="small">
+              apps/server/dist
+            </text>
+            <text x="930" y="448" text-anchor="middle" class="small">
+              运行：pnpm start:server
+            </text>
+
+            <path d="M300 108 C345 108 345 88 395 88" class="arrow"></path>
+            <path d="M300 108 C345 108 345 252 395 252" class="arrow"></path>
+            <path d="M300 108 C345 108 345 418 395 418" class="arrow"></path>
+            <path d="M635 88 H770" class="arrow"></path>
+            <path d="M635 252 H770" class="arrow"></path>
+            <path d="M635 418 H770" class="arrow"></path>
+          </svg>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>命令</th>
+              <th>当前作用</th>
+              <th>真实例子</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>pnpm build:client</code></td>
+              <td>构建 Next.js 页面、RSC、API route、静态资源。</td>
+              <td>发布管理后台页面，页面顶部可展示版本号和 commit。</td>
+            </tr>
+            <tr>
+              <td><code>pnpm build:bff</code></td>
+              <td>构建 NestJS BFF，产物在 <code>apps/bff/dist</code>。</td>
+              <td>部署对外 API、登录会话、审计、上传代理、缓存和 health。</td>
+            </tr>
+            <tr>
+              <td><code>pnpm build:server</code></td>
+              <td>
+                构建 NestJS backend mock service，产物在
+                <code>apps/server/dist</code>。
+              </td>
+              <td>部署商品数据、文件存储、MongoDB 查询模拟层和 health。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>二、构建时变量和运行时变量怎么区分</h2>
+      <div class="panel">
+        <p>
+          第一性原理：构建时变量会被写进构建产物或影响构建结果；运行时变量是在服务启动或处理请求时读取。当前系统的核心规则是：
+          <code>NEXT_PUBLIC_*</code> 给浏览器可见，BFF/backend
+          的敏感配置只在服务端运行时读取。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 610"
+            role="img"
+            aria-label="构建时变量和运行时变量流动图"
+          >
+            <defs>
+              <marker
+                id="arrow-env"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="50"
+              y="60"
+              width="270"
+              height="125"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="185" y="94" text-anchor="middle" class="label">
+              部署平台注入
+            </text>
+            <text x="185" y="122" text-anchor="middle" class="small">
+              APP_ENV / APP_VERSION
+            </text>
+            <text x="185" y="146" text-anchor="middle" class="small">
+              RELEASE_COMMIT_SHA
+            </text>
+            <text x="185" y="170" text-anchor="middle" class="small">
+              MONGODB_URI / REDIS_URL
+            </text>
+
+            <rect
+              x="405"
+              y="40"
+              width="260"
+              height="145"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="535" y="76" text-anchor="middle" class="label">
+              client 构建/运行
+            </text>
+            <text x="535" y="104" text-anchor="middle" class="small">
+              NEXT_PUBLIC_APP_VERSION
+            </text>
+            <text x="535" y="128" text-anchor="middle" class="small">
+              NEXT_PUBLIC_RELEASE_COMMIT_SHA
+            </text>
+            <text x="535" y="152" text-anchor="middle" class="small">
+              BFF_BASE_URL / NEXT_INTERNAL_ORIGIN
+            </text>
+
+            <rect
+              x="405"
+              y="250"
+              width="260"
+              height="145"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="535" y="286" text-anchor="middle" class="label">
+              BFF 运行时
+            </text>
+            <text x="535" y="314" text-anchor="middle" class="small">
+              BACKEND_BASE_URL
+            </text>
+            <text x="535" y="338" text-anchor="middle" class="small">
+              MONGODB_URI / REDIS_URL
+            </text>
+            <text x="535" y="362" text-anchor="middle" class="small">
+              FILE_URL_SIGNING_SECRET
+            </text>
+
+            <rect
+              x="405"
+              y="445"
+              width="260"
+              height="115"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="535" y="480" text-anchor="middle" class="label">
+              backend 运行时
+            </text>
+            <text x="535" y="508" text-anchor="middle" class="small">
+              MONGODB_URI
+            </text>
+            <text x="535" y="532" text-anchor="middle" class="small">
+              STORAGE_DRIVER / S3 / OSS
+            </text>
+
+            <rect
+              x="760"
+              y="60"
+              width="330"
+              height="125"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="925" y="94" text-anchor="middle" class="label">
+              页面可见
+            </text>
+            <text x="925" y="122" text-anchor="middle" class="small">
+              顶部展示 v版本号
+            </text>
+            <text x="925" y="146" text-anchor="middle" class="small">
+              commit 短 SHA
+            </text>
+            <text x="925" y="170" text-anchor="middle" class="small">
+              可选 release 链接
+            </text>
+
+            <rect
+              x="760"
+              y="310"
+              width="330"
+              height="145"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="925" y="346" text-anchor="middle" class="label">
+              生产强校验
+            </text>
+            <text x="925" y="374" text-anchor="middle" class="small">
+              APP_ENV=production
+            </text>
+            <text x="925" y="398" text-anchor="middle" class="small">
+              缺少版本 / commit / 依赖配置
+            </text>
+            <text x="925" y="422" text-anchor="middle" class="small">
+              启动或构建直接失败
+            </text>
+
+            <path
+              d="M320 122 H405"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-env)"
+            ></path>
+            <path
+              d="M320 122 C365 122 360 322 405 322"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-env)"
+            ></path>
+            <path
+              d="M320 122 C370 122 360 502 405 502"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-env)"
+            ></path>
+            <path
+              d="M665 122 H760"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-env)"
+            ></path>
+            <path
+              d="M665 322 C710 322 710 382 760 382"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-env)"
+            ></path>
+            <path
+              d="M665 502 C720 502 710 382 760 382"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-env)"
+            ></path>
+          </svg>
+        </div>
+        <pre><code># client 生产必须显式提供
+NEXT_PUBLIC_APP_ENV=production
+NEXT_PUBLIC_APP_VERSION=2026.05.11.1
+NEXT_PUBLIC_RELEASE_COMMIT_SHA=abc123def456
+BFF_BASE_URL=https://bff.example.com
+NEXT_INTERNAL_ORIGIN=https://admin.example.com
+
+# BFF / backend 生产必须显式提供
+APP_ENV=production
+APP_VERSION=2026.05.11.1
+RELEASE_COMMIT_SHA=abc123def456
+MONGODB_URI=mongodb+srv://...
+REDIS_URL=redis://...
+RELEASE_NOTES_URL=https://github.com/example/next-bff/releases/tag/2026.05.11.1</code></pre>
+      </div>
+
+      <h2>三、版本追踪和回滚怎么工作</h2>
+      <div class="panel">
+        <p>
+          版本追踪的目标是：当线上错误率升高时，先知道“当前跑的是哪次发布”，再决定回滚到哪个
+          commit。当前系统在页面、BFF 根接口、backend 根接口和 health
+          返回中都带版本信息。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 500"
+            role="img"
+            aria-label="发布版本追踪和回滚定位流程"
+          >
+            <defs>
+              <marker
+                id="arrow-release"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="50"
+              y="70"
+              width="220"
+              height="110"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="160" y="106" text-anchor="middle" class="label">
+              CI / 发布系统
+            </text>
+            <text x="160" y="134" text-anchor="middle" class="small">
+              生成 version
+            </text>
+            <text x="160" y="158" text-anchor="middle" class="small">
+              注入 commit sha
+            </text>
+
+            <rect
+              x="350"
+              y="70"
+              width="220"
+              height="110"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="460" y="106" text-anchor="middle" class="label">
+              client 页面
+            </text>
+            <text x="460" y="134" text-anchor="middle" class="small">
+              v2026.05.11.1
+            </text>
+            <text x="460" y="158" text-anchor="middle" class="small">
+              abc123de
+            </text>
+
+            <rect
+              x="650"
+              y="70"
+              width="220"
+              height="110"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="760" y="106" text-anchor="middle" class="label">
+              BFF / backend
+            </text>
+            <text x="760" y="134" text-anchor="middle" class="small">
+              / 根接口
+            </text>
+            <text x="760" y="158" text-anchor="middle" class="small">
+              /api/health/ready
+            </text>
+
+            <rect
+              x="950"
+              y="70"
+              width="180"
+              height="110"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="1040" y="106" text-anchor="middle" class="label">
+              线上告警
+            </text>
+            <text x="1040" y="134" text-anchor="middle" class="small">
+              5xx 升高
+            </text>
+            <text x="1040" y="158" text-anchor="middle" class="small">
+              定位版本
+            </text>
+
+            <rect
+              x="335"
+              y="310"
+              width="510"
+              height="90"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="590" y="344" text-anchor="middle" class="label">
+              回滚决策
+            </text>
+            <text x="590" y="372" text-anchor="middle" class="small">
+              当前 commit=abc123de，上一稳定 commit=09fd21ab
+            </text>
+            <text x="590" y="394" text-anchor="middle" class="small">
+              发布系统回滚镜像/产物到上一版本
+            </text>
+
+            <path
+              d="M270 125 H350"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-release)"
+            ></path>
+            <path
+              d="M570 125 H650"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-release)"
+            ></path>
+            <path
+              d="M870 125 H950"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-release)"
+            ></path>
+            <path
+              d="M1040 180 C1040 260 760 270 760 310"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-release)"
+            ></path>
+            <path
+              d="M460 180 C460 250 520 270 520 310"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-release)"
+            ></path>
+          </svg>
+        </div>
+        <pre><code>// 页面顶部
+v2026.05.11.1
+abc123de
+release
+
+// BFF / backend 返回
+{
+  "service": "bff",
+  "version": "2026.05.11.1",
+  "commitSha": "abc123def456",
+  "releaseNotesUrl": "https://github.com/example/next-bff/releases/tag/2026.05.11.1"
+}</code></pre>
+      </div>
+
+      <h2>四、health check 和滚动发布怎么处理</h2>
+      <div class="panel">
+        <p>
+          <code>live</code> 和 <code>ready</code> 的区别很重要：<code
+            >live</code
+          >
+          说明进程还活着，<code>ready</code>
+          说明服务可以接业务流量。滚动发布时负载均衡器应该看
+          <code>ready</code>，而不是只看进程是否存活。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 660"
+            role="img"
+            aria-label="健康检查、ready probe、draining 和滚动发布流程"
+          >
+            <defs>
+              <marker
+                id="arrow-health"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="50"
+              y="55"
+              width="220"
+              height="115"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="160" y="90" text-anchor="middle" class="label">
+              新实例启动
+            </text>
+            <text x="160" y="118" text-anchor="middle" class="small">
+              app.init()
+            </text>
+            <text x="160" y="142" text-anchor="middle" class="small">
+              assertStartupReady()
+            </text>
+
+            <rect
+              x="350"
+              y="55"
+              width="220"
+              height="115"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="460" y="90" text-anchor="middle" class="label">
+              依赖检查
+            </text>
+            <text x="460" y="118" text-anchor="middle" class="small">
+              BFF: MongoDB / Redis
+            </text>
+            <text x="460" y="142" text-anchor="middle" class="small">
+              backend: MongoDB
+            </text>
+
+            <rect
+              x="650"
+              y="55"
+              width="220"
+              height="115"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="760" y="90" text-anchor="middle" class="label">
+              ready=ok
+            </text>
+            <text x="760" y="118" text-anchor="middle" class="small">
+              /api/health/ready 200
+            </text>
+            <text x="760" y="142" text-anchor="middle" class="small">
+              允许接流量
+            </text>
+
+            <rect
+              x="950"
+              y="55"
+              width="180"
+              height="115"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="1040" y="90" text-anchor="middle" class="label">
+              负载均衡
+            </text>
+            <text x="1040" y="118" text-anchor="middle" class="small">
+              加入实例
+            </text>
+            <text x="1040" y="142" text-anchor="middle" class="small">
+              业务请求进入
+            </text>
+
+            <rect
+              x="350"
+              y="250"
+              width="220"
+              height="115"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="460" y="285" text-anchor="middle" class="label">
+              依赖失败
+            </text>
+            <text x="460" y="313" text-anchor="middle" class="small">
+              MongoDB down
+            </text>
+            <text x="460" y="337" text-anchor="middle" class="small">
+              Redis down
+            </text>
+
+            <rect
+              x="650"
+              y="250"
+              width="220"
+              height="115"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="760" y="285" text-anchor="middle" class="label">
+              ready=unready
+            </text>
+            <text x="760" y="313" text-anchor="middle" class="small">
+              /api/health/ready 503
+            </text>
+            <text x="760" y="337" text-anchor="middle" class="small">
+              不接新流量
+            </text>
+
+            <rect
+              x="50"
+              y="455"
+              width="220"
+              height="115"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="160" y="490" text-anchor="middle" class="label">
+              旧实例下线
+            </text>
+            <text x="160" y="518" text-anchor="middle" class="small">
+              SIGTERM
+            </text>
+            <text x="160" y="542" text-anchor="middle" class="small">
+              enableShutdownHooks()
+            </text>
+
+            <rect
+              x="350"
+              y="455"
+              width="220"
+              height="115"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="460" y="490" text-anchor="middle" class="label">
+              draining
+            </text>
+            <text x="460" y="518" text-anchor="middle" class="small">
+              ready 返回 503
+            </text>
+            <text x="460" y="542" text-anchor="middle" class="small">
+              等待 5 秒排空
+            </text>
+
+            <rect
+              x="650"
+              y="455"
+              width="220"
+              height="115"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="760" y="490" text-anchor="middle" class="label">
+              老请求完成
+            </text>
+            <text x="760" y="518" text-anchor="middle" class="small">
+              新请求不再进入
+            </text>
+            <text x="760" y="542" text-anchor="middle" class="small">
+              进程安全退出
+            </text>
+
+            <path
+              d="M270 112 H350"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-health)"
+            ></path>
+            <path
+              d="M570 112 H650"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-health)"
+            ></path>
+            <path
+              d="M870 112 H950"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-health)"
+            ></path>
+            <path
+              d="M460 170 V250"
+              fill="none"
+              stroke="#dc2626"
+              stroke-width="2"
+              marker-end="url(#arrow-health)"
+            ></path>
+            <path
+              d="M570 307 H650"
+              fill="none"
+              stroke="#dc2626"
+              stroke-width="2"
+              marker-end="url(#arrow-health)"
+            ></path>
+            <path
+              d="M270 512 H350"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-health)"
+            ></path>
+            <path
+              d="M570 512 H650"
+              fill="none"
+              stroke="#64748b"
+              stroke-width="2"
+              marker-end="url(#arrow-health)"
+            ></path>
+          </svg>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>接口</th>
+              <th>当前检查什么</th>
+              <th>谁使用</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>BFF /api/health/live</code></td>
+              <td>只表示 BFF 进程存活。</td>
+              <td>进程级 liveness probe。</td>
+            </tr>
+            <tr>
+              <td><code>BFF /api/health/ready</code></td>
+              <td>检查 MongoDB、Redis、backend ready；失败返回 503。</td>
+              <td>负载均衡器、滚动发布、排障人员。</td>
+            </tr>
+            <tr>
+              <td><code>backend /api/health/live</code></td>
+              <td>只表示 backend 进程存活。</td>
+              <td>进程级 liveness probe。</td>
+            </tr>
+            <tr>
+              <td><code>backend /api/health/ready</code></td>
+              <td>检查 MongoDB；失败返回 503。</td>
+              <td>BFF ready 检查、负载均衡器、滚动发布。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>五、真实 case：MongoDB 不可用时怎么表现</h2>
+      <div class="panel">
+        <p>
+          真实发布时最怕的是“服务进程启动了，但数据库连不上，流量已经打进来”。当前实现用启动前检查和
+          ready probe 两层拦住这个问题。
+        </p>
+        <pre><code>// backend 启动阶段
+app.init()
+await app.get(HealthService).assertStartupReady()
+
+// 如果 MongoDB 不可用
+throw new Error("Backend startup dependency check failed: mongodb ...")
+
+// 如果运行中 MongoDB 断开
+GET /api/health/ready
+HTTP 503
+{
+  "service": "backend",
+  "status": "unready",
+  "dependencies": [
+    {
+      "name": "mongodb",
+      "status": "down",
+      "message": "MongoDB connection is not ready, readyState=0"
+    }
+  ]
+}</code></pre>
+        <p>
+          对用户来说，正确结果不是看到一堆 500，而是发布平台/负载均衡器发现
+          <code>ready=503</code> 后不再把新流量打给这个实例。
+        </p>
+      </div>
+    </main>
+  </body>
+</html>

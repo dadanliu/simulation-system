@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { MongooseModule } from "@nestjs/mongoose";
+import { HealthModule } from "../health/health.module";
 import { CommodityService } from "./commodity.service";
 import { MockBackendController } from "./mock-backend.controller";
 import { MockBackendService } from "./mock-backend.service";
@@ -16,6 +17,7 @@ import { UsersService } from "./users.service";
 @Module({
   imports: [
     ConfigModule,
+    HealthModule,
     MongooseModule.forFeature([
       { name: Commodity.name, schema: CommoditySchema }
     ])

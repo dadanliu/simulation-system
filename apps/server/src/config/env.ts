@@ -4,6 +4,8 @@ const ENV_FILE_PATHS = [".env.local", ".env", "../../.env.local", "../../.env"];
 const DEFAULTS = {
   APP_ENV: "development",
   APP_VERSION: "local",
+  GRACEFUL_SHUTDOWN_DRAIN_SECONDS: "5",
+  HEALTH_CHECK_TIMEOUT_MS: "2000",
   LOCAL_UPLOAD_DIR: ".dev/uploads",
   LOCAL_UPLOAD_PUBLIC_BASE_URL: "http://localhost:3002/uploads",
   LOG_LEVEL: "log,warn,error",
@@ -205,6 +207,8 @@ export function validateServerEnv(input: RawConfig) {
   const errors: string[] = [];
 
   requireNonEmpty(config, "MONGODB_URI", errors);
+  requirePositiveInteger(config, "GRACEFUL_SHUTDOWN_DRAIN_SECONDS", errors);
+  requirePositiveInteger(config, "HEALTH_CHECK_TIMEOUT_MS", errors);
   requirePositiveInteger(config, "SERVER_PORT", errors);
   requireStorageDriver(config, errors);
   requireBooleanString(config, "MOCK_SEED_ENABLED", errors);

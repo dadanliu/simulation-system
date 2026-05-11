@@ -8,6 +8,7 @@ import { bffConfigModuleOptions } from "./config/env";
 import { RequestLoggingInterceptor } from "./common/interceptors/request-logging.interceptor";
 import { SuccessResponseInterceptor } from "./common/interceptors/success-response.interceptor";
 import { DatabaseModule } from "./database/database.module";
+import { HealthModule } from "./health/health.module";
 import { PermissionModule } from "./permission/permission.module";
 import { RoleModule } from "./role/role.module";
 import { TestResetModule } from "./test-support/test-reset.module";
@@ -21,6 +22,7 @@ import { UserModule } from "./user/user.module";
     BffModule,
     CommodityModule,
     DatabaseModule,
+    HealthModule,
     PermissionModule,
     RoleModule,
     TestResetModule,

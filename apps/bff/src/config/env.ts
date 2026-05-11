@@ -23,6 +23,8 @@ const DEFAULTS = {
   LOGIN_MAX_FAILURES_PER_IP: "20",
   LOGIN_MAX_FAILURES_PER_USER: "5",
   FILE_URL_SIGNING_SECRET: "next-bff-dev-file-secret",
+  GRACEFUL_SHUTDOWN_DRAIN_SECONDS: "5",
+  HEALTH_CHECK_TIMEOUT_MS: "2000",
   LOG_LEVEL: "log,warn,error",
   MOCK_SEED_ENABLED: undefined,
   NODE_ENV: "development",
@@ -223,6 +225,8 @@ export function validateBffEnv(input: RawConfig) {
   );
   requirePositiveInteger(config, "FILE_PREVIEW_URL_TTL_SECONDS", errors);
   requirePositiveInteger(config, "FILE_URL_TTL_SECONDS", errors);
+  requirePositiveInteger(config, "GRACEFUL_SHUTDOWN_DRAIN_SECONDS", errors);
+  requirePositiveInteger(config, "HEALTH_CHECK_TIMEOUT_MS", errors);
   requirePositiveInteger(config, "LOGIN_MAX_FAILURES_PER_USER", errors);
   requirePositiveInteger(config, "LOGIN_MAX_FAILURES_PER_IP", errors);
   requirePositiveInteger(config, "LOGIN_FAILURE_WINDOW_SECONDS", errors);

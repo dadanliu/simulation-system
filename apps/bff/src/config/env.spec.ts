@@ -32,6 +32,8 @@ describe("validateBffEnv", () => {
       COMMODITY_LIST_CACHE_STALE_SECONDS: "30",
       COMMODITY_LIST_CACHE_TTL_SECONDS: "5",
       CSRF_ALLOWED_ORIGINS: "http://localhost:3000",
+      GRACEFUL_SHUTDOWN_DRAIN_SECONDS: "5",
+      HEALTH_CHECK_TIMEOUT_MS: "2000",
       APP_ENV: "development",
       MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff-dev",
       NODE_ENV: "development",
