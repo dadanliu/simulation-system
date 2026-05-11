@@ -7,12 +7,14 @@ import { buildCommodityListSearchParams } from "@/src/features/commodity/query";
 type CommodityListPaginationProps = {
   currentPage: number;
   filters: CommodityListFilters;
+  nextCursor?: string | null;
   totalPages: number;
 };
 
 export function CommodityListPagination({
   currentPage,
   filters,
+  nextCursor,
   totalPages
 }: CommodityListPaginationProps) {
   const router = useRouter();
@@ -22,7 +24,23 @@ export function CommodityListPagination({
     router.push(
       `/present/commodity/list?${buildCommodityListSearchParams({
         ...filters,
+        cursor: "",
         page: nextPage
+      }).toString()}`
+    );
+  }
+
+  function goToNextPage() {
+    if (!nextCursor) {
+      goToPage(currentPage + 1);
+      return;
+    }
+
+    router.push(
+      `/present/commodity/list?${buildCommodityListSearchParams({
+        ...filters,
+        cursor: nextCursor,
+        page: currentPage + 1
       }).toString()}`
     );
   }
@@ -45,7 +63,7 @@ export function CommodityListPagination({
         aria-disabled={currentPage >= totalPages}
         className={`button button--secondary${currentPage >= totalPages ? " button--disabled" : ""}`}
         disabled={currentPage >= totalPages}
-        onClick={() => goToPage(currentPage + 1)}
+        onClick={goToNextPage}
         type="button"
       >
         下一页

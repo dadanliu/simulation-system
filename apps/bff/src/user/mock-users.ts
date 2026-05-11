@@ -1,4 +1,4 @@
-import type { CreateUserInput } from "./user.types";
+import { DEFAULT_TENANT_ID, type CreateUserInput } from "./user.types";
 
 export const mockUsers: CreateUserInput[] = [
   {
@@ -7,7 +7,8 @@ export const mockUsers: CreateUserInput[] = [
     displayName: "系统管理员",
     password: "admin123",
     enabled: true,
-    roles: ["admin"]
+    roles: ["admin"],
+    tenantId: DEFAULT_TENANT_ID
   },
   {
     id: "u_operator_001",
@@ -15,7 +16,8 @@ export const mockUsers: CreateUserInput[] = [
     displayName: "商品运营",
     password: "operator123",
     enabled: true,
-    roles: ["operator"]
+    roles: ["operator"],
+    tenantId: DEFAULT_TENANT_ID
   },
   {
     id: "u_viewer_001",
@@ -23,6 +25,7 @@ export const mockUsers: CreateUserInput[] = [
     displayName: "只读用户",
     password: "viewer123",
     enabled: true,
-    roles: ["viewer"]
+    roles: ["viewer"],
+    tenantId: DEFAULT_TENANT_ID
   }
 ];

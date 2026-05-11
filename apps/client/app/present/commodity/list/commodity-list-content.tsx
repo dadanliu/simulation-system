@@ -27,10 +27,16 @@ const sortLabel = {
   stock: "库存"
 };
 
+const queryCostLabel = {
+  high: "高",
+  low: "低",
+  medium: "中"
+};
+
 export async function CommodityListContent({
   searchParams
 }: CommodityListContentProps) {
-  const { filters, list, pagination, totalPages } =
+  const { filters, list, pagination, queryPlan, sharding, totalPages } =
     await getCommodityListPageData(searchParams);
 
   return (
@@ -52,6 +58,44 @@ export async function CommodityListContent({
           <p className="card__label">当前排序</p>
           <p className="card__value">
             {sortLabel[filters.sortBy]} {sortLabel[filters.sortOrder]}
+          </p>
+        </article>
+        <article className="card">
+          <p className="card__label">查询路由</p>
+          <p className="card__value">
+            {sharding
+              ? sharding.routingMode === "targeted"
+                ? "定向分片"
+                : "跨分片"
+              : "-"}
+          </p>
+        </article>
+        <article className="card">
+          <p className="card__label">分片</p>
+          <p className="card__value">{sharding?.shardName ?? "-"}</p>
+        </article>
+        <article className="card">
+          <p className="card__label">租户标识</p>
+          <p className="card__value">{sharding?.tenantHash ?? "-"}</p>
+        </article>
+        <article className="card">
+          <p className="card__label">候选索引</p>
+          <p className="card__value mono-cell">
+            {queryPlan?.candidateIndex ?? "-"}
+          </p>
+        </article>
+        <article className="card">
+          <p className="card__label">查询成本</p>
+          <p className="card__value">
+            {queryPlan ? queryCostLabel[queryPlan.costLevel] : "-"}
+          </p>
+        </article>
+        <article className="card">
+          <p className="card__label">未覆盖条件</p>
+          <p className="card__value mono-cell">
+            {queryPlan?.unsupportedFilters.length
+              ? queryPlan.unsupportedFilters.join(", ")
+              : "无"}
           </p>
         </article>
       </div>
@@ -129,6 +173,7 @@ export async function CommodityListContent({
         <CommodityListPagination
           currentPage={pagination.page}
           filters={filters}
+          nextCursor={pagination.nextCursor}
           totalPages={totalPages}
         />
       </section>

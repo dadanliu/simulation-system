@@ -5,6 +5,7 @@ export type User = {
   enabled: boolean;
   id: string;
   roles: UserRole[];
+  tenantId: string;
   username: string;
 };
 
@@ -13,6 +14,7 @@ export type CreateUserInput = {
   enabled: boolean;
   password: string;
   roles: UserRole[];
+  tenantId?: string;
   username: string;
 };
 

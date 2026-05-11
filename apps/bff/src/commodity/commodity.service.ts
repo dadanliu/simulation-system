@@ -46,9 +46,11 @@ export class CommodityService {
     const backendQuery = {
       createdAtFrom: query.createdFrom,
       createdAtTo: query.createdTo,
+      cursor: query.cursor,
       keyword: query.keyword?.trim(),
       limit: query.pageSize,
       offset: (query.page - 1) * query.pageSize,
+      page: query.cursor ? query.page : undefined,
       priceMax: query.maxPrice,
       priceMin: query.minPrice,
       sortDirection: query.sortOrder,
@@ -104,6 +106,7 @@ export class CommodityService {
       backendPath,
       {
         // BFF 将已登录用户上下文注入到后端请求里。
+        tenantId: user.tenantId,
         userId: user.id
       }
     );
@@ -125,6 +128,7 @@ export class CommodityService {
         `/api/commodity/${encodeURIComponent(id)}`,
         {
           // 详情接口同样由 BFF 统一注入登录用户上下文。
+          tenantId: user.tenantId,
           userId: user.id
         }
       );
@@ -154,6 +158,7 @@ export class CommodityService {
         },
         method: "POST",
         // 创建接口同样带上当前登录用户，后端后续可用于审计和归属。
+        tenantId: user.tenantId,
         userId: user.id
       }
     );
@@ -191,6 +196,7 @@ export class CommodityService {
           deletedBy: user.id
         },
         method: "DELETE",
+        tenantId: user.tenantId,
         userId: user.id
       });
     } catch (error) {
@@ -234,6 +240,7 @@ export class CommodityService {
         before: Commodity;
       }>(request, `/api/commodity/${encodeURIComponent(id)}/restore`, {
         method: "PATCH",
+        tenantId: user.tenantId,
         userId: user.id
       });
     } catch (error) {
@@ -281,6 +288,7 @@ export class CommodityService {
           updatedBy: user.id
         },
         method: "PATCH",
+        tenantId: user.tenantId,
         userId: user.id
       });
     } catch (error) {
@@ -328,6 +336,7 @@ export class CommodityService {
       }>(request, `/api/commodity/${encodeURIComponent(id)}/status`, {
         body,
         method: "PATCH",
+        tenantId: user.tenantId,
         userId: user.id
       });
     } catch (error) {
@@ -364,6 +373,7 @@ export class CommodityService {
       request,
       backendPath,
       {
+        tenantId: user.tenantId,
         userId: user.id
       }
     );

@@ -50,6 +50,15 @@ export class QueryCommodityListDto {
   keyword?: string;
 
   @ApiPropertyOptional({
+    description: "游标分页位置，仅支持 createdAt 排序场景",
+    example:
+      "eyJjcmVhdGVkQXQiOiIyMDI2LTA0LTAzVDEwOjAwOjAwLjAwMFoiLCJpZCI6IjEwMDAyIn0"
+  })
+  @IsOptional()
+  @IsString()
+  cursor?: string;
+
+  @ApiPropertyOptional({
     description: "按商品状态筛选",
     enum: QueryCommodityStatus,
     example: QueryCommodityStatus.OnSale

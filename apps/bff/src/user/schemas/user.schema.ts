@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import type { HydratedDocument } from "mongoose";
+import { DEFAULT_TENANT_ID } from "../user.types";
 
 export type UserDocument = HydratedDocument<UserEntity>;
 
@@ -25,6 +26,9 @@ export class UserEntity {
 
   @Prop({ type: [String], default: [] })
   roles!: string[];
+
+  @Prop({ default: DEFAULT_TENANT_ID })
+  tenantId!: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserEntity);

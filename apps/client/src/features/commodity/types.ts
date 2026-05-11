@@ -12,6 +12,8 @@ export type Commodity = {
 };
 
 export type CommodityListPagination = {
+  mode?: "cursor" | "offset";
+  nextCursor?: string | null;
   page: number;
   pageSize: number;
   total: number;
@@ -20,11 +22,35 @@ export type CommodityListPagination = {
 export type CommodityListData = {
   list: Commodity[];
   pagination: CommodityListPagination;
+  queryPlan?: {
+    candidateIndex: string;
+    coveredByIndex: boolean;
+    costLevel: "high" | "low" | "medium";
+    hasCreatedAtRange: boolean;
+    hasKeyword: boolean;
+    hasPriceRange: boolean;
+    hasStatusFilter: boolean;
+    hasStockRange: boolean;
+    offset: number;
+    page: number;
+    paginationMode: "cursor" | "offset";
+    recommendations: string[];
+    sortDirection: "asc" | "desc";
+    sortField: string;
+    unsupportedFilters: string[];
+  };
+  sharding?: {
+    routingMode: "broadcast" | "targeted";
+    shardKey: "tenantId";
+    shardName: string;
+    tenantHash: string;
+  };
 };
 
 export type CommodityListFilters = {
   createdFrom: string;
   createdTo: string;
+  cursor: string;
   keyword: string;
   maxPrice: string;
   maxStock: string;

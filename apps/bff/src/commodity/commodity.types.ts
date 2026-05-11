@@ -13,6 +13,7 @@ export type Commodity = {
   price: number;
   status: CommodityStatus;
   stock: number;
+  tenantId?: string;
   updatedAt: string;
 };
 
@@ -30,6 +31,7 @@ export type CreateCommodityBody = {
 export type CommodityListQuery = {
   createdFrom?: string;
   createdTo?: string;
+  cursor?: string;
   keyword?: string;
   maxPrice?: number;
   maxStock?: number;
@@ -45,8 +47,33 @@ export type CommodityListQuery = {
 export type CommodityListData = {
   list: Commodity[];
   pagination: {
+    mode?: "cursor" | "offset";
+    nextCursor?: string | null;
     page: number;
     pageSize: number;
     total: number;
+  };
+  queryPlan?: {
+    candidateIndex: string;
+    coveredByIndex: boolean;
+    costLevel: "high" | "low" | "medium";
+    hasCreatedAtRange: boolean;
+    hasKeyword: boolean;
+    hasPriceRange: boolean;
+    hasStatusFilter: boolean;
+    hasStockRange: boolean;
+    offset: number;
+    page: number;
+    paginationMode: "cursor" | "offset";
+    recommendations: string[];
+    sortDirection: "asc" | "desc";
+    sortField: string;
+    unsupportedFilters: string[];
+  };
+  sharding?: {
+    routingMode: "broadcast" | "targeted";
+    shardKey: "tenantId";
+    shardName: string;
+    tenantHash: string;
   };
 };

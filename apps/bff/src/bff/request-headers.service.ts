@@ -3,6 +3,7 @@ import type { Request } from "express";
 import { randomUUID } from "node:crypto";
 
 type BuildHeadersOptions = {
+  tenantId?: string;
   userId?: string;
   traceId?: string;
 };
@@ -17,6 +18,10 @@ export class RequestHeadersService {
 
     if (options.userId) {
       headers["x-user-id"] = options.userId;
+    }
+
+    if (options.tenantId) {
+      headers["x-tenant-id"] = options.tenantId;
     }
 
     return headers;

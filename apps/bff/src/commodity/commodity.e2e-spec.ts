@@ -26,6 +26,7 @@ describe("CommodityController e2e", () => {
       "user:manage"
     ],
     roles: ["admin"],
+    tenantId: "tenant_demo",
     username: "admin"
   };
 
@@ -33,6 +34,7 @@ describe("CommodityController e2e", () => {
     id: "u_operator_001",
     permissions: ["commodity:create", "commodity:read", "commodity:update"],
     roles: ["operator"],
+    tenantId: "tenant_demo",
     username: "operator"
   };
 
@@ -208,7 +210,32 @@ describe("CommodityController e2e", () => {
         pagination: {
           page: 1,
           pageSize: 20,
+          mode: "offset",
+          nextCursor: null,
           total: 1
+        },
+        queryPlan: {
+          candidateIndex: "idx_commodities_tenant_active_created_at_id",
+          costLevel: "low",
+          coveredByIndex: true,
+          hasCreatedAtRange: false,
+          hasKeyword: false,
+          hasPriceRange: false,
+          hasStatusFilter: false,
+          hasStockRange: false,
+          offset: 0,
+          page: 1,
+          paginationMode: "offset",
+          recommendations: ["当前查询可由商品复合索引覆盖主要筛选和排序。"],
+          sortDirection: "desc",
+          sortField: "createdAt",
+          unsupportedFilters: []
+        },
+        sharding: {
+          routingMode: "targeted",
+          shardKey: "tenantId",
+          shardName: "shard-1",
+          tenantHash: "tenantabc123"
         }
       });
     });
@@ -225,6 +252,18 @@ describe("CommodityController e2e", () => {
     expect(response.headers["x-commodity-list-cache-source"]).toBe("backend");
     expect(response.headers["x-commodity-list-cache-refresh"]).toBe("none");
     expect(response.headers["x-commodity-list-cache-key"]).toBe("cacheabc1234");
+    expect(response.headers["x-commodity-list-candidate-index"]).toBe(
+      "idx_commodities_tenant_active_created_at_id"
+    );
+    expect(response.headers["x-commodity-list-index-covered"]).toBe("true");
+    expect(response.headers["x-commodity-list-query-cost"]).toBe("low");
+    expect(response.headers["x-commodity-list-unsupported-filters"]).toBe("");
+    expect(response.headers["x-commodity-list-routing-mode"]).toBe("targeted");
+    expect(response.headers["x-commodity-list-shard-key"]).toBe("tenantId");
+    expect(response.headers["x-commodity-list-shard-name"]).toBe("shard-1");
+    expect(response.headers["x-commodity-list-tenant-hash"]).toBe(
+      "tenantabc123"
+    );
     expect(response.body).toMatchObject({
       data: {
         list: [

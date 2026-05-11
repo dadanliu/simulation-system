@@ -9,6 +9,7 @@ describe("AuthService", () => {
   const user = {
     id: "u_admin_001",
     roles: ["admin"],
+    tenantId: "tenant_demo",
     username: "admin"
   };
 

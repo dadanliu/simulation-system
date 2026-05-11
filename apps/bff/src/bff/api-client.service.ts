@@ -19,6 +19,7 @@ type RequestOptions = {
   formData?: FormData;
   headers?: Record<string, string>;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  tenantId?: string;
   traceId?: string;
   userId?: string;
 };
@@ -60,6 +61,7 @@ export class ApiClientService {
       async (span) => {
         const headers = injectActiveTraceHeaders(
           this.requestHeadersService.build(request, {
+            tenantId: options.tenantId,
             traceId: options.traceId,
             userId: options.userId
           })
@@ -76,6 +78,7 @@ export class ApiClientService {
             backendBaseUrl,
             method,
             path,
+            tenantContext: options.tenantId ? "present" : "missing",
             traceId
           },
           level: "info"
@@ -116,6 +119,7 @@ export class ApiClientService {
             method,
             path,
             status: response.status,
+            tenantContext: options.tenantId ? "present" : "missing",
             traceId
           },
           level: "info"

@@ -40,6 +40,10 @@ type DeleteCommodityBody = {
   deletedBy?: string;
 };
 
+function readSingleHeader(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 @Controller("api")
 export class MockBackendController {
   constructor(
@@ -71,41 +75,75 @@ export class MockBackendController {
     @Query() query: ListCommoditiesQuery,
     @Req() request: Request & { traceId?: string }
   ) {
-    return this.commodityService.listCommodities(query, request.traceId ?? "");
+    return this.commodityService.listCommodities(
+      query,
+      request.traceId ?? "",
+      readSingleHeader(request.headers["x-tenant-id"])
+    );
   }
 
   @Get("commodity/:id")
-  getCommodity(@Param("id") id: string) {
+  getCommodity(@Param("id") id: string, @Req() request: Request) {
     // mock backend 只负责返回统一 errno 结构，是否转成 HTTP 异常由 BFF 决定。
-    return this.commodityService.getCommodityById(id);
+    return this.commodityService.getCommodityById(
+      id,
+      readSingleHeader(request.headers["x-tenant-id"])
+    );
   }
 
   @Post("commodity/create")
-  createCommodity(@Body() body: CreateCommodityBody) {
-    return this.commodityService.createCommodity(body);
+  createCommodity(@Body() body: CreateCommodityBody, @Req() request: Request) {
+    return this.commodityService.createCommodity(
+      body,
+      readSingleHeader(request.headers["x-tenant-id"])
+    );
   }
 
   @Delete("commodity/:id")
-  deleteCommodity(@Param("id") id: string, @Body() body: DeleteCommodityBody) {
-    return this.commodityService.deleteCommodity(id, body.deletedBy);
+  deleteCommodity(
+    @Param("id") id: string,
+    @Body() body: DeleteCommodityBody,
+    @Req() request: Request
+  ) {
+    return this.commodityService.deleteCommodity(
+      id,
+      body.deletedBy,
+      readSingleHeader(request.headers["x-tenant-id"])
+    );
   }
 
   @Patch("commodity/:id")
-  updateCommodity(@Param("id") id: string, @Body() body: UpdateCommodityBody) {
-    return this.commodityService.updateCommodity(id, body);
+  updateCommodity(
+    @Param("id") id: string,
+    @Body() body: UpdateCommodityBody,
+    @Req() request: Request
+  ) {
+    return this.commodityService.updateCommodity(
+      id,
+      body,
+      readSingleHeader(request.headers["x-tenant-id"])
+    );
   }
 
   @Patch("commodity/:id/restore")
-  restoreCommodity(@Param("id") id: string) {
-    return this.commodityService.restoreCommodity(id);
+  restoreCommodity(@Param("id") id: string, @Req() request: Request) {
+    return this.commodityService.restoreCommodity(
+      id,
+      readSingleHeader(request.headers["x-tenant-id"])
+    );
   }
 
   @Patch("commodity/:id/status")
   updateCommodityStatus(
     @Param("id") id: string,
-    @Body() body: UpdateCommodityStatusBody
+    @Body() body: UpdateCommodityStatusBody,
+    @Req() request: Request
   ) {
-    return this.commodityService.updateCommodityStatus(id, body);
+    return this.commodityService.updateCommodityStatus(
+      id,
+      body,
+      readSingleHeader(request.headers["x-tenant-id"])
+    );
   }
 
   @Post("upload/token")

@@ -1,6 +1,6 @@
 import { hashPassword } from "./password-hash";
 import { UserService } from "./user.service";
-import type { UserRecord } from "./user.types";
+import { DEFAULT_TENANT_ID, type UserRecord } from "./user.types";
 
 describe("UserService", () => {
   const roleService = {
@@ -46,6 +46,7 @@ describe("UserService", () => {
       id: "u_admin_001",
       passwordHash,
       roles: ["admin"],
+      tenantId: DEFAULT_TENANT_ID,
       username: "admin"
     };
     const userModel = {
@@ -76,6 +77,7 @@ describe("UserService", () => {
         "user:manage"
       ],
       roles: ["admin"],
+      tenantId: DEFAULT_TENANT_ID,
       username: "admin"
     });
   });
@@ -88,6 +90,7 @@ describe("UserService", () => {
       id: "u_admin_001",
       passwordHash,
       roles: ["admin"],
+      tenantId: DEFAULT_TENANT_ID,
       username: "admin"
     };
     const lean = jest
@@ -116,6 +119,7 @@ describe("UserService", () => {
       password: "admin123",
       passwordHash: await hashPassword("admin123"),
       roles: ["admin"],
+      tenantId: DEFAULT_TENANT_ID,
       username: "admin"
     };
     const userModel = {
@@ -134,6 +138,7 @@ describe("UserService", () => {
         enabled: true,
         id: "u_admin_001",
         roles: ["admin"],
+        tenantId: DEFAULT_TENANT_ID,
         username: "admin"
       }
     ]);
@@ -173,6 +178,7 @@ describe("UserService", () => {
     expect(savedUser.password).toBeUndefined();
     expect(savedUser.passwordHash).not.toBe("operator123");
     expect(savedUser.passwordHash).toMatch(/^\$2[aby]\$/);
+    expect(savedUser.tenantId).toBe(DEFAULT_TENANT_ID);
     expect(result).not.toHaveProperty("password");
     expect(result).not.toHaveProperty("passwordHash");
   });

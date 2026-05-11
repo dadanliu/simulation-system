@@ -29,6 +29,7 @@ describe("AuthController e2e", () => {
       "user:manage"
     ],
     roles: ["admin"],
+    tenantId: "tenant_demo",
     username: "admin"
   };
 

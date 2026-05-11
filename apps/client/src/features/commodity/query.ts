@@ -29,6 +29,7 @@ const VALID_SORT_ORDER = new Set<CommodityListSortOrder>(["asc", "desc"]);
 const KNOWN_QUERY_KEYS = [
   "createdFrom",
   "createdTo",
+  "cursor",
   "keyword",
   "maxPrice",
   "maxStock",
@@ -81,6 +82,7 @@ export function readCommodityListFilters(
   return {
     createdFrom: readString(searchParams.createdFrom),
     createdTo: readString(searchParams.createdTo),
+    cursor: readString(searchParams.cursor),
     keyword: readString(searchParams.keyword),
     maxPrice: readString(searchParams.maxPrice),
     maxStock: readString(searchParams.maxStock),
@@ -102,6 +104,10 @@ export function buildCommodityListSearchParams(filters: CommodityListFilters) {
 
   if (filters.keyword) {
     query.set("keyword", filters.keyword);
+  }
+
+  if (filters.cursor) {
+    query.set("cursor", filters.cursor);
   }
 
   if (filters.minPrice) {

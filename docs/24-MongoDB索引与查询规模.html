@@ -341,14 +341,18 @@
             <tr>
               <td>offset 分页</td>
               <td>用 <code>skip + limit</code> 跳过前面的数据再取一页。</td>
-              <td>当前仍使用 offset；页码越深，数据库跳过成本越高。</td>
+              <td>
+                当前兼容 offset，并新增 cursor 下一页；页码越深，offset
+                跳过成本越高。
+              </td>
             </tr>
             <tr>
               <td>候选索引</td>
               <td>代码根据查询形态判断最可能匹配的索引。</td>
               <td>
-                日志字段 <code>candidateIndex</code> 用来辅助排查，不等同于
-                MongoDB 最终执行计划。
+                日志、响应体 <code>queryPlan</code> 和 BFF header 都会暴露
+                <code>candidateIndex</code>，用来辅助排查，不等同于 MongoDB
+                explain 的最终执行计划。
               </td>
             </tr>
             <tr>
@@ -375,17 +379,21 @@
           </thead>
           <tbody>
             <tr>
-              <td><code>idx_commodities_active_status</code></td>
-              <td><code>{ deletedAt: 1, status: 1 }</code></td>
+              <td><code>idx_commodities_tenant_active_status</code></td>
+              <td><code>{ tenantId: 1, deletedAt: 1, status: 1 }</code></td>
               <td>只看某个状态的未删除商品。</td>
               <td>
-                列表默认过滤软删除数据，所以把
-                <code>deletedAt</code> 放在索引前面。
+                列表默认按租户隔离并过滤软删除数据，所以把
+                <code>tenantId</code> 和 <code>deletedAt</code> 放在索引前面。
               </td>
             </tr>
             <tr>
-              <td><code>idx_commodities_active_created_at_id</code></td>
-              <td><code>{ deletedAt: 1, createdAt: -1, id: -1 }</code></td>
+              <td><code>idx_commodities_tenant_active_created_at_id</code></td>
+              <td>
+                <code
+                  >{ tenantId: 1, deletedAt: 1, createdAt: -1, id: -1 }</code
+                >
+              </td>
               <td>默认按创建时间倒序分页。</td>
               <td>
                 <code>id</code>
@@ -393,20 +401,91 @@
               </td>
             </tr>
             <tr>
-              <td><code>idx_commodities_active_status_created_at_id</code></td>
               <td>
-                <code>{ deletedAt: 1, status: 1, createdAt: -1, id: -1 }</code>
+                <code>idx_commodities_tenant_active_status_created_at_id</code>
+              </td>
+              <td>
+                <code
+                  >{ tenantId: 1, deletedAt: 1, status: 1, createdAt: -1, id: -1
+                  }</code
+                >
               </td>
               <td>状态 tab 里按创建时间排序分页。</td>
               <td>
                 先过滤未删除和状态，再按时间有序取一页，减少扫描和内存排序。
               </td>
             </tr>
+            <tr>
+              <td><code>idx_commodities_tenant_name_unique</code></td>
+              <td><code>{ tenantId: 1, name: 1 }</code></td>
+              <td>同一租户内商品名唯一。</td>
+              <td>不同租户可以有同名商品，但同一租户不能重复创建同名商品。</td>
+            </tr>
           </tbody>
         </table>
       </div>
 
-      <h2>三、查询路径图</h2>
+      <h2>三、本次系统内新增的索引功能</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>功能点</th>
+              <th>当前实现</th>
+              <th>真实例子</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>状态筛选有索引支持</td>
+              <td>
+                <code>tenantId + deletedAt + status</code> 和
+                <code>tenantId + deletedAt + status + createdAt + id</code>
+              </td>
+              <td>
+                查询 <code>tenant_demo</code> 下的
+                <code>status=on_sale</code> 商品，不需要扫描其他租户数据。
+              </td>
+            </tr>
+            <tr>
+              <td>创建时间排序有索引支持</td>
+              <td>
+                <code>tenantId + deletedAt + createdAt + id</code>
+                支持默认列表排序。
+              </td>
+              <td>
+                商品列表默认按最新创建时间倒序展示，<code>id</code>
+                作为次排序避免翻页重复或漏数据。
+              </td>
+            </tr>
+            <tr>
+              <td>状态 + 创建时间组合查询有复合索引</td>
+              <td>
+                <code>idx_commodities_tenant_active_status_created_at_id</code>
+              </td>
+              <td>
+                打开“上架中”tab
+                并按创建时间倒序分页，候选索引会指向这个复合索引。
+              </td>
+            </tr>
+            <tr>
+              <td>新增筛选项前评估查询成本</td>
+              <td>
+                backend 返回 <code>queryPlan</code>，BFF header 暴露
+                <code>X-Commodity-List-Candidate-Index</code
+                >、<code>X-Commodity-List-Query-Cost</code>、<code>X-Commodity-List-Unsupported-Filters</code>。
+              </td>
+              <td>
+                如果用户按 <code>price</code> 范围筛选并按价格排序，
+                <code>unsupportedFilters</code> 会出现 <code>price</code> 和
+                <code>sort:price</code>，提示这不是当前主索引路径。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>四、查询路径图</h2>
       <div class="panel">
         <div class="svg-wrap">
           <svg
@@ -533,7 +612,7 @@
         </div>
       </div>
 
-      <h2>四、新增筛选项前要问后端什么</h2>
+      <h2>五、新增筛选项前要问后端什么</h2>
       <div class="panel">
         <table>
           <thead>
@@ -578,7 +657,7 @@
         </table>
       </div>
 
-      <h2>五、索引的问题：什么时候加，什么时候不加</h2>
+      <h2>六、索引的问题：什么时候加，什么时候不加</h2>
       <div class="panel">
         <p>
           索引的本质是“额外维护一份查找目录”。它可以让读更快，但会占空间，也会让写入、更新、删除多做维护工作。
@@ -682,7 +761,7 @@
         </table>
       </div>
 
-      <h2>六、前端渲染慢和 DB 查询慢怎么区分</h2>
+      <h2>七、前端渲染慢和 DB 查询慢怎么区分</h2>
       <div class="panel">
         <table>
           <thead>
@@ -725,7 +804,7 @@
         </table>
       </div>
 
-      <h2>七、用 query、page、sort、traceId 辅助排查</h2>
+      <h2>八、用 query、page、sort、traceId 辅助排查</h2>
       <div class="panel">
         <p>前端反馈慢查询时，至少给后端这些信息：</p>
         <pre><code>{
@@ -740,7 +819,10 @@
   "sortBy": "createdAt",
   "sortOrder": "desc"
 }</code></pre>
-        <p>后端可以用同一个 <code>traceId</code> 查到：</p>
+        <p>
+          后端可以用同一个 <code>traceId</code> 查到；前端也能在列表响应的
+          <code>queryPlan</code> 和 Network header 里直接看到关键字段：
+        </p>
         <table>
           <thead>
             <tr>
@@ -751,7 +833,18 @@
           <tbody>
             <tr>
               <td><code>candidateIndex</code></td>
-              <td>判断是否匹配状态、创建时间、复合索引。</td>
+              <td>
+                判断是否匹配状态、创建时间、复合索引。Network header 是
+                <code>X-Commodity-List-Candidate-Index</code>。
+              </td>
+            </tr>
+            <tr>
+              <td><code>coveredByIndex / costLevel</code></td>
+              <td>
+                判断本次查询是不是主要由索引覆盖，以及成本是低、中还是高。Network
+                header 是 <code>X-Commodity-List-Index-Covered</code> 和
+                <code>X-Commodity-List-Query-Cost</code>。
+              </td>
             </tr>
             <tr>
               <td><code>page / limit / offset</code></td>
@@ -763,13 +856,23 @@
             </tr>
             <tr>
               <td><code>hasKeyword / hasPriceRange / hasStockRange</code></td>
-              <td>判断是否用了暂未重点优化的筛选项。</td>
+              <td>
+                判断是否用了暂未重点优化的筛选项；这些会汇总到
+                <code>unsupportedFilters</code>。
+              </td>
+            </tr>
+            <tr>
+              <td><code>recommendations</code></td>
+              <td>
+                给出下一步建议，比如“keyword
+                应评估文本索引或搜索服务”、“深分页应使用 cursor”。
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <h2>八、验收对照</h2>
+      <h2>九、验收对照</h2>
       <div class="panel">
         <table>
           <thead>

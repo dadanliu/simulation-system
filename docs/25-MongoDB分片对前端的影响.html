@@ -1,0 +1,3162 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>9.4 MongoDB 分片对前端的影响</title>
+    <style>
+      :root {
+        --bg: #f7f9fc;
+        --panel: #ffffff;
+        --text: #1f2937;
+        --muted: #5f6b7a;
+        --line: #d8e0ea;
+        --blue: #2563eb;
+        --green: #059669;
+        --orange: #d97706;
+        --red: #dc2626;
+        --purple: #7c3aed;
+        --soft-blue: #eaf2ff;
+        --soft-green: #e8f7ef;
+        --soft-orange: #fff4df;
+        --soft-red: #fff0f0;
+        --soft-purple: #f2edff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Microsoft YaHei", sans-serif;
+        line-height: 1.65;
+      }
+
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 40px 20px 72px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.25;
+      }
+
+      h1 {
+        font-size: 34px;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin-top: 34px;
+        font-size: 24px;
+      }
+
+      h3 {
+        margin-top: 22px;
+        font-size: 18px;
+      }
+
+      p {
+        margin: 10px 0;
+      }
+
+      code {
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: #eef2f7;
+        color: #111827;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", monospace;
+        font-size: 0.92em;
+      }
+
+      pre {
+        overflow-x: auto;
+        margin: 12px 0 0;
+        padding: 14px;
+        border-radius: 8px;
+        background: #0f172a;
+        color: #e5e7eb;
+      }
+
+      pre code {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+      }
+
+      .lead {
+        max-width: 940px;
+        color: var(--muted);
+        font-size: 16px;
+      }
+
+      .panel {
+        margin-top: 16px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 20px;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .stat {
+        border-left: 4px solid var(--blue);
+        background: var(--soft-blue);
+      }
+
+      .stat.green {
+        border-color: var(--green);
+        background: var(--soft-green);
+      }
+
+      .stat.orange {
+        border-color: var(--orange);
+        background: var(--soft-orange);
+      }
+
+      .stat h3 {
+        margin-top: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      th,
+      td {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: #eef3f9;
+        color: #263548;
+        font-weight: 700;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .tag {
+        display: inline-block;
+        margin: 2px 4px 2px 0;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #eef2f7;
+        color: #334155;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .ok {
+        background: var(--soft-green);
+        color: #047857;
+      }
+
+      .warn {
+        background: var(--soft-orange);
+        color: #a16207;
+      }
+
+      .danger {
+        background: var(--soft-red);
+        color: #b91c1c;
+      }
+
+      .svg-wrap {
+        overflow-x: auto;
+        padding: 8px 0;
+      }
+
+      svg {
+        display: block;
+        min-width: 980px;
+        max-width: 100%;
+        height: auto;
+      }
+
+      .node {
+        fill: #fff;
+        stroke: #cbd5e1;
+        stroke-width: 1.4;
+      }
+
+      .node-blue {
+        fill: var(--soft-blue);
+        stroke: #93b7ff;
+      }
+
+      .node-green {
+        fill: var(--soft-green);
+        stroke: #83d4ad;
+      }
+
+      .node-orange {
+        fill: var(--soft-orange);
+        stroke: #f0bd6a;
+      }
+
+      .node-red {
+        fill: var(--soft-red);
+        stroke: #f5a3a3;
+      }
+
+      .node-purple {
+        fill: var(--soft-purple);
+        stroke: #bba6ff;
+      }
+
+      .arrow {
+        stroke: #64748b;
+        stroke-width: 2;
+        marker-end: url(#arrow);
+        fill: none;
+      }
+
+      .arrow-green {
+        stroke: var(--green);
+      }
+
+      .arrow-red {
+        stroke: var(--red);
+      }
+
+      .arrow-orange {
+        stroke: var(--orange);
+      }
+
+      .arrow-purple {
+        stroke: var(--purple);
+      }
+
+      .label {
+        fill: #1f2937;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      .small {
+        fill: #526172;
+        font-size: 12px;
+      }
+
+      @media (max-width: 820px) {
+        main {
+          padding: 28px 14px 52px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .grid.three {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>9.4 MongoDB 分片对前端的影响</h1>
+        <p class="lead">
+          分片不是前端直接配置的东西，但它会改变列表接口的查询代价。
+          同一个商品列表，如果请求里带了正确的租户上下文，MongoDB
+          可以定向到少量分片；如果缺少 shard key，就可能变成跨分片查询。
+          所以前端要懂一点分片，核心不是运维数据库，而是设计正确的查询参数、分页方式和异常兜底。
+        </p>
+      </header>
+
+      <section class="grid three">
+        <div class="panel stat">
+          <h3>查询路由</h3>
+          <p>
+            <code>tenantId</code> 这类 shard key
+            决定请求是定向查一个分片，还是广播到多个分片。
+          </p>
+        </div>
+        <div class="panel stat green">
+          <h3>分页排序</h3>
+          <p>
+            深页
+            <code>offset</code> 和全局排序在分片下成本更高，规模上来后应升级
+            <code>cursor</code>。
+          </p>
+        </div>
+        <div class="panel stat orange">
+          <h3>前端兜底</h3>
+          <p>
+            分片迁移、热点租户会导致部分接口抖动，页面需要
+            loading、重试、错误提示和 traceId。
+          </p>
+        </div>
+      </section>
+
+      <h2>一、先用当前商品列表举例</h2>
+      <div class="panel">
+        <p>
+          当前系统已经新增了演示级租户上下文。mock 用户都有
+          <code>tenantId=tenant_demo</code>，BFF 从登录态读取这个值，并通过
+          <code>x-tenant-id</code> 可信转发给 backend；前端 URL 不需要也不能伪造
+          tenantId。
+        </p>
+        <pre><code>GET /present/commodity/list?page=1&amp;pageSize=10&amp;status=on_sale&amp;sortBy=createdAt&amp;sortOrder=desc
+
+Next 页面 -&gt; BFF /api/commodity/list
+BFF -&gt; header: x-tenant-id=tenant_demo
+BFF -&gt; backend /api/commodity/list?limit=10&amp;offset=0&amp;status=on_sale&amp;sortField=createdAt
+backend -&gt; MongoDB commodities.find({ tenantId: "tenant_demo", deletedAt: null, status: "on_sale" }).sort({ createdAt: -1, id: -1 })</code></pre>
+        <p>
+          这个阶段前端关心的是
+          <code>page</code>、<code>pageSize</code>、<code>status</code>、<code
+            >sortBy</code
+          >
+          是否合法；backend 通过
+          <code>idx_commodities_tenant_active_status_created_at_id</code>
+          这类索引减少扫描。
+        </p>
+        <p>
+          列表响应会返回 <code>sharding.routingMode</code>、<code
+            >shardName</code
+          >
+          和 <code>tenantHash</code>，BFF 也会把这些值写到响应
+          header，排查时可以直接从 Network 面板看本次请求是定向分片还是跨分片。
+        </p>
+      </div>
+
+      <h2>二、本次系统内新增了什么</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>能力</th>
+              <th>当前代码</th>
+              <th>真实例子</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>可信租户上下文</td>
+              <td>
+                <code>AuthUser.tenantId</code>、<code>x-tenant-id</code>、
+                <code>RequestHeadersService</code>
+              </td>
+              <td>
+                operator 登录后，BFF 注入 <code>tenant_demo</code>，不是让前端
+                body 自己传。
+              </td>
+            </tr>
+            <tr>
+              <td>租户隔离查询</td>
+              <td>
+                backend 商品查询统一加
+                <code>{ tenantId, deletedAt }</code>。
+              </td>
+              <td>租户 A 打开商品 10001，只能查到自己租户下的 10001。</td>
+            </tr>
+            <tr>
+              <td>分片路由观测</td>
+              <td>
+                响应和日志包含
+                <code>routingMode</code
+                >、<code>shardName</code>、<code>tenantHash</code>。
+              </td>
+              <td>
+                Network 看到
+                <code>X-Commodity-List-Routing-Mode=targeted</code>，说明本次有
+                shard key。
+              </td>
+            </tr>
+            <tr>
+              <td>cursor 分页预留</td>
+              <td>
+                backend 支持 <code>cursor</code>，前端下一页优先使用
+                <code>pagination.nextCursor</code>。
+              </td>
+              <td>
+                第一页最后一条是 10002，下一页用它的
+                <code>createdAt + id</code> 继续读，不靠深页 skip。
+              </td>
+            </tr>
+            <tr>
+              <td>前端兜底</td>
+              <td>
+                列表已有
+                <code>loading.tsx</code>、<code>error.tsx</code>、重试按钮和
+                traceId 上报。
+              </td>
+              <td>
+                分片迁移导致接口超时，页面显示失败信息并保留 traceId
+                给后端排查。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>三、当前系统变量流动图</h2>
+      <div class="panel">
+        <p>
+          当前系统不是直接把 MongoDB 部署成真实 shard 集群，而是用
+          <code>tenantId</code> 模拟 shard key 对前端、BFF、backend、MongoDB
+          查询和排障信息的影响。重点看变量从哪里输入、在哪里转换、在哪里输出、最后被谁消费。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 690"
+            role="img"
+            aria-label="当前系统 MongoDB 分片变量流动图"
+          >
+            <defs>
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="40"
+              y="55"
+              width="220"
+              height="96"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="150" y="87" text-anchor="middle" class="label">
+              浏览器输入
+            </text>
+            <text x="150" y="112" text-anchor="middle" class="small">
+              page / status / sortBy
+            </text>
+            <text x="150" y="134" text-anchor="middle" class="small">
+              cursor 可选
+            </text>
+
+            <rect
+              x="40"
+              y="205"
+              width="220"
+              height="96"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="150" y="237" text-anchor="middle" class="label">
+              登录态输入
+            </text>
+            <text x="150" y="262" text-anchor="middle" class="small">
+              AuthUser.tenantId
+            </text>
+            <text x="150" y="284" text-anchor="middle" class="small">
+              tenant_demo
+            </text>
+
+            <rect
+              x="335"
+              y="110"
+              width="230"
+              height="130"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="450" y="143" text-anchor="middle" class="label">
+              BFF 转换
+            </text>
+            <text x="450" y="169" text-anchor="middle" class="small">
+              page -&gt; offset
+            </text>
+            <text x="450" y="191" text-anchor="middle" class="small">
+              sortBy -&gt; sortField
+            </text>
+            <text x="450" y="213" text-anchor="middle" class="small">
+              tenantId -&gt; x-tenant-id
+            </text>
+
+            <rect
+              x="640"
+              y="75"
+              width="230"
+              height="120"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="755" y="108" text-anchor="middle" class="label">
+              backend 接收
+            </text>
+            <text x="755" y="134" text-anchor="middle" class="small">
+              request.headers["x-tenant-id"]
+            </text>
+            <text x="755" y="158" text-anchor="middle" class="small">
+              tenantContext
+            </text>
+
+            <rect
+              x="640"
+              y="245"
+              width="230"
+              height="130"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="755" y="278" text-anchor="middle" class="label">
+              组装查询
+            </text>
+            <text x="755" y="304" text-anchor="middle" class="small">
+              filters.tenantId
+            </text>
+            <text x="755" y="326" text-anchor="middle" class="small">
+              filters.status / createdAt
+            </text>
+            <text x="755" y="348" text-anchor="middle" class="small">
+              sort / cursor / limit
+            </text>
+
+            <rect
+              x="930"
+              y="245"
+              width="210"
+              height="130"
+              rx="8"
+              class="node"
+            ></rect>
+            <text x="1035" y="278" text-anchor="middle" class="label">
+              MongoDB 查询
+            </text>
+            <text x="1035" y="304" text-anchor="middle" class="small">
+              commodities.find(filters)
+            </text>
+            <text x="1035" y="326" text-anchor="middle" class="small">
+              tenant 前缀索引
+            </text>
+            <text x="1035" y="348" text-anchor="middle" class="small">
+              单集合模拟
+            </text>
+
+            <rect
+              x="640"
+              y="430"
+              width="230"
+              height="140"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="755" y="464" text-anchor="middle" class="label">
+              backend 输出
+            </text>
+            <text x="755" y="490" text-anchor="middle" class="small">
+              list / pagination
+            </text>
+            <text x="755" y="512" text-anchor="middle" class="small">
+              sharding.routingMode
+            </text>
+            <text x="755" y="534" text-anchor="middle" class="small">
+              queryPlan.candidateIndex
+            </text>
+            <text x="755" y="556" text-anchor="middle" class="small">
+              tenantHash / shardName
+            </text>
+
+            <rect
+              x="335"
+              y="430"
+              width="230"
+              height="140"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="450" y="464" text-anchor="middle" class="label">
+              BFF 响应头
+            </text>
+            <text x="450" y="490" text-anchor="middle" class="small">
+              X-Commodity-List-Routing-Mode
+            </text>
+            <text x="450" y="512" text-anchor="middle" class="small">
+              X-Commodity-List-Shard-Name
+            </text>
+            <text x="450" y="534" text-anchor="middle" class="small">
+              X-Commodity-List-Candidate-Index
+            </text>
+            <text x="450" y="556" text-anchor="middle" class="small">
+              X-Commodity-List-Query-Cost
+            </text>
+
+            <rect
+              x="40"
+              y="430"
+              width="220"
+              height="140"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="150" y="464" text-anchor="middle" class="label">
+              前端消费
+            </text>
+            <text x="150" y="490" text-anchor="middle" class="small">
+              查询路由卡片
+            </text>
+            <text x="150" y="512" text-anchor="middle" class="small">
+              分片 / 租户标识
+            </text>
+            <text x="150" y="534" text-anchor="middle" class="small">
+              候选索引 / 查询成本
+            </text>
+            <text x="150" y="556" text-anchor="middle" class="small">
+              Network 排障
+            </text>
+
+            <path d="M260 103 C295 103 295 153 335 153" class="arrow"></path>
+            <path d="M260 253 C295 253 295 198 335 198" class="arrow"></path>
+            <path d="M565 175 H640" class="arrow arrow-green"></path>
+            <path d="M755 195 V245" class="arrow"></path>
+            <path d="M870 310 H930" class="arrow"></path>
+            <path d="M1035 375 C1035 420 895 500 870 500" class="arrow"></path>
+            <path d="M640 500 H565" class="arrow arrow-green"></path>
+            <path d="M335 500 H260" class="arrow arrow-green"></path>
+
+            <rect
+              x="315"
+              y="610"
+              width="560"
+              height="48"
+              rx="8"
+              fill="#fff7ed"
+              stroke="#f0bd6a"
+            ></rect>
+            <text x="595" y="640" text-anchor="middle" class="small">
+              说明：当前 shardName 是根据 tenantId hash
+              计算的模拟结果，不代表真实 MongoDB shard 机器。
+            </text>
+          </svg>
+        </div>
+      </div>
+
+      <h2>四、关键变量从哪里来、往哪里去</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>变量</th>
+              <th>输入位置</th>
+              <th>中间流动</th>
+              <th>输出 / 消费</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>tenantId</code></td>
+              <td>
+                用户登录态里的 <code>AuthUser.tenantId</code>，当前 mock
+                用户默认 <code>tenant_demo</code>。
+              </td>
+              <td>
+                BFF 调 backend 时通过 <code>x-tenant-id</code> header 传递。
+              </td>
+              <td>
+                backend 变成 <code>tenantContext</code>，进入
+                <code>filters.tenantId</code>；同时生成
+                <code>tenantHash</code>。
+              </td>
+            </tr>
+            <tr>
+              <td><code>query</code></td>
+              <td>
+                浏览器
+                URL：<code>page</code>、<code>pageSize</code>、<code>status</code>、<code>sortBy</code>、<code>cursor</code>。
+              </td>
+              <td>
+                BFF 转换成 backend
+                参数：<code>limit</code>、<code>offset</code>、<code>sortField</code>、<code>sortDirection</code>。
+              </td>
+              <td>
+                backend 生成 MongoDB <code>filters</code>、<code>sort</code> 和
+                <code>cursor</code> 条件。
+              </td>
+            </tr>
+            <tr>
+              <td><code>filters</code></td>
+              <td>backend 根据租户、状态、时间、价格、库存、关键词组装。</td>
+              <td>
+                传给 <code>commodityModel.find(filters)</code> 和
+                <code>countDocuments(countFilters)</code>。
+              </td>
+              <td>
+                MongoDB 返回 <code>commodities</code> 和 <code>total</code>。
+              </td>
+            </tr>
+            <tr>
+              <td><code>sharding</code></td>
+              <td>
+                backend 的 <code>buildShardingDebug(tenantContext)</code>。
+              </td>
+              <td>
+                根据 tenantId 是否存在输出 <code>targeted</code> 或
+                <code>broadcast</code>，并计算模拟 <code>shardName</code>。
+              </td>
+              <td>
+                返回到 JSON body；BFF 写成
+                <code>X-Commodity-List-Routing-Mode</code
+                >、<code>X-Commodity-List-Shard-Name</code>、<code>X-Commodity-List-Tenant-Hash</code>。
+              </td>
+            </tr>
+            <tr>
+              <td><code>queryPlan</code></td>
+              <td>backend 根据筛选、排序、分页形态计算。</td>
+              <td>
+                选择 <code>candidateIndex</code>，判断
+                <code>coveredByIndex</code>、<code>costLevel</code> 和
+                <code>unsupportedFilters</code>。
+              </td>
+              <td>
+                前端列表卡片展示候选索引和查询成本；BFF 写
+                <code>X-Commodity-List-Candidate-Index</code> 等 header。
+              </td>
+            </tr>
+            <tr>
+              <td><code>cacheDebug</code></td>
+              <td>
+                BFF 的 <code>commodityCacheService.readCommodityList(...)</code>
+                根据缓存命中结果生成。
+              </td>
+              <td>
+                <code>CommodityService</code> 把
+                <code>state</code>、<code>source</code>、<code>refresh</code> 和
+                <code>keyHash</code> 挂到
+                <code>request.commodityListCacheDebug</code>。
+              </td>
+              <td>
+                controller 写成 <code>X-Commodity-List-Cache-State</code> 等
+                header；日志拦截器写入结构化日志，前端主要通过 Network
+                面板排查。
+              </td>
+            </tr>
+            <tr>
+              <td><code>nextCursor</code></td>
+              <td>
+                backend 根据本页最后一条商品的
+                <code>createdAt + id</code> 生成。
+              </td>
+              <td>返回到 <code>pagination.nextCursor</code>。</td>
+              <td>
+                前端点击下一页时把它放回 URL 的
+                <code>cursor</code>，下一次请求继续往后读。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>五、一次商品列表请求的真实数据样例</h2>
+      <div class="panel">
+        <p>
+          用户输入的是页面 URL
+          和登录态，系统输出的是商品列表、分片排障信息和索引排障信息。
+        </p>
+        <pre><code>// 1. 浏览器输入
+GET /present/commodity/list?page=1&amp;pageSize=10&amp;status=on_sale&amp;sortBy=createdAt&amp;sortOrder=desc
+
+// 2. BFF 从登录态取到
+user.tenantId = "tenant_demo"
+user.id = "u_operator_001"
+
+// 3. BFF 转发给 backend
+GET /api/commodity/list?limit=10&amp;offset=0&amp;status=on_sale&amp;sortField=createdAt&amp;sortDirection=desc
+x-tenant-id: tenant_demo
+x-user-id: u_operator_001
+
+// 4. BFF 先判断列表缓存状态
+cacheDebug = {
+  state: "fresh",
+  source: "redis",
+  refresh: "none",
+  keyHash: "f4c1a9e0"
+}
+
+// 5. backend 组装 MongoDB 查询
+filters = {
+  tenantId: "tenant_demo",
+  deletedAt: null,
+  status: "on_sale"
+}
+sort = { createdAt: -1, id: -1 }
+
+// 6. backend 输出给 BFF / 前端
+{
+  list: [...],
+  pagination: {
+    mode: "offset",
+    nextCursor: "eyJjcmVhdGVkQXQiOiIyMDI2...",
+    page: 1,
+    pageSize: 10,
+    total: 3
+  },
+  sharding: {
+    routingMode: "targeted",
+    shardKey: "tenantId",
+    shardName: "shard-1",
+    tenantHash: "b7a3..."
+  },
+  queryPlan: {
+    candidateIndex: "idx_commodities_tenant_active_status_created_at_id",
+    coveredByIndex: true,
+    costLevel: "low",
+    unsupportedFilters: []
+  }
+}
+
+// 7. BFF 写到响应 header，方便 Network 面板直接排障
+X-Cache-Layer: bff-redis
+X-Commodity-List-Cache-State: fresh
+X-Commodity-List-Cache-Source: redis
+X-Commodity-List-Cache-Refresh: none
+X-Commodity-List-Cache-Key: f4c1a9e0
+X-Commodity-List-Routing-Mode: targeted
+X-Commodity-List-Shard-Key: tenantId
+X-Commodity-List-Shard-Name: shard-1
+X-Commodity-List-Candidate-Index: idx_commodities_tenant_active_status_created_at_id
+X-Commodity-List-Query-Cost: low</code></pre>
+        <h3>cacheDebug / sharding / queryPlan 怎么生产、流动、消费</h3>
+        <p>
+          这三个变量不是用户填写的业务字段，而是系统自己生成的排障字段。真实排查时可以这样理解：
+          <code>cacheDebug</code> 回答“旧数据是不是缓存导致的”，<code
+            >sharding</code
+          >
+          回答“请求打到哪个分片”，<code>queryPlan</code>
+          回答“这次查询大概贵不贵、用了哪个索引”。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 620"
+            role="img"
+            aria-label="cacheDebug sharding queryPlan 三个排障变量流动图"
+          >
+            <defs>
+              <marker
+                id="arrow-debug"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="40"
+              y="65"
+              width="220"
+              height="120"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="150" y="98" text-anchor="middle" class="label">
+              请求输入
+            </text>
+            <text x="150" y="124" text-anchor="middle" class="small">
+              URL query
+            </text>
+            <text x="150" y="146" text-anchor="middle" class="small">
+              登录态 tenantId
+            </text>
+            <text x="150" y="168" text-anchor="middle" class="small">
+              traceId
+            </text>
+
+            <rect
+              x="330"
+              y="40"
+              width="260"
+              height="150"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="460" y="73" text-anchor="middle" class="label">
+              BFF 生产 cacheDebug
+            </text>
+            <text x="460" y="100" text-anchor="middle" class="small">
+              readCommodityList()
+            </text>
+            <text x="460" y="122" text-anchor="middle" class="small">
+              state: fresh / stale / miss
+            </text>
+            <text x="460" y="144" text-anchor="middle" class="small">
+              source: redis / backend
+            </text>
+            <text x="460" y="166" text-anchor="middle" class="small">
+              request.commodityListCacheDebug
+            </text>
+
+            <rect
+              x="330"
+              y="235"
+              width="260"
+              height="150"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="460" y="268" text-anchor="middle" class="label">
+              backend 生产 sharding
+            </text>
+            <text x="460" y="295" text-anchor="middle" class="small">
+              x-tenant-id -&gt; tenantContext
+            </text>
+            <text x="460" y="317" text-anchor="middle" class="small">
+              buildShardingDebug()
+            </text>
+            <text x="460" y="339" text-anchor="middle" class="small">
+              routingMode / shardName
+            </text>
+            <text x="460" y="361" text-anchor="middle" class="small">
+              tenantHash
+            </text>
+
+            <rect
+              x="330"
+              y="430"
+              width="260"
+              height="150"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="460" y="463" text-anchor="middle" class="label">
+              backend 生产 queryPlan
+            </text>
+            <text x="460" y="490" text-anchor="middle" class="small">
+              filters + sort + pagination
+            </text>
+            <text x="460" y="512" text-anchor="middle" class="small">
+              buildQueryPlan()
+            </text>
+            <text x="460" y="534" text-anchor="middle" class="small">
+              candidateIndex / costLevel
+            </text>
+            <text x="460" y="556" text-anchor="middle" class="small">
+              unsupportedFilters
+            </text>
+
+            <rect
+              x="700"
+              y="80"
+              width="210"
+              height="120"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="805" y="113" text-anchor="middle" class="label">
+              BFF header
+            </text>
+            <text x="805" y="139" text-anchor="middle" class="small">
+              X-Commodity-List-Cache-*
+            </text>
+            <text x="805" y="161" text-anchor="middle" class="small">
+              X-Commodity-List-Shard-*
+            </text>
+            <text x="805" y="183" text-anchor="middle" class="small">
+              X-Commodity-List-Query-*
+            </text>
+
+            <rect
+              x="700"
+              y="255"
+              width="210"
+              height="120"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="805" y="288" text-anchor="middle" class="label">
+              JSON body
+            </text>
+            <text x="805" y="314" text-anchor="middle" class="small">
+              list / pagination
+            </text>
+            <text x="805" y="336" text-anchor="middle" class="small">
+              sharding
+            </text>
+            <text x="805" y="358" text-anchor="middle" class="small">
+              queryPlan
+            </text>
+
+            <rect
+              x="700"
+              y="430"
+              width="210"
+              height="120"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="805" y="463" text-anchor="middle" class="label">
+              结构化日志
+            </text>
+            <text x="805" y="489" text-anchor="middle" class="small">
+              cache state / key
+            </text>
+            <text x="805" y="511" text-anchor="middle" class="small">
+              routing mode
+            </text>
+            <text x="805" y="533" text-anchor="middle" class="small">
+              query cost
+            </text>
+
+            <rect
+              x="980"
+              y="165"
+              width="160"
+              height="120"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="1060" y="198" text-anchor="middle" class="label">
+              前端页面
+            </text>
+            <text x="1060" y="224" text-anchor="middle" class="small">
+              分片卡片
+            </text>
+            <text x="1060" y="246" text-anchor="middle" class="small">
+              索引卡片
+            </text>
+            <text x="1060" y="268" text-anchor="middle" class="small">
+              traceId 报错
+            </text>
+
+            <rect
+              x="980"
+              y="350"
+              width="160"
+              height="120"
+              rx="8"
+              class="node"
+            ></rect>
+            <text x="1060" y="383" text-anchor="middle" class="label">
+              排障人员
+            </text>
+            <text x="1060" y="409" text-anchor="middle" class="small">
+              Network headers
+            </text>
+            <text x="1060" y="431" text-anchor="middle" class="small">
+              日志按 traceId 查
+            </text>
+            <text x="1060" y="453" text-anchor="middle" class="small">
+              判断慢在哪里
+            </text>
+
+            <path
+              d="M260 125 H330"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+            <path
+              d="M260 125 C290 125 292 310 330 310"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+            <path
+              d="M260 125 C290 125 292 505 330 505"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+            <path
+              d="M590 115 H700"
+              stroke="#16a34a"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+            <path
+              d="M590 310 H700"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+            <path
+              d="M590 505 H700"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+            <path
+              d="M910 315 C945 315 945 225 980 225"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+            <path
+              d="M910 140 C950 140 945 410 980 410"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+            <path
+              d="M910 490 H980"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-debug)"
+            ></path>
+          </svg>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>变量</th>
+              <th>谁生产</th>
+              <th>怎么流动</th>
+              <th>谁消费</th>
+              <th>真实排查例子</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>cacheDebug</code></td>
+              <td>BFF 缓存层。</td>
+              <td>
+                先挂在 <code>request.commodityListCacheDebug</code>，再写到响应
+                header 和结构化日志。
+              </td>
+              <td>Network 面板、日志平台、排查人员。</td>
+              <td>
+                状态已经改了但列表没变，先看
+                <code>X-Commodity-List-Cache-State</code>。如果是
+                <code>stale</code>，说明用户拿到旧缓存，后台正在刷新。
+              </td>
+            </tr>
+            <tr>
+              <td><code>sharding</code></td>
+              <td>backend 查询层。</td>
+              <td>
+                从 <code>x-tenant-id</code> 生成，进入 JSON body；BFF 同步写
+                <code>X-Commodity-List-Routing-Mode</code> 等 header。
+              </td>
+              <td>前端分片卡片、Network 面板、后端日志。</td>
+              <td>
+                某个租户很慢时，看 <code>routingMode=targeted</code> 和
+                <code>shardName=shard-2</code>，判断是不是某个分片或租户热点。
+              </td>
+            </tr>
+            <tr>
+              <td><code>queryPlan</code></td>
+              <td>backend 查询规划辅助逻辑。</td>
+              <td>
+                根据筛选、排序、分页生成，进入 JSON body；BFF 同步写
+                <code>X-Commodity-List-Candidate-Index</code> 和
+                <code>X-Commodity-List-Query-Cost</code>。
+              </td>
+              <td>前端索引卡片、Network 面板、后端排查。</td>
+              <td>
+                列表突然变慢时，看 <code>costLevel</code> 是否变成
+                <code>high</code>，再看
+                <code>unsupportedFilters</code> 是否出现新筛选项。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>单独拆开看 cacheDebug</h3>
+        <p>
+          <code>cacheDebug</code> 是 BFF
+          为“商品列表缓存排障”临时生成的调试变量。它不是商品字段，不进
+          MongoDB，也不由前端传入。它只描述“这一次列表请求的缓存状态”：数据从
+          Redis 来，还是从 backend
+          来；缓存是新鲜的，还是旧但可用；有没有后台刷新。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 560"
+            role="img"
+            aria-label="cacheDebug 从创建到读取更新删除的完整流程"
+          >
+            <defs>
+              <marker
+                id="arrow-cache-crud"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="40"
+              y="70"
+              width="200"
+              height="120"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="140" y="103" text-anchor="middle" class="label">
+              1. 输入
+            </text>
+            <text x="140" y="129" text-anchor="middle" class="small">
+              用户打开列表
+            </text>
+            <text x="140" y="151" text-anchor="middle" class="small">
+              URL + 登录态
+            </text>
+            <text x="140" y="173" text-anchor="middle" class="small">
+              page/status/tenantId
+            </text>
+
+            <rect
+              x="300"
+              y="70"
+              width="230"
+              height="120"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="415" y="103" text-anchor="middle" class="label">
+              2. 生成 cacheKey
+            </text>
+            <text x="415" y="129" text-anchor="middle" class="small">
+              tenantId + roles
+            </text>
+            <text x="415" y="151" text-anchor="middle" class="small">
+              + backendPath
+            </text>
+            <text x="415" y="173" text-anchor="middle" class="small">
+              next-bff:commodity:list:...
+            </text>
+
+            <rect
+              x="600"
+              y="70"
+              width="220"
+              height="120"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="710" y="103" text-anchor="middle" class="label">
+              3. 读 Redis
+            </text>
+            <text x="710" y="129" text-anchor="middle" class="small">
+              readCommodityList()
+            </text>
+            <text x="710" y="151" text-anchor="middle" class="small">
+              miss / fresh / stale
+            </text>
+            <text x="710" y="173" text-anchor="middle" class="small">
+              返回 data + key + state
+            </text>
+
+            <rect
+              x="900"
+              y="70"
+              width="230"
+              height="120"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="1015" y="103" text-anchor="middle" class="label">
+              4. 创建 cacheDebug
+            </text>
+            <text x="1015" y="129" text-anchor="middle" class="small">
+              state/source/refresh
+            </text>
+            <text x="1015" y="151" text-anchor="middle" class="small">
+              keyHash
+            </text>
+            <text x="1015" y="173" text-anchor="middle" class="small">
+              挂到 request
+            </text>
+
+            <rect
+              x="205"
+              y="275"
+              width="230"
+              height="130"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="320" y="308" text-anchor="middle" class="label">
+              5. 读取消费
+            </text>
+            <text x="320" y="335" text-anchor="middle" class="small">
+              controller 读 request
+            </text>
+            <text x="320" y="357" text-anchor="middle" class="small">
+              写 X-Commodity-List-Cache-*
+            </text>
+            <text x="320" y="379" text-anchor="middle" class="small">
+              interceptor 写日志
+            </text>
+
+            <rect
+              x="475"
+              y="275"
+              width="230"
+              height="130"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="590" y="308" text-anchor="middle" class="label">
+              6. 更新缓存数据
+            </text>
+            <text x="590" y="335" text-anchor="middle" class="small">
+              miss: backend 后写 Redis
+            </text>
+            <text x="590" y="357" text-anchor="middle" class="small">
+              stale: 后台 refresh
+            </text>
+            <text x="590" y="379" text-anchor="middle" class="small">
+              cacheDebug 下次重建
+            </text>
+
+            <rect
+              x="745"
+              y="275"
+              width="230"
+              height="130"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="860" y="308" text-anchor="middle" class="label">
+              7. 删除/失效
+            </text>
+            <text x="860" y="335" text-anchor="middle" class="small">
+              写操作 scan + del
+            </text>
+            <text x="860" y="357" text-anchor="middle" class="small">
+              TTL 到期自动过期
+            </text>
+            <text x="860" y="379" text-anchor="middle" class="small">
+              request 结束即释放
+            </text>
+
+            <rect
+              x="260"
+              y="455"
+              width="660"
+              height="56"
+              rx="8"
+              fill="#f8fafc"
+              stroke="#cbd5e1"
+            ></rect>
+            <text x="590" y="488" text-anchor="middle" class="small">
+              关键区别：Redis 保存的是列表缓存数据；cacheDebug
+              只保存在当前请求对象、响应 header 和日志里。
+            </text>
+
+            <path
+              d="M240 130 H300"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-crud)"
+            ></path>
+            <path
+              d="M530 130 H600"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-crud)"
+            ></path>
+            <path
+              d="M820 130 H900"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-crud)"
+            ></path>
+            <path
+              d="M1015 190 C1015 250 320 230 320 275"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-crud)"
+            ></path>
+            <path
+              d="M435 340 H475"
+              stroke="#16a34a"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-crud)"
+            ></path>
+            <path
+              d="M705 340 H745"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-crud)"
+            ></path>
+          </svg>
+        </div>
+
+        <h3>cacheDebug 的真实状态流转</h3>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 760"
+            role="img"
+            aria-label="cacheDebug 不同请求路径下的状态字段变化"
+          >
+            <defs>
+              <marker
+                id="arrow-cache-state"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <text x="50" y="42" class="label">场景 A：第一次打开列表</text>
+            <rect
+              x="50"
+              y="62"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="145" y="94" text-anchor="middle" class="small">
+              GET 列表
+            </text>
+            <text x="145" y="119" text-anchor="middle" class="small">
+              status=on_sale
+            </text>
+            <rect
+              x="290"
+              y="62"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="385" y="94" text-anchor="middle" class="small">
+              Redis: null
+            </text>
+            <text x="385" y="119" text-anchor="middle" class="small">
+              read state=miss
+            </text>
+            <rect
+              x="530"
+              y="62"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="625" y="94" text-anchor="middle" class="small">
+              查 backend
+            </text>
+            <text x="625" y="119" text-anchor="middle" class="small">
+              写 Redis list v1
+            </text>
+            <rect
+              x="770"
+              y="62"
+              width="330"
+              height="88"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="935" y="90" text-anchor="middle" class="small">
+              cacheDebug
+            </text>
+            <text x="935" y="114" text-anchor="middle" class="small">
+              state=miss, source=backend, refresh=none
+            </text>
+            <path
+              d="M240 106 H290"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+            <path
+              d="M480 106 H530"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+            <path
+              d="M720 106 H770"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+
+            <text x="50" y="215" class="label">场景 B：5 秒内再次打开</text>
+            <rect
+              x="50"
+              y="235"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="145" y="267" text-anchor="middle" class="small">
+              GET 同一列表
+            </text>
+            <text x="145" y="292" text-anchor="middle" class="small">
+              同 tenantId/roles
+            </text>
+            <rect
+              x="290"
+              y="235"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="385" y="267" text-anchor="middle" class="small">
+              Redis: list v1
+            </text>
+            <text x="385" y="292" text-anchor="middle" class="small">
+              freshUntil >= now
+            </text>
+            <rect
+              x="530"
+              y="235"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="625" y="267" text-anchor="middle" class="small">
+              不查 backend
+            </text>
+            <text x="625" y="292" text-anchor="middle" class="small">
+              直接返回 Redis
+            </text>
+            <rect
+              x="770"
+              y="235"
+              width="330"
+              height="88"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="935" y="263" text-anchor="middle" class="small">
+              cacheDebug
+            </text>
+            <text x="935" y="287" text-anchor="middle" class="small">
+              state=fresh, source=redis, refresh=none
+            </text>
+            <path
+              d="M240 279 H290"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+            <path
+              d="M480 279 H530"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+            <path
+              d="M720 279 H770"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+
+            <text x="50" y="388" class="label">
+              场景 C：5 秒后、35 秒内再次打开
+            </text>
+            <rect
+              x="50"
+              y="408"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="145" y="440" text-anchor="middle" class="small">
+              GET 同一列表
+            </text>
+            <text x="145" y="465" text-anchor="middle" class="small">
+              用户先拿旧数据
+            </text>
+            <rect
+              x="290"
+              y="408"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="385" y="440" text-anchor="middle" class="small">
+              Redis: list v1
+            </text>
+            <text x="385" y="465" text-anchor="middle" class="small">
+              freshUntil < now
+            </text>
+            <rect
+              x="530"
+              y="408"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="625" y="440" text-anchor="middle" class="small">
+              后台查 backend
+            </text>
+            <text x="625" y="465" text-anchor="middle" class="small">
+              覆盖 Redis list v2
+            </text>
+            <rect
+              x="770"
+              y="408"
+              width="330"
+              height="88"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="935" y="436" text-anchor="middle" class="small">
+              cacheDebug
+            </text>
+            <text x="935" y="460" text-anchor="middle" class="small">
+              state=stale, source=redis, refresh=background
+            </text>
+            <path
+              d="M240 452 H290"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+            <path
+              d="M480 452 H530"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+            <path
+              d="M720 452 H770"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+
+            <text x="50" y="561" class="label">场景 D：商品写操作之后</text>
+            <rect
+              x="50"
+              y="581"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="145" y="613" text-anchor="middle" class="small">
+              admin 下架商品
+            </text>
+            <text x="145" y="638" text-anchor="middle" class="small">
+              PATCH status
+            </text>
+            <rect
+              x="290"
+              y="581"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="385" y="613" text-anchor="middle" class="small">
+              invalidate
+            </text>
+            <text x="385" y="638" text-anchor="middle" class="small">
+              scan + del cacheKey
+            </text>
+            <rect
+              x="530"
+              y="581"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="625" y="613" text-anchor="middle" class="small">
+              下次 GET
+            </text>
+            <text x="625" y="638" text-anchor="middle" class="small">
+              Redis 重新 miss
+            </text>
+            <rect
+              x="770"
+              y="581"
+              width="330"
+              height="88"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="935" y="609" text-anchor="middle" class="small">
+              cacheDebug
+            </text>
+            <text x="935" y="633" text-anchor="middle" class="small">
+              state=miss, source=backend, refresh=none
+            </text>
+            <path
+              d="M240 625 H290"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+            <path
+              d="M480 625 H530"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+            <path
+              d="M720 625 H770"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-cache-state)"
+            ></path>
+
+            <rect
+              x="78"
+              y="700"
+              width="1024"
+              height="40"
+              rx="8"
+              fill="#f8fafc"
+              stroke="#cbd5e1"
+            ></rect>
+            <text x="590" y="725" text-anchor="middle" class="small">
+              这张图里的 state/source/refresh 每次请求重新生成；Redis 只保存列表
+              data 和 freshUntil。
+            </text>
+          </svg>
+        </div>
+
+        <h3>真实举例：字段状态如何变化</h3>
+        <pre><code>// 同一个列表请求
+cacheKey = "next-bff:commodity:list:tenant_demo:operator:/api/commodity/list?limit=10&amp;offset=0&amp;status=on_sale"
+keyHash = "f4c1a9e0"
+
+// T+0s：第一次打开，Redis 没有这个 key
+Redis[cacheKey] = null
+cacheDebug = {
+  state: "miss",
+  source: "backend",
+  refresh: "none",
+  keyHash: "f4c1a9e0"
+}
+响应数据 = backend list v1
+随后写入 Redis:
+Redis[cacheKey] = {
+  data: "list v1",
+  freshUntil: "T+5s"
+}
+
+// T+2s：第二次打开，还在 fresh 阶段
+Redis[cacheKey] = {
+  data: "list v1",
+  freshUntil: "T+5s"
+}
+cacheDebug = {
+  state: "fresh",
+  source: "redis",
+  refresh: "none",
+  keyHash: "f4c1a9e0"
+}
+响应数据 = Redis list v1
+
+// T+8s：fresh 已过，Redis key 还没过期，进入 stale 阶段
+Redis[cacheKey] = {
+  data: "list v1",
+  freshUntil: "T+5s"
+}
+cacheDebug = {
+  state: "stale",
+  source: "redis",
+  refresh: "background",
+  keyHash: "f4c1a9e0"
+}
+响应数据 = Redis list v1
+后台刷新后:
+Redis[cacheKey] = {
+  data: "list v2",
+  freshUntil: "T+13s"
+}
+
+// T+10s：admin 下架商品，写操作触发缓存失效
+invalidateCommodityList()
+Redis[cacheKey] = null
+
+// T+11s：用户再打开列表，重新回到 miss
+cacheDebug = {
+  state: "miss",
+  source: "backend",
+  refresh: "none",
+  keyHash: "f4c1a9e0"
+}
+响应数据 = backend list v3</code></pre>
+
+        <h3>单独拆开看 sharding</h3>
+        <p>
+          <code>sharding</code>
+          的第一性原理是回答“这次查询应该去哪个数据分片”。当前系统不是让前端传
+          <code>tenantId</code>，而是 BFF 从登录态取出可信
+          <code>tenantId</code>，通过 <code>x-tenant-id</code>
+          交给 backend；backend 再把它变成查询条件和排障字段。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1180 760"
+            role="img"
+            aria-label="sharding 从登录态到 backend 查询再到页面和 header 的流转"
+          >
+            <defs>
+              <marker
+                id="arrow-sharding-flow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <text x="50" y="42" class="label">主路径：正常租户查询</text>
+            <rect
+              x="50"
+              y="62"
+              width="170"
+              height="88"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="135" y="94" text-anchor="middle" class="small">
+              浏览器 URL
+            </text>
+            <text x="135" y="119" text-anchor="middle" class="small">
+              status=on_sale
+            </text>
+
+            <rect
+              x="260"
+              y="62"
+              width="180"
+              height="88"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="350" y="94" text-anchor="middle" class="small">
+              BFF 登录态
+            </text>
+            <text x="350" y="119" text-anchor="middle" class="small">
+              tenant_demo
+            </text>
+
+            <rect
+              x="480"
+              y="62"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="575" y="94" text-anchor="middle" class="small">
+              请求 header
+            </text>
+            <text x="575" y="119" text-anchor="middle" class="small">
+              x-tenant-id
+            </text>
+
+            <rect
+              x="710"
+              y="62"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="805" y="94" text-anchor="middle" class="small">
+              backend 查询
+            </text>
+            <text x="805" y="119" text-anchor="middle" class="small">
+              filters.tenantId
+            </text>
+
+            <rect
+              x="940"
+              y="62"
+              width="190"
+              height="88"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="1035" y="90" text-anchor="middle" class="small">
+              sharding
+            </text>
+            <text x="1035" y="114" text-anchor="middle" class="small">
+              targeted / shard-2
+            </text>
+
+            <path
+              d="M220 106 H260"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+            <path
+              d="M440 106 H480"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+            <path
+              d="M670 106 H710"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+            <path
+              d="M900 106 H940"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+
+            <text x="50" y="215" class="label">输出：谁消费 sharding</text>
+            <rect
+              x="65"
+              y="235"
+              width="230"
+              height="100"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="180" y="267" text-anchor="middle" class="small">
+              JSON body
+            </text>
+            <text x="180" y="292" text-anchor="middle" class="small">
+              sharding 字段
+            </text>
+            <text x="180" y="316" text-anchor="middle" class="small">
+              给页面卡片用
+            </text>
+
+            <rect
+              x="365"
+              y="235"
+              width="230"
+              height="100"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="480" y="267" text-anchor="middle" class="small">
+              BFF response header
+            </text>
+            <text x="480" y="292" text-anchor="middle" class="small">
+              X-Commodity-List-Shard-*
+            </text>
+            <text x="480" y="316" text-anchor="middle" class="small">
+              给 Network 排障
+            </text>
+
+            <rect
+              x="665"
+              y="235"
+              width="230"
+              height="100"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="780" y="267" text-anchor="middle" class="small">
+              backend 结构化日志
+            </text>
+            <text x="780" y="292" text-anchor="middle" class="small">
+              routingMode / shardName
+            </text>
+            <text x="780" y="316" text-anchor="middle" class="small">
+              给 traceId 排查
+            </text>
+
+            <rect
+              x="965"
+              y="235"
+              width="150"
+              height="100"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="1040" y="267" text-anchor="middle" class="small">
+              前端页面
+            </text>
+            <text x="1040" y="292" text-anchor="middle" class="small">
+              查询路由
+            </text>
+            <text x="1040" y="316" text-anchor="middle" class="small">
+              分片卡片
+            </text>
+
+            <path
+              d="M1035 150 C1035 200 180 190 180 235"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+            <path
+              d="M1035 150 C1035 205 480 195 480 235"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+            <path
+              d="M1035 150 C1035 205 780 195 780 235"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+            <path
+              d="M295 285 H365"
+              stroke="#16a34a"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+            <path
+              d="M895 285 H965"
+              stroke="#64748b"
+              stroke-width="2"
+              fill="none"
+              marker-end="url(#arrow-sharding-flow)"
+            ></path>
+
+            <text x="50" y="405" class="label">
+              对比路径：没有 tenantId 或换租户
+            </text>
+            <rect
+              x="65"
+              y="425"
+              width="245"
+              height="120"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="187" y="458" text-anchor="middle" class="small">
+              缺失 tenantId
+            </text>
+            <text x="187" y="483" text-anchor="middle" class="small">
+              x-tenant-id 不存在
+            </text>
+            <text x="187" y="508" text-anchor="middle" class="small">
+              routingMode=broadcast
+            </text>
+            <text x="187" y="532" text-anchor="middle" class="small">
+              shardName=all-shards
+            </text>
+
+            <rect
+              x="375"
+              y="425"
+              width="245"
+              height="120"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="497" y="458" text-anchor="middle" class="small">
+              tenant_demo
+            </text>
+            <text x="497" y="483" text-anchor="middle" class="small">
+              tenantHash=10faf96c4498
+            </text>
+            <text x="497" y="508" text-anchor="middle" class="small">
+              routingMode=targeted
+            </text>
+            <text x="497" y="532" text-anchor="middle" class="small">
+              shardName=shard-2
+            </text>
+
+            <rect
+              x="685"
+              y="425"
+              width="245"
+              height="120"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="807" y="458" text-anchor="middle" class="small">
+              tenant_big_sale
+            </text>
+            <text x="807" y="483" text-anchor="middle" class="small">
+              tenantHash=4b9d47e1a0b0
+            </text>
+            <text x="807" y="508" text-anchor="middle" class="small">
+              routingMode=targeted
+            </text>
+            <text x="807" y="532" text-anchor="middle" class="small">
+              shardName=shard-1
+            </text>
+
+            <rect
+              x="95"
+              y="620"
+              width="990"
+              height="72"
+              rx="8"
+              fill="#f8fafc"
+              stroke="#cbd5e1"
+            ></rect>
+            <text x="590" y="648" text-anchor="middle" class="small">
+              当前 shardName 是根据 tenantId hash
+              算出的模拟值，用来让前端理解真实分片路由。
+            </text>
+            <text x="590" y="674" text-anchor="middle" class="small">
+              sharding 不进 Redis，也不写
+              MongoDB；它每次查询时重新计算，再进入响应、header、日志和页面卡片。
+            </text>
+          </svg>
+        </div>
+
+        <h3>真实举例：sharding 字段如何变化</h3>
+        <pre><code>// 场景 1：operator 正常打开商品列表
+AuthUser.tenantId = "tenant_demo"
+BFF -&gt; backend header:
+x-tenant-id: tenant_demo
+
+backend 查询条件:
+filters = {
+  tenantId: "tenant_demo",
+  deletedAt: null,
+  status: "on_sale"
+}
+
+backend 计算出来的 sharding:
+sharding = {
+  routingMode: "targeted",
+  shardKey: "tenantId",
+  shardName: "shard-2",
+  tenantHash: "10faf96c4498"
+}
+
+BFF 响应 header:
+X-Commodity-List-Routing-Mode: targeted
+X-Commodity-List-Shard-Key: tenantId
+X-Commodity-List-Shard-Name: shard-2
+X-Commodity-List-Tenant-Hash: 10faf96c4498
+
+前端列表卡片:
+查询路由 = 定向分片
+分片 = shard-2
+租户标识 = 10faf96c4498
+
+// 场景 2：请求没有可信 tenantId
+BFF -&gt; backend header:
+x-tenant-id: &lt;missing&gt;
+
+backend 查询条件:
+filters = {
+  deletedAt: null,
+  status: "on_sale"
+}
+
+backend 计算出来的 sharding:
+sharding = {
+  routingMode: "broadcast",
+  shardKey: "tenantId",
+  shardName: "all-shards",
+  tenantHash: "missing"
+}
+
+排查含义:
+这不是“去了某一个分片”，而是可能要扫多个分片。
+如果线上看到 broadcast，优先检查 BFF 是否漏传 tenantId，或者接口是否本来就是全局后台查询。
+
+// 场景 3：另一个大租户打开同一列表
+AuthUser.tenantId = "tenant_big_sale"
+sharding = {
+  routingMode: "targeted",
+  shardKey: "tenantId",
+  shardName: "shard-1",
+  tenantHash: "4b9d47e1a0b0"
+}
+
+排查含义:
+如果 tenant_big_sale 很慢，但 tenant_demo 正常，
+就沿着 shardName=shard-1 和 tenantHash=4b9d47e1a0b0 查热点租户或热点分片。</code></pre>
+      </div>
+
+      <h2>六、概念都放在真实例子里讲</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>概念</th>
+              <th>真实商品系统例子</th>
+              <th>前端要关心什么</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>分片 shard</td>
+              <td>
+                1000 万商品放不下一台机器，于是拆成
+                <code>shard-1</code
+                >、<code>shard-2</code>、<code>shard-3</code>。
+              </td>
+              <td>
+                接口偶发变慢时，要知道可能是某个分片慢，不一定是整个系统都慢。
+              </td>
+            </tr>
+            <tr>
+              <td>shard key</td>
+              <td>
+                用 <code>tenantId</code> 决定商品属于哪个分片，例如租户
+                <code>T10086</code> 的商品都按这个字段路由。
+              </td>
+              <td>
+                列表查询必须带租户上下文，否则 MongoDB 可能不知道该去哪个分片。
+              </td>
+            </tr>
+            <tr>
+              <td>mongos</td>
+              <td>
+                应用不是直接猜分片，而是把请求交给 MongoDB 路由层
+                <code>mongos</code>。
+              </td>
+              <td>
+                前端不用连接 mongos，但要让接口参数足够明确，让 mongos
+                能定向路由。
+              </td>
+            </tr>
+            <tr>
+              <td>跨分片查询</td>
+              <td>
+                没带 <code>tenantId</code>，只查
+                <code>status=on_sale</code>，每个分片都要查一遍再汇总。
+              </td>
+              <td>
+                全局搜索、全局排序、全局统计要谨慎做，页面上可能明显变慢。
+              </td>
+            </tr>
+            <tr>
+              <td>热点分片</td>
+              <td>
+                大租户
+                <code>T99999</code>
+                正在大促，商品列表和库存操作都打到同一个分片。
+              </td>
+              <td>出现“某些租户很慢，其他租户正常”时，要按租户维度排查。</td>
+            </tr>
+            <tr>
+              <td>cursor 分页</td>
+              <td>
+                第一页返回最后一条的
+                <code>createdAt=2026-05-10T10:00:00Z</code> 和
+                <code>id=10086</code>，下一页拿这两个值继续往后查。
+              </td>
+              <td>
+                大规模列表不要依赖很深的页码跳转，应设计“下一页/继续加载”。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>七、shard key 如何影响查询路由</h2>
+      <div class="panel">
+        <p>
+          真实例子：租户 <code>T10086</code> 的运营打开商品列表，只看上架商品。
+          如果请求里有可信的 <code>tenantId=T10086</code>，MongoDB
+          可以定向到对应分片；如果没有，查询就可能广播到所有分片。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1120 560"
+            role="img"
+            aria-label="shard key 查询路由图"
+          >
+            <defs>
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="40"
+              y="75"
+              width="210"
+              height="88"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="145" y="108" text-anchor="middle" class="label">
+              前端商品列表
+            </text>
+            <text x="145" y="133" text-anchor="middle" class="small">
+              status=on_sale
+            </text>
+
+            <rect
+              x="320"
+              y="75"
+              width="220"
+              height="88"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="430" y="108" text-anchor="middle" class="label">
+              BFF 注入登录态
+            </text>
+            <text x="430" y="133" text-anchor="middle" class="small">
+              tenantId=T10086
+            </text>
+
+            <rect
+              x="610"
+              y="75"
+              width="190"
+              height="88"
+              rx="8"
+              class="node"
+            ></rect>
+            <text x="705" y="108" text-anchor="middle" class="label">
+              mongos 路由
+            </text>
+            <text x="705" y="133" text-anchor="middle" class="small">
+              按 shard key 定位
+            </text>
+
+            <rect
+              x="880"
+              y="42"
+              width="180"
+              height="70"
+              rx="8"
+              class="node"
+            ></rect>
+            <text x="970" y="72" text-anchor="middle" class="label">
+              shard-1
+            </text>
+            <text x="970" y="94" text-anchor="middle" class="small">
+              其他租户
+            </text>
+
+            <rect
+              x="880"
+              y="147"
+              width="180"
+              height="78"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="970" y="178" text-anchor="middle" class="label">
+              shard-2
+            </text>
+            <text x="970" y="202" text-anchor="middle" class="small">
+              T10086 商品
+            </text>
+
+            <path d="M250 119 H320" class="arrow arrow-green"></path>
+            <path d="M540 119 H610" class="arrow arrow-green"></path>
+            <path
+              d="M800 119 C835 119 835 186 880 186"
+              class="arrow arrow-green"
+            ></path>
+
+            <rect
+              x="40"
+              y="330"
+              width="210"
+              height="88"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="145" y="363" text-anchor="middle" class="label">
+              缺少 tenantId
+            </text>
+            <text x="145" y="388" text-anchor="middle" class="small">
+              只传 status=on_sale
+            </text>
+
+            <rect
+              x="320"
+              y="330"
+              width="220"
+              height="88"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="430" y="363" text-anchor="middle" class="label">
+              mongos 无法定向
+            </text>
+            <text x="430" y="388" text-anchor="middle" class="small">
+              scatter-gather
+            </text>
+
+            <rect
+              x="610"
+              y="285"
+              width="170"
+              height="70"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="695" y="315" text-anchor="middle" class="label">
+              shard-1
+            </text>
+            <text x="695" y="337" text-anchor="middle" class="small">
+              查一遍
+            </text>
+
+            <rect
+              x="610"
+              y="380"
+              width="170"
+              height="70"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="695" y="410" text-anchor="middle" class="label">
+              shard-2
+            </text>
+            <text x="695" y="432" text-anchor="middle" class="small">
+              查一遍
+            </text>
+
+            <rect
+              x="610"
+              y="475"
+              width="170"
+              height="70"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="695" y="505" text-anchor="middle" class="label">
+              shard-3
+            </text>
+            <text x="695" y="527" text-anchor="middle" class="small">
+              查一遍
+            </text>
+
+            <rect
+              x="860"
+              y="380"
+              width="200"
+              height="82"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="960" y="414" text-anchor="middle" class="label">
+              汇总排序
+            </text>
+            <text x="960" y="438" text-anchor="middle" class="small">
+              慢、抖动、资源高
+            </text>
+
+            <path d="M250 374 H320" class="arrow arrow-red"></path>
+            <path
+              d="M540 374 C575 374 575 320 610 320"
+              class="arrow arrow-red"
+            ></path>
+            <path d="M540 374 H610" class="arrow arrow-red"></path>
+            <path
+              d="M540 374 C575 374 575 510 610 510"
+              class="arrow arrow-red"
+            ></path>
+            <path
+              d="M780 320 C820 320 820 421 860 421"
+              class="arrow arrow-orange"
+            ></path>
+            <path d="M780 415 H860" class="arrow arrow-orange"></path>
+            <path
+              d="M780 510 C820 510 820 421 860 421"
+              class="arrow arrow-orange"
+            ></path>
+          </svg>
+        </div>
+      </div>
+
+      <h2>八、多租户请求应该怎么带上下文</h2>
+      <div class="panel">
+        <p>
+          当前系统已经在用户、BFF 请求头、backend 商品查询和商品索引里接入
+          <code>tenantId</code>。真实生产系统可以让 admin
+          在页面上选择租户视图，但真正传给 backend 的租户上下文仍然必须由 BFF
+          从登录态或权限系统注入，不能信任前端 body 自己提交的
+          <code>tenantId</code>。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>场景</th>
+              <th>真实例子</th>
+              <th>接口契约</th>
+              <th>为什么这样设计</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>普通运营看自己租户商品</td>
+              <td>
+                用户 <code>operator01</code> 属于租户 <code>T10086</code>。
+              </td>
+              <td>
+                前端请求商品列表，不需要手填 <code>tenantId</code>；BFF 从
+                session 注入。
+              </td>
+              <td>避免用户改 URL 或 body 越权查看别的租户商品。</td>
+            </tr>
+            <tr>
+              <td>平台 admin 跨租户查询</td>
+              <td>admin 在后台选择 <code>T20001</code> 排查商品问题。</td>
+              <td>
+                前端可以提交目标 <code>tenantId</code>，BFF
+                必须先做权限校验再转发。
+              </td>
+              <td>跨租户能力是高权限功能，不能变成普通筛选项。</td>
+            </tr>
+            <tr>
+              <td>缓存 key</td>
+              <td>两个租户都访问 <code>status=on_sale</code>。</td>
+              <td>BFF 缓存 key 必须包含 <code>tenantId</code> 或租户 hash。</td>
+              <td>否则租户 A 可能读到租户 B 的列表缓存。</td>
+            </tr>
+            <tr>
+              <td>日志排查</td>
+              <td>只有 <code>T99999</code> 很慢。</td>
+              <td>
+                日志记录
+                <code>traceId</code
+                >、<code>tenantHash</code>、<code>page</code>、<code>sort</code>。
+              </td>
+              <td>可以定位是特定租户慢，还是全局接口慢。</td>
+            </tr>
+          </tbody>
+        </table>
+        <pre><code>// 当前 backend 已接入的查询形态
+{
+  tenantId: "tenant_demo",
+  deletedAt: null,
+  status: "on_sale"
+}
+
+// 对应复合索引通常要把 shard key / tenantId 放到前面
+{ tenantId: 1, deletedAt: 1, status: 1, createdAt: -1, id: -1 }</code></pre>
+      </div>
+
+      <h2>九、为什么大规模系统要从 offset 升级 cursor</h2>
+      <div class="panel">
+        <p>
+          当前系统的 BFF 会把 <code>page</code> 转成 backend 的
+          <code>offset</code>：
+        </p>
+        <pre><code>page=1000, pageSize=20
+offset=(1000 - 1) * 20 = 19980</code></pre>
+        <p>
+          单库里，数据库至少要跳过前面 19980 条。分片后，如果查询没有很好地按
+          shard key 定向，多个分片都可能先跳过、排序、返回候选结果，再由 mongos
+          合并。这就是深分页和全局排序在分片下更贵的原因。
+        </p>
+        <div class="svg-wrap">
+          <svg
+            viewBox="0 0 1120 520"
+            role="img"
+            aria-label="offset 分页和 cursor 分页对比图"
+          >
+            <defs>
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="45"
+              y="55"
+              width="235"
+              height="86"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="162" y="89" text-anchor="middle" class="label">
+              offset 深分页
+            </text>
+            <text x="162" y="113" text-anchor="middle" class="small">
+              page=1000 / offset=19980
+            </text>
+
+            <rect
+              x="350"
+              y="30"
+              width="180"
+              height="70"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="440" y="60" text-anchor="middle" class="label">
+              shard-1
+            </text>
+            <text x="440" y="82" text-anchor="middle" class="small">
+              跳过很多条
+            </text>
+
+            <rect
+              x="350"
+              y="125"
+              width="180"
+              height="70"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="440" y="155" text-anchor="middle" class="label">
+              shard-2
+            </text>
+            <text x="440" y="177" text-anchor="middle" class="small">
+              跳过很多条
+            </text>
+
+            <rect
+              x="620"
+              y="78"
+              width="190"
+              height="82"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="715" y="111" text-anchor="middle" class="label">
+              mongos 合并排序
+            </text>
+            <text x="715" y="136" text-anchor="middle" class="small">
+              全局排序成本高
+            </text>
+
+            <rect
+              x="890"
+              y="78"
+              width="180"
+              height="82"
+              rx="8"
+              class="node"
+            ></rect>
+            <text x="980" y="111" text-anchor="middle" class="label">
+              返回第 1000 页
+            </text>
+            <text x="980" y="136" text-anchor="middle" class="small">
+              慢且容易抖动
+            </text>
+
+            <path
+              d="M280 98 C315 98 315 65 350 65"
+              class="arrow arrow-red"
+            ></path>
+            <path
+              d="M280 98 C315 98 315 160 350 160"
+              class="arrow arrow-red"
+            ></path>
+            <path
+              d="M530 65 C575 65 575 119 620 119"
+              class="arrow arrow-orange"
+            ></path>
+            <path
+              d="M530 160 C575 160 575 119 620 119"
+              class="arrow arrow-orange"
+            ></path>
+            <path d="M810 119 H890" class="arrow arrow-red"></path>
+
+            <rect
+              x="45"
+              y="315"
+              width="235"
+              height="86"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="162" y="349" text-anchor="middle" class="label">
+              cursor 下一页
+            </text>
+            <text x="162" y="373" text-anchor="middle" class="small">
+              after=createdAt,id
+            </text>
+
+            <rect
+              x="350"
+              y="315"
+              width="230"
+              height="86"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="465" y="349" text-anchor="middle" class="label">
+              带 tenantId 定向
+            </text>
+            <text x="465" y="373" text-anchor="middle" class="small">
+              只查目标租户范围
+            </text>
+
+            <rect
+              x="650"
+              y="315"
+              width="230"
+              height="86"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="765" y="349" text-anchor="middle" class="label">
+              从游标后继续读
+            </text>
+            <text x="765" y="373" text-anchor="middle" class="small">
+              不需要跳过前 N 页
+            </text>
+
+            <path d="M280 358 H350" class="arrow arrow-green"></path>
+            <path d="M580 358 H650" class="arrow arrow-green"></path>
+          </svg>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>分页方式</th>
+              <th>商品列表例子</th>
+              <th>分片下的问题</th>
+              <th>适合场景</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>offset</td>
+              <td><code>page=1000&amp;pageSize=20</code></td>
+              <td>要跳过大量数据；跨分片时还可能每个分片都排序和合并。</td>
+              <td>数据量小、后台工具、偶尔翻页。</td>
+            </tr>
+            <tr>
+              <td>cursor</td>
+              <td><code>after=2026-05-10T10:00:00Z,10086</code></td>
+              <td>不能随意跳到第 1000 页，但继续加载稳定很多。</td>
+              <td>商品流、订单流、审计日志、大规模列表。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>十、某些租户很慢，其他租户正常怎么排查</h2>
+      <div class="panel">
+        <p>
+          真实 case：客服反馈租户 <code>T99999</code> 的商品列表经常 3
+          秒才出来， 但租户
+          <code>T10086</code>
+          正常。这个现象不像前端渲染问题，更像某个租户对应的数据量、分片负载或迁移状态有问题。
+        </p>
+        <div class="svg-wrap">
+          <svg viewBox="0 0 1120 500" role="img" aria-label="热点租户排查图">
+            <defs>
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="9"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"></path>
+              </marker>
+            </defs>
+
+            <rect
+              x="45"
+              y="72"
+              width="190"
+              height="82"
+              rx="8"
+              class="node node-red"
+            ></rect>
+            <text x="140" y="105" text-anchor="middle" class="label">
+              T99999 很慢
+            </text>
+            <text x="140" y="130" text-anchor="middle" class="small">
+              同页面 3 秒+
+            </text>
+
+            <rect
+              x="45"
+              y="252"
+              width="190"
+              height="82"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="140" y="285" text-anchor="middle" class="label">
+              T10086 正常
+            </text>
+            <text x="140" y="310" text-anchor="middle" class="small">
+              同页面 200ms
+            </text>
+
+            <rect
+              x="315"
+              y="165"
+              width="210"
+              height="96"
+              rx="8"
+              class="node node-blue"
+            ></rect>
+            <text x="420" y="199" text-anchor="middle" class="label">
+              带 traceId 对比
+            </text>
+            <text x="420" y="224" text-anchor="middle" class="small">
+              tenantHash/page/sort/cache
+            </text>
+
+            <rect
+              x="610"
+              y="60"
+              width="220"
+              height="82"
+              rx="8"
+              class="node node-orange"
+            ></rect>
+            <text x="720" y="93" text-anchor="middle" class="label">
+              shard-2 负载高
+            </text>
+            <text x="720" y="118" text-anchor="middle" class="small">
+              热点租户或数据倾斜
+            </text>
+
+            <rect
+              x="610"
+              y="190"
+              width="220"
+              height="82"
+              rx="8"
+              class="node node-purple"
+            ></rect>
+            <text x="720" y="223" text-anchor="middle" class="label">
+              深分页 / 全局排序
+            </text>
+            <text x="720" y="248" text-anchor="middle" class="small">
+              offset 或 sort 成本高
+            </text>
+
+            <rect
+              x="610"
+              y="320"
+              width="220"
+              height="82"
+              rx="8"
+              class="node"
+            ></rect>
+            <text x="720" y="353" text-anchor="middle" class="label">
+              chunk 迁移
+            </text>
+            <text x="720" y="378" text-anchor="middle" class="small">
+              迁移期间接口抖动
+            </text>
+
+            <rect
+              x="900"
+              y="190"
+              width="180"
+              height="82"
+              rx="8"
+              class="node node-green"
+            ></rect>
+            <text x="990" y="223" text-anchor="middle" class="label">
+              前端兜底
+            </text>
+            <text x="990" y="248" text-anchor="middle" class="small">
+              loading/retry/traceId
+            </text>
+
+            <path
+              d="M235 113 C270 113 270 213 315 213"
+              class="arrow arrow-red"
+            ></path>
+            <path
+              d="M235 293 C270 293 270 213 315 213"
+              class="arrow arrow-green"
+            ></path>
+            <path
+              d="M525 213 C565 213 565 101 610 101"
+              class="arrow arrow-orange"
+            ></path>
+            <path d="M525 213 H610" class="arrow arrow-purple"></path>
+            <path d="M525 213 C565 213 565 361 610 361" class="arrow"></path>
+            <path d="M830 231 H900" class="arrow arrow-green"></path>
+          </svg>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>排查点</th>
+              <th>怎么用当前系统经验落地</th>
+              <th>如果是分片系统再补什么</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Network</td>
+              <td>
+                看商品列表请求是否发出、状态码、耗时、<code>x-trace-id</code>。
+              </td>
+              <td>增加 <code>tenantHash</code> 或安全的租户标识用于对比。</td>
+            </tr>
+            <tr>
+              <td>BFF 日志</td>
+              <td>当前已有 cache source/state、route、durationMs、traceId。</td>
+              <td>确认是否只有某个 tenantHash 慢，是否命中缓存。</td>
+            </tr>
+            <tr>
+              <td>backend 查询日志</td>
+              <td>
+                当前已有 <code>commodity_list_query_planned</code>，包含
+                <code>page</code
+                >、<code>offset</code>、<code>sortField</code>、<code>candidateIndex</code>。
+              </td>
+              <td>
+                增加 shard key、shardName、是否 scatter-gather、MongoDB
+                explain。
+              </td>
+            </tr>
+            <tr>
+              <td>页面兜底</td>
+              <td>
+                保留 loading、错误提示、刷新入口，错误上报带 page 和 traceId。
+              </td>
+              <td>慢接口可做轻量重试；写操作不要盲目自动重试。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>十一、分片迁移或热点导致抖动时，前端怎么兜底</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>现象</th>
+              <th>真实例子</th>
+              <th>前端处理</th>
+              <th>不要做什么</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>列表慢</td>
+              <td>租户大促，商品列表从 200ms 变成 2s。</td>
+              <td>
+                保留骨架屏或
+                loading，避免按钮乱跳，必要时显示“正在加载最新数据”。
+              </td>
+              <td>不要无限 loading，不给用户任何反馈。</td>
+            </tr>
+            <tr>
+              <td>短暂失败</td>
+              <td>分片迁移期间偶发 503 或超时。</td>
+              <td>读接口可以有限重试，比如 1-2 次退避重试，并展示 traceId。</td>
+              <td>不要对删除、恢复、状态变更这类写操作自动重试。</td>
+            </tr>
+            <tr>
+              <td>部分租户慢</td>
+              <td><code>T99999</code> 慢，其他租户正常。</td>
+              <td>错误上报和日志带 tenantHash，方便后端定位热点分片。</td>
+              <td>不要只报“页面卡”，丢失租户和 traceId。</td>
+            </tr>
+            <tr>
+              <td>全局排序很慢</td>
+              <td>平台 admin 要看所有租户商品按价格排序。</td>
+              <td>限制筛选条件，提示先选择租户或时间范围，再允许排序。</td>
+              <td>不要默认开放任意全局排序。</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>十二、当前系统到真实分片集群的演进清单</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>层级</th>
+              <th>当前系统</th>
+              <th>真实分片集群还要增加</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>前端 URL</td>
+              <td>
+                <code>page</code
+                >、<code>pageSize</code>、<code>status</code>、<code>sortBy</code>。
+              </td>
+              <td>
+                已不让普通用户直接传 tenantId；admin
+                跨租户页面可以后续增加受控租户筛选。
+              </td>
+            </tr>
+            <tr>
+              <td>BFF</td>
+              <td>
+                注入 <code>userId</code> 和 <code>tenantId</code>，透传
+                traceId，做权限和缓存。
+              </td>
+              <td>接入真实租户权限模型，支持 admin 在授权范围内切换租户。</td>
+            </tr>
+            <tr>
+              <td>backend 查询</td>
+              <td>
+                <code>{ tenantId, deletedAt, status, createdAt, id }</code>
+                支持当前商品列表。
+              </td>
+              <td>
+                在 MongoDB 集群里真正配置 shard key，并用 explain
+                验证是否定向路由。
+              </td>
+            </tr>
+            <tr>
+              <td>分页</td>
+              <td>
+                已支持 <code>page + pageSize</code> 和
+                <code>cursor={ createdAt, id }</code> 两种方式。
+              </td>
+              <td>
+                大列表逐步关闭深页跳转，默认使用 cursor 或搜索条件缩小范围。
+              </td>
+            </tr>
+            <tr>
+              <td>排障</td>
+              <td>
+                用 <code>traceId</code>、<code>candidateIndex</code>、<code
+                  >offset</code
+                >
+                查慢请求。
+              </td>
+              <td>
+                已增加
+                <code>tenantHash</code
+                >、<code>shardName</code>、<code>routingMode</code>。
+                真实集群还应接入 MongoDB explain 和分片指标。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2>十三、验收对照</h2>
+      <div class="panel">
+        <table>
+          <thead>
+            <tr>
+              <th>验收项</th>
+              <th>本系统中的解释方式</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>能解释为什么资深前端要懂一点分片</td>
+              <td>
+                因为前端选择的查询参数、分页方式和租户上下文会直接影响请求是否跨分片。
+              </td>
+            </tr>
+            <tr>
+              <td>能说明 shard key 对列表查询参数的影响</td>
+              <td>
+                如果 shard key 是 <code>tenantId</code>，商品列表必须由 BFF 注入
+                tenantId，backend 查询和索引也要以 tenantId 作为重要前缀。
+              </td>
+            </tr>
+            <tr>
+              <td>能解释为什么大规模系统要从 offset 升级 cursor</td>
+              <td>
+                offset 深页要跳过大量数据；分片下还可能多个分片分别跳过和排序。
+                cursor 用上一次最后一条记录继续读，避免不断跳过前 N 页。
+              </td>
+            </tr>
+            <tr>
+              <td>能描述“某些租户很慢，其他租户正常”的排查方向</td>
+              <td>
+                用 traceId 对比 BFF/backend 日志，按
+                tenantHash、page、sort、cache 状态、 candidateIndex 和 shard
+                指标定位是否热点租户、深分页或分片迁移。
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </body>
+</html>

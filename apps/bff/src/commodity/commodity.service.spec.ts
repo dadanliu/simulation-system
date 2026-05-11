@@ -38,6 +38,7 @@ describe("CommodityService", () => {
       "user:manage"
     ],
     roles: ["admin"],
+    tenantId: "tenant_demo",
     username: "admin"
   };
 
@@ -126,6 +127,7 @@ describe("CommodityService", () => {
       }),
       "/api/commodity/list?createdAtFrom=2026-04-01T00%3A00%3A00.000Z&createdAtTo=2026-04-30T23%3A59%3A59.999Z&keyword=%E9%94%AE%E7%9B%98&limit=20&offset=20&priceMax=1000&priceMin=100&sortDirection=asc&sortField=price&status=on_sale&stockMax=200&stockMin=1",
       {
+        tenantId: user.tenantId,
         userId: user.id
       }
     );
@@ -189,6 +191,40 @@ describe("CommodityService", () => {
         state: "fresh"
       }
     });
+  });
+
+  it("forwards cursor pagination with tenant context", async () => {
+    const request = { traceId: "trace-cursor" } as never;
+
+    apiClientService.request.mockResolvedValue({
+      list: [commodity],
+      pagination: {
+        mode: "cursor",
+        nextCursor: null,
+        page: 3,
+        pageSize: 10,
+        total: 21
+      }
+    });
+
+    await service.listCommodities(request, user, {
+      cursor: "cursor-token",
+      page: 3,
+      pageSize: 10,
+      sortBy: "createdAt" as never,
+      sortOrder: "desc" as never
+    });
+
+    expect(apiClientService.request).toHaveBeenCalledWith(
+      expect.objectContaining({
+        traceId: "trace-cursor"
+      }),
+      "/api/commodity/list?cursor=cursor-token&limit=10&offset=20&page=3&sortDirection=desc&sortField=createdAt",
+      {
+        tenantId: user.tenantId,
+        userId: user.id
+      }
+    );
   });
 
   it("returns stale cached commodity list and schedules background refresh", async () => {
@@ -285,6 +321,7 @@ describe("CommodityService", () => {
           stock: 10
         },
         method: "POST",
+        tenantId: user.tenantId,
         userId: user.id
       }
     );
@@ -366,6 +403,7 @@ describe("CommodityService", () => {
           deletedBy: user.id
         },
         method: "DELETE",
+        tenantId: user.tenantId,
         userId: user.id
       }
     );
@@ -468,6 +506,7 @@ describe("CommodityService", () => {
       "/api/commodity/10099/restore",
       {
         method: "PATCH",
+        tenantId: user.tenantId,
         userId: user.id
       }
     );
@@ -553,6 +592,7 @@ describe("CommodityService", () => {
           updatedBy: user.id
         },
         method: "PATCH",
+        tenantId: user.tenantId,
         userId: user.id
       }
     );
@@ -632,6 +672,7 @@ describe("CommodityService", () => {
           status: "on_sale"
         },
         method: "PATCH",
+        tenantId: user.tenantId,
         userId: user.id
       }
     );

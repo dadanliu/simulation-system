@@ -11,10 +11,12 @@ import type {
   User,
   UserRecord
 } from "./user.types";
+import { DEFAULT_TENANT_ID } from "./user.types";
 
-type PersistedUserRecord = UserRecord & {
+type PersistedUserRecord = Omit<UserRecord, "tenantId"> & {
   _id?: unknown;
   password?: string;
+  tenantId?: string;
 };
 
 @Injectable()
@@ -47,7 +49,8 @@ export class UserService {
     const user: UserRecord = {
       ...userBody,
       passwordHash: await hashPassword(password),
-      id: body.id ?? `u_${Date.now()}`
+      id: body.id ?? `u_${Date.now()}`,
+      tenantId: this.normalizeTenantId(body.tenantId)
     };
 
     const createdUser = await this.userModel.create(user);
@@ -106,13 +109,26 @@ export class UserService {
       passwordHash: _passwordHash,
       ...safeUser
     } = user;
-    return safeUser;
+    return {
+      ...safeUser,
+      tenantId: this.normalizeTenantId(safeUser.tenantId)
+    };
   }
 
-  private async toAuthUser(user: UserRecord): Promise<AuthUser> {
+  private async toAuthUser(user: PersistedUserRecord): Promise<AuthUser> {
     const { id, username, roles } = user;
     const permissions =
       await this.roleService.getPermissionCodesByRoleCodes(roles);
-    return { id, permissions, username, roles };
+    return {
+      id,
+      permissions,
+      roles,
+      tenantId: this.normalizeTenantId(user.tenantId),
+      username
+    };
+  }
+
+  private normalizeTenantId(tenantId: string | undefined) {
+    return tenantId?.trim() || DEFAULT_TENANT_ID;
   }
 }

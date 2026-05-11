@@ -161,7 +161,7 @@ export class CommodityCacheService implements OnModuleDestroy {
   private buildCommodityListKey(user: AuthUser, backendPath: string) {
     const roles = [...user.roles].sort().join(",");
 
-    return `${this.keyPrefix}${roles}:${backendPath}`;
+    return `${this.keyPrefix}${user.tenantId}:${roles}:${backendPath}`;
   }
 
   private parseCommodityListEntry(rawEntry: string) {

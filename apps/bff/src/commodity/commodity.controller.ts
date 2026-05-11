@@ -28,6 +28,7 @@ import { ErrorResponseDto } from "../common/swagger/error-response.dto";
 import { RequirePermissions } from "../permission/permissions.decorator";
 import { PermissionsGuard } from "../permission/permissions.guard";
 import type { AuthUser } from "../user/user.types";
+import type { CommodityListData } from "./commodity.types";
 import {
   CommodityService,
   type CommodityListCacheDebug
@@ -45,21 +46,52 @@ type RequestWithCommodityListCacheDebug = Request & {
   commodityListCacheDebug?: CommodityListCacheDebug;
 };
 
-function setCommodityListCacheHeaders(request: Request, response: Response) {
+function setCommodityListCacheHeaders(
+  request: Request,
+  response: Response,
+  data?: CommodityListData
+) {
   const cacheDebug = (request as RequestWithCommodityListCacheDebug)
     .commodityListCacheDebug;
 
   response.setHeader("Cache-Control", "no-store");
   response.setHeader("X-Cache-Layer", "bff-redis");
 
-  if (!cacheDebug) {
-    return;
+  if (cacheDebug) {
+    response.setHeader("X-Commodity-List-Cache-State", cacheDebug.state);
+    response.setHeader("X-Commodity-List-Cache-Source", cacheDebug.source);
+    response.setHeader("X-Commodity-List-Cache-Refresh", cacheDebug.refresh);
+    response.setHeader("X-Commodity-List-Cache-Key", cacheDebug.keyHash);
   }
 
-  response.setHeader("X-Commodity-List-Cache-State", cacheDebug.state);
-  response.setHeader("X-Commodity-List-Cache-Source", cacheDebug.source);
-  response.setHeader("X-Commodity-List-Cache-Refresh", cacheDebug.refresh);
-  response.setHeader("X-Commodity-List-Cache-Key", cacheDebug.keyHash);
+  if (data?.queryPlan) {
+    response.setHeader(
+      "X-Commodity-List-Candidate-Index",
+      data.queryPlan.candidateIndex
+    );
+    response.setHeader(
+      "X-Commodity-List-Index-Covered",
+      String(data.queryPlan.coveredByIndex)
+    );
+    response.setHeader("X-Commodity-List-Query-Cost", data.queryPlan.costLevel);
+    response.setHeader(
+      "X-Commodity-List-Unsupported-Filters",
+      data.queryPlan.unsupportedFilters.join(",")
+    );
+  }
+
+  if (data?.sharding) {
+    response.setHeader(
+      "X-Commodity-List-Routing-Mode",
+      data.sharding.routingMode
+    );
+    response.setHeader("X-Commodity-List-Shard-Key", data.sharding.shardKey);
+    response.setHeader("X-Commodity-List-Shard-Name", data.sharding.shardName);
+    response.setHeader(
+      "X-Commodity-List-Tenant-Hash",
+      data.sharding.tenantHash
+    );
+  }
 }
 
 @ApiTags("Commodity")
@@ -96,7 +128,7 @@ export class CommodityController {
       query
     );
 
-    setCommodityListCacheHeaders(request, response);
+    setCommodityListCacheHeaders(request, response, data);
 
     return data;
   }

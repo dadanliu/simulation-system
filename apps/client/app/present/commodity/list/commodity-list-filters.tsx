@@ -36,6 +36,7 @@ export function CommodityListFiltersPanel({
     event.preventDefault();
     pushFilters({
       ...form,
+      cursor: "",
       keyword: form.keyword.trim(),
       page: 1
     });
@@ -45,6 +46,7 @@ export function CommodityListFiltersPanel({
     const nextFilters: CommodityListFilters = {
       createdFrom: "",
       createdTo: "",
+      cursor: "",
       keyword: "",
       maxPrice: "",
       maxStock: "",
