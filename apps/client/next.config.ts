@@ -42,6 +42,14 @@ const nextConfig: NextConfig = {
       {
         source: "/api/users/:path*",
         destination: `${bffBaseUrl}/api/users/:path*`
+      },
+      {
+        source: "/api/roles/:path*",
+        destination: `${bffBaseUrl}/api/roles/:path*`
+      },
+      {
+        source: "/api/permissions/:path*",
+        destination: `${bffBaseUrl}/api/permissions/:path*`
       }
     ];
   }

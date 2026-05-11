@@ -26,6 +26,7 @@ describe("validateBffEnv", () => {
   it("applies local defaults for optional BFF settings", () => {
     expect(validateBffEnv(validEnv)).toMatchObject({
       BACKEND_BASE_URL: "http://localhost:3002",
+      APP_VERSION: "local",
       BFF_PORT: "3001",
       COOKIE_SECURE: undefined,
       COMMODITY_LIST_CACHE_STALE_SECONDS: "30",
@@ -34,6 +35,7 @@ describe("validateBffEnv", () => {
       APP_ENV: "development",
       MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff-dev",
       NODE_ENV: "development",
+      RELEASE_COMMIT_SHA: "local",
       REDIS_URL: "redis://127.0.0.1:6379"
     });
   });
@@ -80,5 +82,32 @@ describe("validateBffEnv", () => {
         MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff"
       })
     ).toThrow("MOCK_SEED_ENABLED=true is not allowed when APP_ENV=production");
+  });
+
+  it("rejects production without release metadata", () => {
+    expect(() =>
+      validateBffEnv({
+        ...validEnv,
+        APP_ENV: "production",
+        MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff"
+      })
+    ).toThrow("APP_VERSION is required when APP_ENV=production");
+  });
+
+  it("accepts production release metadata", () => {
+    expect(
+      validateBffEnv({
+        ...validEnv,
+        APP_ENV: "production",
+        APP_VERSION: "2026.05.11.1",
+        FILE_URL_SIGNING_SECRET: "prod-secret",
+        MONGODB_URI: "mongodb://127.0.0.1:27017/next-bff",
+        RELEASE_COMMIT_SHA: "abc123def456"
+      })
+    ).toMatchObject({
+      APP_ENV: "production",
+      APP_VERSION: "2026.05.11.1",
+      RELEASE_COMMIT_SHA: "abc123def456"
+    });
   });
 });

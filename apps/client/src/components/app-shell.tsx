@@ -9,7 +9,13 @@ type AppShellProps = {
 };
 
 export function AppShell({ children, currentUser }: AppShellProps) {
-  const { appEnv, showEnvBadge } = loadClientConfig();
+  const {
+    appEnv,
+    appVersion,
+    releaseCommitSha,
+    releaseNotesUrl,
+    showEnvBadge
+  } = loadClientConfig();
 
   return (
     <div className="page-shell">
@@ -17,7 +23,10 @@ export function AppShell({ children, currentUser }: AppShellProps) {
       <main className="main-panel">
         <TopBar
           appEnv={appEnv}
+          appVersion={appVersion}
           currentUser={currentUser}
+          releaseCommitSha={releaseCommitSha}
+          releaseNotesUrl={releaseNotesUrl}
           showEnvBadge={showEnvBadge}
         />
         {children}

@@ -3,12 +3,15 @@ type ServerEnvironment = "development" | "production" | "test";
 const ENV_FILE_PATHS = [".env.local", ".env", "../../.env.local", "../../.env"];
 const DEFAULTS = {
   APP_ENV: "development",
+  APP_VERSION: "local",
   LOCAL_UPLOAD_DIR: ".dev/uploads",
   LOCAL_UPLOAD_PUBLIC_BASE_URL: "http://localhost:3002/uploads",
   LOG_LEVEL: "log,warn,error",
   MOCK_SEED_ENABLED: undefined,
   NODE_ENV: "development",
   SERVER_PORT: "3002",
+  RELEASE_COMMIT_SHA: "local",
+  RELEASE_NOTES_URL: undefined,
   STORAGE_DRIVER: "local",
   UPLOAD_REGISTRY_PATH: ".dev/upload-registry.json"
 } as const;
@@ -26,6 +29,13 @@ function readEnvironment(value: ConfigValue): ServerEnvironment {
 
 function readAppEnvironment(value: ConfigValue): ServerEnvironment {
   return readEnvironment(value);
+}
+
+function shouldIgnoreEnvFile() {
+  return (
+    process.env.APP_ENV === "production" ||
+    process.env.NODE_ENV === "production"
+  );
 }
 
 function requireNonEmpty(config: RawConfig, key: string, errors: string[]) {
@@ -100,6 +110,23 @@ function requireOptionalUrl(config: RawConfig, key: string, errors: string[]) {
   }
 }
 
+function requireProductionReleaseMetadata(config: RawConfig, errors: string[]) {
+  if (config.APP_ENV !== "production") {
+    return;
+  }
+
+  if (!config.APP_VERSION?.trim() || config.APP_VERSION === "local") {
+    errors.push("APP_VERSION is required when APP_ENV=production");
+  }
+
+  if (
+    !config.RELEASE_COMMIT_SHA?.trim() ||
+    config.RELEASE_COMMIT_SHA === "local"
+  ) {
+    errors.push("RELEASE_COMMIT_SHA is required when APP_ENV=production");
+  }
+}
+
 function requireBooleanString(
   config: RawConfig,
   key: string,
@@ -165,6 +192,13 @@ export function validateServerEnv(input: RawConfig) {
     ...DEFAULTS,
     ...input,
     APP_ENV: readAppEnvironment(input.APP_ENV ?? input.NODE_ENV),
+    APP_VERSION:
+      input.APP_VERSION ?? input.npm_package_version ?? DEFAULTS.APP_VERSION,
+    RELEASE_COMMIT_SHA:
+      input.RELEASE_COMMIT_SHA ??
+      input.GITHUB_SHA ??
+      input.VERCEL_GIT_COMMIT_SHA ??
+      DEFAULTS.RELEASE_COMMIT_SHA,
     SERVER_PORT: input.SERVER_PORT ?? input.PORT ?? DEFAULTS.SERVER_PORT,
     NODE_ENV: readEnvironment(input.NODE_ENV)
   };
@@ -180,7 +214,9 @@ export function validateServerEnv(input: RawConfig) {
   requireOptionalUrl(config, "S3_UPLOAD_BASE_URL", errors);
   requireOptionalUrl(config, "OSS_PUBLIC_BASE_URL", errors);
   requireOptionalUrl(config, "OSS_UPLOAD_BASE_URL", errors);
+  requireOptionalUrl(config, "RELEASE_NOTES_URL", errors);
   requireObjectStorageConfig(config, errors);
+  requireProductionReleaseMetadata(config, errors);
 
   if (config.APP_ENV === "production" && config.MOCK_SEED_ENABLED === "true") {
     errors.push(
@@ -200,7 +236,8 @@ export function validateServerEnv(input: RawConfig) {
 }
 
 export const serverConfigModuleOptions = {
-  envFilePath: ENV_FILE_PATHS,
+  envFilePath: shouldIgnoreEnvFile() ? [] : ENV_FILE_PATHS,
+  ignoreEnvFile: shouldIgnoreEnvFile(),
   isGlobal: true,
   validate: validateServerEnv
 };

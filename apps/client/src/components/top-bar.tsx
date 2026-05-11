@@ -8,15 +8,29 @@ import { getActiveRoute } from "../lib/routes";
 
 type TopBarProps = {
   appEnv: string;
+  appVersion: string;
   currentUser: CurrentUser;
+  releaseCommitSha: string;
+  releaseNotesUrl?: string;
   showEnvBadge: boolean;
 };
 
-export function TopBar({ appEnv, currentUser, showEnvBadge }: TopBarProps) {
+export function TopBar({
+  appEnv,
+  appVersion,
+  currentUser,
+  releaseCommitSha,
+  releaseNotesUrl,
+  showEnvBadge
+}: TopBarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const activeRoute = getActiveRoute(pathname);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const shortCommitSha =
+    releaseCommitSha === "local"
+      ? releaseCommitSha
+      : releaseCommitSha.slice(0, 8);
 
   async function handleLogout() {
     setIsSubmitting(true);
@@ -59,6 +73,15 @@ export function TopBar({ appEnv, currentUser, showEnvBadge }: TopBarProps) {
           </div>
           {showEnvBadge ? (
             <span className="badge badge--warning">{appEnv}</span>
+          ) : null}
+          <span className="badge badge--neutral">v{appVersion}</span>
+          <span className="badge badge--neutral mono-cell">
+            {shortCommitSha}
+          </span>
+          {releaseNotesUrl ? (
+            <a className="badge badge--neutral" href={releaseNotesUrl}>
+              release
+            </a>
           ) : null}
           <span className="badge">{pathname}</span>
         </div>

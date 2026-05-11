@@ -170,6 +170,12 @@ textarea {
   color: var(--warning);
 }
 
+.badge--neutral {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

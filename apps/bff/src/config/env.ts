@@ -3,6 +3,7 @@ type BffEnvironment = "development" | "production" | "test";
 const ENV_FILE_PATHS = [".env.local", ".env", "../../.env.local", "../../.env"];
 const DEFAULTS = {
   APP_ENV: "development",
+  APP_VERSION: "local",
   BFF_PORT: "3001",
   BFF_PUBLIC_BASE_URL: "http://localhost:3001",
   COOKIE_SECURE: undefined,
@@ -26,6 +27,8 @@ const DEFAULTS = {
   MOCK_SEED_ENABLED: undefined,
   NODE_ENV: "development",
   REDIS_URL: "redis://127.0.0.1:6379",
+  RELEASE_COMMIT_SHA: "local",
+  RELEASE_NOTES_URL: undefined,
   SESSION_TTL_SECONDS: "86400"
 } as const;
 
@@ -44,6 +47,13 @@ function readAppEnvironment(value: ConfigValue): BffEnvironment {
   return readEnvironment(value);
 }
 
+function shouldIgnoreEnvFile() {
+  return (
+    process.env.APP_ENV === "production" ||
+    process.env.NODE_ENV === "production"
+  );
+}
+
 function requireNonEmpty(config: RawConfig, key: string, errors: string[]) {
   if (!config[key]?.trim()) {
     errors.push(`${key} is required`);
@@ -55,6 +65,20 @@ function requireUrl(config: RawConfig, key: string, errors: string[]) {
 
   if (!value) {
     errors.push(`${key} is required`);
+    return;
+  }
+
+  try {
+    new URL(value);
+  } catch {
+    errors.push(`${key} must be a valid URL, received "${value}"`);
+  }
+}
+
+function requireOptionalUrl(config: RawConfig, key: string, errors: string[]) {
+  const value = config[key]?.trim();
+
+  if (!value) {
     return;
   }
 
@@ -137,13 +161,37 @@ function requireEnvironmentDatabase(config: RawConfig, errors: string[]) {
   }
 }
 
+function requireProductionReleaseMetadata(config: RawConfig, errors: string[]) {
+  if (config.APP_ENV !== "production") {
+    return;
+  }
+
+  if (!config.APP_VERSION?.trim() || config.APP_VERSION === "local") {
+    errors.push("APP_VERSION is required when APP_ENV=production");
+  }
+
+  if (
+    !config.RELEASE_COMMIT_SHA?.trim() ||
+    config.RELEASE_COMMIT_SHA === "local"
+  ) {
+    errors.push("RELEASE_COMMIT_SHA is required when APP_ENV=production");
+  }
+}
+
 export function validateBffEnv(input: RawConfig) {
   const config: RawConfig = {
     ...DEFAULTS,
     ...input,
     APP_ENV: readAppEnvironment(input.APP_ENV ?? input.NODE_ENV),
+    APP_VERSION:
+      input.APP_VERSION ?? input.npm_package_version ?? DEFAULTS.APP_VERSION,
     BFF_PORT: input.BFF_PORT ?? input.PORT ?? DEFAULTS.BFF_PORT,
-    NODE_ENV: readEnvironment(input.NODE_ENV)
+    NODE_ENV: readEnvironment(input.NODE_ENV),
+    RELEASE_COMMIT_SHA:
+      input.RELEASE_COMMIT_SHA ??
+      input.GITHUB_SHA ??
+      input.VERCEL_GIT_COMMIT_SHA ??
+      DEFAULTS.RELEASE_COMMIT_SHA
   };
   const errors: string[] = [];
 
@@ -182,6 +230,8 @@ export function validateBffEnv(input: RawConfig) {
   requireBooleanString(config, "COOKIE_SECURE", errors);
   requireBooleanString(config, "MOCK_SEED_ENABLED", errors);
   requireEnvironmentDatabase(config, errors);
+  requireOptionalUrl(config, "RELEASE_NOTES_URL", errors);
+  requireProductionReleaseMetadata(config, errors);
 
   if (config.APP_ENV === "production" && config.MOCK_SEED_ENABLED === "true") {
     errors.push(
@@ -206,7 +256,8 @@ export function validateBffEnv(input: RawConfig) {
 }
 
 export const bffConfigModuleOptions = {
-  envFilePath: ENV_FILE_PATHS,
+  envFilePath: shouldIgnoreEnvFile() ? [] : ENV_FILE_PATHS,
+  ignoreEnvFile: shouldIgnoreEnvFile(),
   isGlobal: true,
   validate: validateBffEnv
 };
