@@ -624,6 +624,7 @@ sequenceDiagram
 - 图片上传和存储抽象。
 - BFF 协议转换和后端错误映射。
 - Redis session、风控、商品列表缓存。
+- BullMQ 商品批量导入异步任务。
 - MongoDB schema、索引和查询计划模拟。
 - 统一成功响应和统一错误响应。
 - traceId、结构化日志、metrics、OpenTelemetry 初始化。
@@ -632,8 +633,8 @@ sequenceDiagram
 ### 仍然是模拟或未覆盖的能力
 
 - 图片扫描、压缩、缩略图生成。
-- 批量导入和审计导出。
-- 队列、定时任务、死信、重试。
+- 审计导出异步任务。
+- 定时任务、死信队列、任务告警。
 - 更完整的多租户数据权限。
 - API versioning。
 - 生产级对象存储、CDN 和生命周期管理。
@@ -649,7 +650,8 @@ sequenceDiagram
 
 | 真实诉求 | 建议能力 |
 |---|---|
-| 图片扫描、缩略图、审计导出、批量导入 | Queue / BullMQ |
+| 商品批量导入进度、失败重试和状态查询 | Queue / BullMQ |
+| 图片扫描、缩略图、审计导出 | 后续按需再接 Queue / BullMQ |
 | 临时文件清理、缓存预热、登录风险统计 | Schedule / Cron |
 | 导出进度、扫描进度、审核提醒 | SSE / WebSocket |
 | 上传、登录、导出等高风险接口统一限流 | Throttler |

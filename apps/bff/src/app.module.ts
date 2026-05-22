@@ -10,6 +10,7 @@ import { SuccessResponseInterceptor } from "./common/interceptors/success-respon
 import { DatabaseModule } from "./database/database.module";
 import { HealthModule } from "./health/health.module";
 import { PermissionModule } from "./permission/permission.module";
+import { QueueModule } from "./queue/queue.module";
 import { RoleModule } from "./role/role.module";
 import { TestResetModule } from "./test-support/test-reset.module";
 import { UploadModule } from "./upload/upload.module";
@@ -24,6 +25,7 @@ import { UserModule } from "./user/user.module";
     DatabaseModule,
     HealthModule,
     PermissionModule,
+    QueueModule,
     RoleModule,
     TestResetModule,
     UploadModule,

@@ -1,39 +1,10 @@
 import type { CreateCommodityDto } from "../commodity/dto/create-commodity.dto";
-import type { QueryAuditLogDto } from "../commodity/dto/query-audit-log.dto";
 import type { TaskQueueName } from "./queue.constants";
 
 export type TaskJobDataBase = {
   requestedBy: string;
   tenantId?: string;
   traceId: string;
-};
-
-export type ImageProcessingJobData = TaskJobDataBase & {
-  fileId: string;
-  mimeType: string;
-  scene: string;
-  size: number;
-};
-
-export type ProcessedImageVariant = {
-  fileId: string;
-  mimeType: string;
-  scene: string;
-  size: number;
-  type: "compressed" | "thumbnail";
-  url: string;
-};
-
-export type ImageProcessingResult = {
-  compressed: ProcessedImageVariant;
-  original: {
-    fileId: string;
-    mimeType: string;
-    scene: string;
-    size: number;
-  };
-  scanStatus: "passed";
-  thumbnail: ProcessedImageVariant;
 };
 
 export type CommodityImportJobData = TaskJobDataBase & {
@@ -55,25 +26,7 @@ export type CommodityImportResult = {
   total: number;
 };
 
-export type AuditExportJobData = TaskJobDataBase & {
-  filters: Pick<
-    QueryAuditLogDto,
-    "action" | "createdFrom" | "createdTo" | "operator" | "targetId"
-  >;
-  maxRows: number;
-};
-
-export type AuditExportResult = {
-  content: string;
-  contentType: "text/csv";
-  fileName: string;
-  rowCount: number;
-};
-
-export type TaskJobData =
-  | AuditExportJobData
-  | CommodityImportJobData
-  | ImageProcessingJobData;
+export type TaskJobData = CommodityImportJobData;
 
 export type TaskStatusState =
   | "completed"
@@ -97,4 +50,3 @@ export type TaskStatus = {
   state: TaskStatusState;
   taskId: string;
 };
-

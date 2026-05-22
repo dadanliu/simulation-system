@@ -18,4 +18,3 @@ export function createBullRedisConnection(redisUrl: string): RedisOptions {
       : undefined
   };
 }
-
