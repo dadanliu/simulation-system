@@ -15,12 +15,18 @@ import { AuthGuard } from "./auth.guard";
 import { AuthService } from "./auth.service";
 import { GetCurrentUserService } from "./get-current-user";
 import { LoginAuditLogService } from "./login-audit-log.service";
+import { LoginRiskDailyStatCronService } from "./login-risk-daily-stat-cron.service";
+import { LoginRiskDailyStatService } from "./login-risk-daily-stat.service";
 import { LoginRiskService } from "./login-risk.service";
 import { RbacSeedService } from "./rbac-seed.service";
 import {
   LoginAuditLogEntity,
   LoginAuditLogSchema
 } from "./schemas/login-audit-log.schema";
+import {
+  LoginRiskDailyStatEntity,
+  LoginRiskDailyStatSchema
+} from "./schemas/login-risk-daily-stat.schema";
 import { SessionStoreService } from "./session-store.service";
 
 @Module({
@@ -31,7 +37,11 @@ import { SessionStoreService } from "./session-store.service";
       { name: UserEntity.name, schema: UserSchema },
       { name: RoleEntity.name, schema: RoleSchema },
       { name: PermissionEntity.name, schema: PermissionSchema },
-      { name: LoginAuditLogEntity.name, schema: LoginAuditLogSchema }
+      { name: LoginAuditLogEntity.name, schema: LoginAuditLogSchema },
+      {
+        name: LoginRiskDailyStatEntity.name,
+        schema: LoginRiskDailyStatSchema
+      }
     ])
   ],
   controllers: [AuthController],
@@ -40,6 +50,8 @@ import { SessionStoreService } from "./session-store.service";
     SessionStoreService,
     LoginRiskService,
     LoginAuditLogService,
+    LoginRiskDailyStatService,
+    LoginRiskDailyStatCronService,
     GetCurrentUserService,
     AuthGuard,
     PermissionService,

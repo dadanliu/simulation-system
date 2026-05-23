@@ -624,6 +624,7 @@ sequenceDiagram
 - 图片上传和存储抽象。
 - BFF 协议转换和后端错误映射。
 - Redis session、风控、商品列表缓存。
+- Schedule/Cron 登录风控每日统计。
 - BullMQ 商品批量导入异步任务。
 - MongoDB schema、索引和查询计划模拟。
 - 统一成功响应和统一错误响应。
@@ -634,7 +635,7 @@ sequenceDiagram
 
 - 图片扫描、压缩、缩略图生成。
 - 审计导出异步任务。
-- 定时任务、死信队列、任务告警。
+- 临时文件清理、缓存预热、死信队列、任务告警。
 - 更完整的多租户数据权限。
 - API versioning。
 - 生产级对象存储、CDN 和生命周期管理。
@@ -652,7 +653,7 @@ sequenceDiagram
 |---|---|
 | 商品批量导入进度、失败重试和状态查询 | Queue / BullMQ |
 | 图片扫描、缩略图、审计导出 | 后续按需再接 Queue / BullMQ |
-| 临时文件清理、缓存预热、登录风险统计 | Schedule / Cron |
+| 临时文件清理、缓存预热 | Schedule / Cron |
 | 导出进度、扫描进度、审核提醒 | SSE / WebSocket |
 | 上传、登录、导出等高风险接口统一限流 | Throttler |
 | 新增接口默认需要登录，公开接口显式声明 | Global Guard + `@Public()` |
@@ -678,6 +679,7 @@ sequenceDiagram
 | 权限为什么用 Guard 和 Decorator | `docs/35-权限为什么用Guard和Decorator.md` |
 | DTO、Schema、业务规则边界 | `docs/39-DTO-Schema-业务规则为什么不能混在一起.md` |
 | 商品状态流转 | `docs/37-商品状态流转为什么放Service.md` |
+| 登录风控每日统计 Cron | `docs/46-登录风控每日统计Cron图解.md` |
 | 请求层与错误治理 | `docs/13-请求层与错误治理.md` |
 | 可观测性与排障 | `docs/21-可观测性与排障体系.md` |
 | 上线潜在问题 | `docs/31-当前系统上线潜在问题清单.md` |

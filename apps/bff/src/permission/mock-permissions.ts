@@ -4,7 +4,7 @@ export const mockPermissions: Permission[] = [
   {
     code: "audit:read",
     name: "审计日志读取",
-    description: "查看商品审计日志"
+    description: "查看商品审计日志、登录日志和风控统计"
   },
   {
     code: "commodity:read",

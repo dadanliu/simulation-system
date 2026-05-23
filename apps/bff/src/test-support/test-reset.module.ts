@@ -7,6 +7,10 @@ import {
   LoginAuditLogSchema
 } from "../auth/schemas/login-audit-log.schema";
 import {
+  LoginRiskDailyStatEntity,
+  LoginRiskDailyStatSchema
+} from "../auth/schemas/login-risk-daily-stat.schema";
+import {
   AuditLogEntity,
   AuditLogSchema
 } from "../commodity/schemas/audit-log.schema";
@@ -19,7 +23,11 @@ import { TestResetService } from "./test-reset.service";
     ConfigModule,
     MongooseModule.forFeature([
       { name: AuditLogEntity.name, schema: AuditLogSchema },
-      { name: LoginAuditLogEntity.name, schema: LoginAuditLogSchema }
+      { name: LoginAuditLogEntity.name, schema: LoginAuditLogSchema },
+      {
+        name: LoginRiskDailyStatEntity.name,
+        schema: LoginRiskDailyStatSchema
+      }
     ])
   ],
   controllers: [TestResetController],

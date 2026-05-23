@@ -3,12 +3,14 @@ import type { Request } from "express";
 import { UserService } from "../user/user.service";
 import { getSessionIdFromRequest } from "./session-cookie";
 import { LoginAuditLogService } from "./login-audit-log.service";
+import { LoginRiskDailyStatService } from "./login-risk-daily-stat.service";
 import { LoginRiskService } from "./login-risk.service";
 import {
   SessionStoreService,
   type SessionDevice
 } from "./session-store.service";
 import { QueryLoginAuditLogDto } from "./dto/query-login-audit-log.dto";
+import { QueryLoginRiskDailyStatDto } from "./dto/query-login-risk-daily-stat.dto";
 
 type LoginContext = SessionDevice & {
   traceId?: string;
@@ -18,6 +20,7 @@ type LoginContext = SessionDevice & {
 export class AuthService {
   constructor(
     private readonly loginAuditLogService: LoginAuditLogService,
+    private readonly loginRiskDailyStatService: LoginRiskDailyStatService,
     private readonly loginRiskService: LoginRiskService,
     private readonly sessionStoreService: SessionStoreService,
     private readonly userService: UserService
@@ -100,6 +103,10 @@ export class AuthService {
 
   listLoginLogs(query: QueryLoginAuditLogDto) {
     return this.loginAuditLogService.listLogs(query);
+  }
+
+  listLoginRiskDailyStats(query: QueryLoginRiskDailyStatDto) {
+    return this.loginRiskDailyStatService.listStats(query);
   }
 
   getSessionTtlSeconds() {

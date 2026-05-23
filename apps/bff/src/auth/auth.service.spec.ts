@@ -20,6 +20,9 @@ describe("AuthService", () => {
       recordFailure: jest.fn(),
       recordSuccess: jest.fn()
     };
+    const loginRiskDailyStatService = {
+      listStats: jest.fn()
+    };
     const loginRiskService = {
       assertLoginAllowed: jest.fn(),
       isRateLimitError: jest.fn(
@@ -45,6 +48,7 @@ describe("AuthService", () => {
       loginRiskService,
       service: new AuthService(
         loginAuditLogService as never,
+        loginRiskDailyStatService as never,
         loginRiskService as never,
         sessionStoreService as never,
         userService as never

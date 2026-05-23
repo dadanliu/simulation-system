@@ -8,6 +8,10 @@ import {
   type LoginAuditLogDocument
 } from "../auth/schemas/login-audit-log.schema";
 import {
+  LoginRiskDailyStatEntity,
+  type LoginRiskDailyStatDocument
+} from "../auth/schemas/login-risk-daily-stat.schema";
+import {
   AuditLogEntity,
   type AuditLogDocument
 } from "../commodity/schemas/audit-log.schema";
@@ -19,6 +23,8 @@ export class TestResetService {
     private readonly auditLogModel: Model<AuditLogDocument>,
     @InjectModel(LoginAuditLogEntity.name)
     private readonly loginAuditLogModel: Model<LoginAuditLogDocument>,
+    @InjectModel(LoginRiskDailyStatEntity.name)
+    private readonly loginRiskDailyStatModel: Model<LoginRiskDailyStatDocument>,
     private readonly configService: ConfigService,
     private readonly rbacSeedService: RbacSeedService
   ) {}
@@ -27,6 +33,7 @@ export class TestResetService {
     await Promise.all([
       this.auditLogModel.deleteMany({}),
       this.loginAuditLogModel.deleteMany({}),
+      this.loginRiskDailyStatModel.deleteMany({}),
       this.rbacSeedService.resetForTest()
     ]);
     await this.resetMockBackend();

@@ -28,6 +28,7 @@ import type { AuthUser } from "../user/user.types";
 import { SuccessResponseMessage } from "../common/interceptors/response-envelope.decorator";
 import { clearSessionCookie, createSessionCookie } from "./session-cookie";
 import { QueryLoginAuditLogDto } from "./dto/query-login-audit-log.dto";
+import { QueryLoginRiskDailyStatDto } from "./dto/query-login-risk-daily-stat.dto";
 import { PermissionsGuard } from "../permission/permissions.guard";
 import { RequirePermissions } from "../permission/permissions.decorator";
 
@@ -159,6 +160,22 @@ export class AuthController {
   })
   loginLogs(@Query() query: QueryLoginAuditLogDto) {
     return this.authService.listLoginLogs(query);
+  }
+
+  @Get("login-risk-daily-stats")
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions("audit:read")
+  @ApiOperation({ summary: "查询每日登录风控统计" })
+  @ApiCookieAuth("next_bff_session")
+  @ApiResponse({ status: 200, description: "查询每日登录风控统计成功" })
+  @ApiResponse({ status: 401, description: "未登录", type: ErrorResponseDto })
+  @ApiResponse({
+    status: 403,
+    description: "无登录风控统计查看权限",
+    type: ErrorResponseDto
+  })
+  loginRiskDailyStats(@Query() query: QueryLoginRiskDailyStatDto) {
+    return this.authService.listLoginRiskDailyStats(query);
   }
 
   private shouldUseSecureCookie() {
