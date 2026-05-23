@@ -436,6 +436,538 @@ task.failed
 | `completed`                      | `task.completed` |
 | `failed`                         | `task.failed`    |
 
+## 本次 SSE 功能具体代码怎么实现
+
+本次功能的代码目标很收敛：
+
+```text
+把 BullMQ 里的异步任务状态
+包装成 NestJS @Sse 能消费的 Observable<MessageEvent>
+再通过浏览器 EventSource 或 curl -N 持续推给客户端。
+```
+
+涉及的核心文件：
+
+| 文件                                                            | 职责                                                                      |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `apps/bff/src/queue/queue.controller.ts`                        | 暴露 `GET /api/tasks/:taskId/events`，做登录态、权限、任务归属和 SSE 映射 |
+| `apps/bff/src/queue/task-queue.service.ts`                      | 查询 BullMQ job，生成任务状态流，终态后 complete                          |
+| `apps/bff/src/queue/task-stream-connection-registry.service.ts` | 记录当前活跃 SSE 连接，按 user/tenant/task 分组统计                       |
+| `apps/bff/src/queue/queue.types.ts`                             | 定义 `TaskStatus`、`TaskStatusStreamEvent`、连接元数据等类型              |
+| `apps/bff/src/queue/queue.controller.spec.ts`                   | 验证 SSE controller 会带上 user/tenant/task 连接上下文                    |
+| `apps/bff/src/queue/task-queue.service.spec.ts`                 | 验证状态映射、终态 complete、连接注册和断开清理                           |
+
+### 总调用链
+
+```mermaid
+flowchart TD
+  client["curl -N / Browser EventSource"] --> controller["QueueController.taskEvents"]
+  controller --> data["TaskQueueService.getTaskData"]
+  data --> bull["BullMQ queue.getJob"]
+  bull --> status["toTaskStatus 归一化任务状态"]
+  status --> access["assertTaskAccess 校验任务归属"]
+  access --> stream["TaskQueueService.streamTaskStatus"]
+  stream --> registry["TaskStreamConnectionRegistry.register"]
+  stream --> poll["定时 getTask 读取 BullMQ 状态"]
+  poll --> dedupe["fingerprint 去重"]
+  dedupe --> event["TaskStatusStreamEvent"]
+  event --> message["Controller map 成 MessageEvent"]
+  message --> nest["Nest @Sse 写 text/event-stream"]
+  nest --> client
+```
+
+这条链路里有两个边界：
+
+```text
+Controller 边界：
+负责 HTTP、认证授权、任务归属、把业务事件映射成 Nest MessageEvent。
+
+Service 边界：
+负责 BullMQ taskId 解析、状态读取、状态归一化、事件流生成和连接清理。
+```
+
+### 1. Controller 如何建立 SSE 流
+
+入口在 `QueueController.taskEvents`：
+
+```ts
+@Sse(":taskId/events")
+taskEvents(
+  @CurrentUser() user: AuthUser,
+  @Param("taskId") taskId: string
+): Observable<MessageEvent> {
+  return from(this.taskQueueService.getTaskData(taskId)).pipe(
+    tap(({ data }) => this.assertTaskAccess(user, data)),
+    switchMap(({ data, status }) =>
+      this.taskQueueService.streamTaskStatus(taskId, {
+        connection: {
+          taskId,
+          tenantId: data.tenantId ?? user.tenantId,
+          userId: user.id
+        },
+        initialStatus: status
+      })
+    ),
+    map((event) => ({
+      data: event.status,
+      id: event.status.taskId,
+      retry: 1000,
+      type: event.type
+    }))
+  );
+}
+```
+
+这里每一步都有明确目的：
+
+| 代码步骤               | 解决什么问题                                              |
+| ---------------------- | --------------------------------------------------------- |
+| `getTaskData(taskId)`  | 先读取任务数据和当前状态；不存在就返回 404                |
+| `assertTaskAccess`     | SSE 是长连接，建立前必须确认用户有权看这个任务            |
+| `switchMap`            | 权限通过后，把一次性读取结果切换成持续任务状态流          |
+| `initialStatus`        | 避免客户端连接后等 1 秒才看到第一条状态，先立即推当前状态 |
+| `connection`           | 把 task/user/tenant 写入连接登记表，方便统计和清理        |
+| `map(...MessageEvent)` | 把业务事件转成 Nest `@Sse()` 需要的 `data/id/retry/type`  |
+
+Controller 的关键点是：
+
+```text
+它不自己 setHeader，不自己 response.write。
+它只返回 Observable<MessageEvent>。
+底层 SSE 协议细节交给 Nest @Sse。
+```
+
+### 2. 权限校验为什么放在 stream 前
+
+当前项目先拿到任务数据，再校验任务归属：
+
+```ts
+private assertTaskAccess(user: AuthUser, task: TaskJobDataBase) {
+  const sameTenant = task.tenantId ? task.tenantId === user.tenantId : true;
+  const isOwner = user.id === task.requestedBy && sameTenant;
+  const isTenantAdmin = user.roles.includes("admin") && sameTenant;
+
+  if (isOwner || isTenantAdmin) {
+    return;
+  }
+
+  throw new ForbiddenException("permission denied");
+}
+```
+
+这一步必须发生在订阅流之前：
+
+```mermaid
+flowchart TD
+  a["GET /events"] --> b["读取 job.data"]
+  b --> c{"用户是 owner 或同租户 admin?"}
+  c -->|否| d["403 Forbidden<br/>不建立 SSE 流"]
+  c -->|是| e["streamTaskStatus<br/>建立长连接"]
+```
+
+原因是：
+
+```text
+SSE 一旦建立，就是持续输出。
+如果权限校验放在后面，可能先泄露一部分任务状态。
+```
+
+### 3. taskId 怎么定位到 BullMQ job
+
+当前对外暴露的 `taskId` 是：
+
+```text
+commodity-import:job-001
+```
+
+它由两部分组成：
+
+```text
+queueName = commodity-import
+jobId = job-001
+```
+
+Service 里先解析：
+
+```ts
+parseTaskId(taskId: string) {
+  const [queueName, ...jobIdParts] = taskId.split(":");
+  const jobId = jobIdParts.join(":");
+
+  if (!this.isTaskQueueName(queueName) || !jobId) {
+    throw new NotFoundException("task not found");
+  }
+
+  return { jobId, queueName };
+}
+```
+
+然后读取 BullMQ：
+
+```ts
+const { jobId, queueName } = this.parseTaskId(taskId);
+const job = await this.commodityImportQueue.getJob(jobId);
+
+if (!job) {
+  throw new NotFoundException("task not found");
+}
+```
+
+图解：
+
+```mermaid
+flowchart LR
+  taskId["commodity-import:job-001"] --> parse["parseTaskId"]
+  parse --> queue["queueName: commodity-import"]
+  parse --> jobId["jobId: job-001"]
+  queue --> getJob["commodityImportQueue.getJob(jobId)"]
+  jobId --> getJob
+  getJob --> job["BullMQ Job"]
+```
+
+这个设计的好处是：
+
+```text
+客户端只拿一个 taskId。
+BFF 内部可以从 taskId 反推出任务属于哪条队列。
+```
+
+当前 MVP 只支持 `commodity-import` 这一条队列，所以未知 queueName 会直接当成任务不存在。
+
+### 4. BullMQ 状态怎么变成业务状态
+
+BullMQ 的原始状态不一定适合直接暴露给前端。
+
+所以 `toTaskStatus` 会把 BullMQ job 归一化成当前项目自己的 `TaskStatus`：
+
+```ts
+return {
+  attemptsMade: job.attemptsMade,
+  createdAt: this.toDateString(job.timestamp),
+  failedReason: job.failedReason || undefined,
+  finishedAt: this.toDateString(job.finishedOn),
+  jobId,
+  name: job.name,
+  processedAt: this.toDateString(job.processedOn),
+  progress: job.progress,
+  queue: queueName,
+  result: job.returnvalue,
+  state: this.mapState(state),
+  taskId: this.buildTaskId(queueName, jobId)
+};
+```
+
+状态映射规则：
+
+```mermaid
+flowchart LR
+  active["BullMQ active"] --> running["TaskStatus running"]
+  waiting["waiting / waiting-children / prioritized / paused"] --> queued["TaskStatus queued"]
+  completed["BullMQ completed"] --> completed2["TaskStatus completed"]
+  delayed["BullMQ delayed"] --> delayed2["TaskStatus delayed"]
+  failed["BullMQ failed"] --> failed2["TaskStatus failed"]
+  other["其他状态"] --> unknown["TaskStatus unknown"]
+```
+
+为什么要归一化：
+
+```text
+前端不应该依赖 BullMQ 的内部状态命名。
+BFF 对外提供稳定的业务状态 contract。
+以后底层从 BullMQ 换成别的队列，前端可以少改或不改。
+```
+
+### 5. streamTaskStatus 怎么持续推送
+
+`streamTaskStatus` 是本次功能的核心。
+
+它返回一个 RxJS `Observable<TaskStatusStreamEvent>`：
+
+```ts
+streamTaskStatus(taskId, options) {
+  return new Observable<TaskStatusStreamEvent>((subscriber) => {
+    // register connection
+    // emit initial status
+    // setTimeout loop
+    // subscriber.next(...)
+    // terminal state -> subscriber.complete()
+    // teardown -> cleanup()
+  });
+}
+```
+
+内部循环可以拆成 5 步：
+
+```mermaid
+flowchart TD
+  start["subscribe"] --> init["注册连接 register"]
+  init --> emit0["emitStatus(initialStatus)"]
+  emit0 --> fingerprint["JSON.stringify(status) 做 fingerprint"]
+  fingerprint --> changed{"状态和上次不同?"}
+  changed -->|是| next["subscriber.next(TaskStatusStreamEvent)"]
+  changed -->|否| skip["跳过重复事件"]
+  next --> terminal{"completed / failed?"}
+  skip --> terminal
+  terminal -->|是| cleanup["cleanup + subscriber.complete"]
+  terminal -->|否| timer["setTimeout 下一轮 getTask"]
+  timer --> emit1["emitStatus(await getTask(taskId))"]
+  emit1 --> fingerprint
+```
+
+这里有三个关键实现点。
+
+第一，立即发送初始状态：
+
+```ts
+void emitStatus(options.initialStatus).then(scheduleNext);
+```
+
+这让客户端刚连上就能看到当前任务状态，而不是等下一轮 timer。
+
+第二，用 fingerprint 去重：
+
+```ts
+const fingerprint = JSON.stringify(currentStatus);
+
+if (fingerprint !== lastFingerprint) {
+  lastFingerprint = fingerprint;
+  subscriber.next({
+    status: currentStatus,
+    type: this.toStreamEventType(currentStatus.state)
+  });
+}
+```
+
+这样如果任务状态没有变化，就不会每秒推一条完全相同的事件。
+
+注意：BFF 当前仍然会每秒查一次 BullMQ，只是不会把重复状态推给客户端。
+
+第三，终态后主动结束流：
+
+```ts
+if (TERMINAL_TASK_STATES.has(currentStatus.state)) {
+  cleanup();
+  subscriber.complete();
+}
+```
+
+终态集合是：
+
+```ts
+const TERMINAL_TASK_STATES = new Set<TaskStatusState>(["completed", "failed"]);
+```
+
+也就是说：
+
+```text
+completed / failed
+-> 发最后一条事件
+-> cleanup
+-> Observable complete
+-> Nest response.end
+-> SSE 连接关闭
+```
+
+### 6. 业务事件怎么映射成 SSE 事件名
+
+Service 里先把任务状态映射成内部流事件：
+
+```ts
+private toStreamEventType(state: TaskStatusState) {
+  if (state === "completed") {
+    return "task.completed";
+  }
+
+  if (state === "failed") {
+    return "task.failed";
+  }
+
+  return "task.progress";
+}
+```
+
+然后 Controller 再转成 Nest `MessageEvent`：
+
+```ts
+map((event) => ({
+  data: event.status,
+  id: event.status.taskId,
+  retry: 1000,
+  type: event.type
+}));
+```
+
+完整映射链路：
+
+```mermaid
+flowchart LR
+  bull["BullMQ state"] --> taskStatus["TaskStatus.state"]
+  taskStatus --> eventType["TaskStatusStreamEvent.type"]
+  eventType --> messageType["MessageEvent.type"]
+  messageType --> sseText["SSE event: 字段"]
+  sseText --> browser["浏览器 addEventListener"]
+```
+
+对应关系：
+
+| BullMQ / TaskStatus 状态         | 内部事件 type    | SSE 文本     | 浏览器监听方式                            |
+| -------------------------------- | ---------------- | ------------ | ----------------------------------------- |
+| `queued` / `running` / `delayed` | `task.progress`  | `event: ...` | `addEventListener("task.progress", ...)`  |
+| `completed`                      | `task.completed` | `event: ...` | `addEventListener("task.completed", ...)` |
+| `failed`                         | `task.failed`    | `event: ...` | `addEventListener("task.failed", ...)`    |
+
+### 7. 连接注册和断开清理怎么实现
+
+当前项目新增了 `TaskStreamConnectionRegistry`，用来记录活跃 SSE 连接：
+
+```ts
+register(connection: TaskStatusStreamConnection) {
+  const connectionId = `${connection.taskId}:${connection.userId}:${++this.nextConnectionId}`;
+
+  this.connections.set(connectionId, connection);
+  this.addToGroup(this.byTaskId, connection.taskId, connectionId);
+  this.addToGroup(this.byTenantId, connection.tenantId, connectionId);
+  this.addToGroup(this.byUserId, connection.userId, connectionId);
+
+  let active = true;
+
+  return () => {
+    if (!active) {
+      return;
+    }
+
+    active = false;
+    this.unregister(connectionId);
+  };
+}
+```
+
+它的作用不是发送事件，而是给线上观测和限流留接口：
+
+```text
+当前有多少 SSE 连接？
+某个 user 打开了几条？
+某个 tenant 打开了几条？
+某个 taskId 被多少客户端订阅？
+```
+
+连接生命周期：
+
+```mermaid
+stateDiagram-v2
+  [*] --> Subscribing: EventSource 建立连接
+  Subscribing --> Registered: registry.register
+  Registered --> Streaming: emit task.progress
+  Streaming --> Completed: task.completed
+  Streaming --> Failed: task.failed
+  Streaming --> ClientClosed: 浏览器关闭 / 网络断开
+  Completed --> Cleanup
+  Failed --> Cleanup
+  ClientClosed --> Cleanup
+  Cleanup --> [*]: clearTimeout + unregister
+```
+
+`streamTaskStatus` 里的 cleanup 负责收尾：
+
+```ts
+const cleanup = () => {
+  closed = true;
+
+  if (timer) {
+    clearTimeout(timer);
+    timer = undefined;
+  }
+
+  if (unregisterConnection) {
+    unregisterConnection();
+    unregisterConnection = undefined;
+  }
+};
+```
+
+所以本次功能不是只“能推送”，还补了资源回收：
+
+```text
+任务终态
+或 客户端断开
+或 查询 BullMQ 出错
+-> cleanup
+-> 清 timer
+-> 从 registry 移除连接
+```
+
+### 8. 错误和终态怎么流转
+
+运行时主要有三类结果：
+
+```mermaid
+flowchart TD
+  read["读取任务状态"] --> ok{"读取成功?"}
+  ok -->|否| error["subscriber.error(error)"]
+  ok -->|是| state{"任务状态"}
+  state -->|queued/running/delayed/unknown| progress["next task.progress<br/>继续下一轮"]
+  state -->|completed| completed["next task.completed<br/>complete"]
+  state -->|failed| failed["next task.failed<br/>complete"]
+  error --> cleanup["cleanup"]
+  completed --> cleanup
+  failed --> cleanup
+```
+
+`getTaskData` / `getTask` 找不到任务时会抛 `NotFoundException`。
+
+如果发生在建立流之前，客户端得到普通 404。
+
+如果发生在流内部，Observable 会 `error`，Nest 的 SSE 封装会写一条 `event: error` 后结束流。
+
+当前项目最重要的行为契约是：
+
+```text
+running 类状态：继续保持 SSE。
+completed / failed：发最后一条事件后关闭 SSE。
+not found / permission denied：不应该建立业务 SSE 流。
+```
+
+### 9. 测试覆盖了什么
+
+这次功能的测试重点不是“Nest 会不会输出 text/event-stream”，因为那是框架能力。
+
+测试重点是当前项目自己的业务契约：
+
+```mermaid
+flowchart TD
+  tests["测试覆盖"] --> controllerSpec["queue.controller.spec.ts"]
+  tests --> serviceSpec["task-queue.service.spec.ts"]
+
+  controllerSpec --> c1["owner 可以查询任务"]
+  controllerSpec --> c2["跨租户 admin 被拒绝"]
+  controllerSpec --> c3["SSE stream 带 task/user/tenant scope"]
+
+  serviceSpec --> s1["taskId build / parse 稳定"]
+  serviceSpec --> s2["BullMQ active -> running"]
+  serviceSpec --> s3["completed 后 emit + complete"]
+  serviceSpec --> s4["unsubscribe 后 registry 清零"]
+  serviceSpec --> s5["未知 queue -> NotFound"]
+```
+
+这说明本次功能关注的是：
+
+```text
+权限边界正确。
+状态 contract 稳定。
+终态能关闭。
+断开能清理。
+连接能被观测。
+```
+
+没有覆盖或生产中还需要补的：
+
+| 未覆盖项                          | 原因或后续方向                                                       |
+| --------------------------------- | -------------------------------------------------------------------- |
+| 真实 HTTP `text/event-stream` e2e | 当前测试直接调用 controller/service；可后续用 supertest 或浏览器验证 |
+| 代理缓冲行为                      | 需要在 Nginx / 网关环境验证                                          |
+| `Last-Event-ID` 断线续传          | 当前 MVP 是重连后读取当前 BullMQ 状态，不做历史事件回放              |
+| heartbeat                         | 当前状态不变时不会推送心跳，生产长连接可按需要补                     |
+
 ## 浏览器或客户端怎么接收 SSE
 
 浏览器接收 SSE 的核心是：
