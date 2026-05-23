@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException
+} from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
 import type { Request } from "express";
 import { createHash } from "node:crypto";
 import { ApiClientService } from "../bff/api-client.service";
@@ -7,6 +12,17 @@ import type { AuthUser } from "../user/user.types";
 import type { Commodity, CommodityListData } from "./commodity.types";
 import { AuditLogService } from "./audit-log.service";
 import { CommodityCacheService } from "./commodity-cache.service";
+import {
+  COMMODITY_EVENTS,
+  CommodityCreatedEvent,
+  CommodityDeletedEvent,
+  CommodityRestoredEvent,
+  CommodityStatusChangedEvent,
+  CommodityUpdatedEvent,
+  isCommodityAuditEventResult,
+  type CommodityAuditEventResult,
+  type CommodityDomainEvent
+} from "./commodity.events";
 import type { CreateCommodityDto } from "./dto/create-commodity.dto";
 import type { DeleteCommodityDto } from "./dto/delete-commodity.dto";
 import type { QueryAuditLogDto } from "./dto/query-audit-log.dto";
@@ -31,7 +47,8 @@ export class CommodityService {
   constructor(
     private readonly apiClientService: ApiClientService,
     private readonly auditLogService: AuditLogService,
-    private readonly commodityCacheService: CommodityCacheService
+    private readonly commodityCacheService: CommodityCacheService,
+    private readonly eventEmitter: EventEmitter2
   ) {}
 
   async listCommodities(
@@ -163,12 +180,14 @@ export class CommodityService {
       }
     );
 
-    const auditLog = await this.auditLogService.recordCommodityCreate(
-      user.id,
-      commodity,
-      request.traceId ?? ""
+    const auditLog = await this.publishCommodityMutationEvent(
+      COMMODITY_EVENTS.created,
+      new CommodityCreatedEvent({
+        commodity,
+        operatorId: user.id,
+        traceId: request.traceId ?? ""
+      })
     );
-    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -207,15 +226,17 @@ export class CommodityService {
       throw error;
     }
 
-    const auditLog = await this.auditLogService.recordCommodityDelete(
-      user.id,
-      id,
-      data.before,
-      data.after,
-      body.reason.trim(),
-      request.traceId ?? ""
+    const auditLog = await this.publishCommodityMutationEvent(
+      COMMODITY_EVENTS.deleted,
+      new CommodityDeletedEvent({
+        after: data.after,
+        before: data.before,
+        commodityId: id,
+        operatorId: user.id,
+        reason: body.reason.trim(),
+        traceId: request.traceId ?? ""
+      })
     );
-    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -251,15 +272,17 @@ export class CommodityService {
       throw error;
     }
 
-    const auditLog = await this.auditLogService.recordCommodityRestore(
-      user.id,
-      id,
-      data.before,
-      data.after,
-      body.reason.trim(),
-      request.traceId ?? ""
+    const auditLog = await this.publishCommodityMutationEvent(
+      COMMODITY_EVENTS.restored,
+      new CommodityRestoredEvent({
+        after: data.after,
+        before: data.before,
+        commodityId: id,
+        operatorId: user.id,
+        reason: body.reason.trim(),
+        traceId: request.traceId ?? ""
+      })
     );
-    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -299,14 +322,16 @@ export class CommodityService {
       throw error;
     }
 
-    const auditLog = await this.auditLogService.recordCommodityUpdate(
-      user.id,
-      id,
-      data.before,
-      data.after,
-      request.traceId ?? ""
+    const auditLog = await this.publishCommodityMutationEvent(
+      COMMODITY_EVENTS.updated,
+      new CommodityUpdatedEvent({
+        after: data.after,
+        before: data.before,
+        commodityId: id,
+        operatorId: user.id,
+        traceId: request.traceId ?? ""
+      })
     );
-    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -347,15 +372,17 @@ export class CommodityService {
       throw error;
     }
 
-    const auditLog = await this.auditLogService.recordCommodityStatusChange(
-      user.id,
-      id,
-      data.before.status,
-      data.after.status,
-      body.reason,
-      request.traceId ?? ""
+    const auditLog = await this.publishCommodityMutationEvent(
+      COMMODITY_EVENTS.statusChanged,
+      new CommodityStatusChangedEvent({
+        after: data.after,
+        before: data.before,
+        commodityId: id,
+        operatorId: user.id,
+        reason: body.reason,
+        traceId: request.traceId ?? ""
+      })
     );
-    await this.commodityCacheService.invalidateCommodityList();
 
     return {
       auditLog,
@@ -379,6 +406,25 @@ export class CommodityService {
     );
 
     await this.commodityCacheService.writeCommodityList(cacheKey, data);
+  }
+
+  private async publishCommodityMutationEvent(
+    eventName: string,
+    event: CommodityDomainEvent
+  ) {
+    const results = await this.eventEmitter.emitAsync(eventName, event);
+    const auditResult = results.find(
+      (result): result is CommodityAuditEventResult =>
+        isCommodityAuditEventResult(result)
+    );
+
+    // Audit is part of this API contract today: mutation responses include auditLog.
+    // Cache/search/notification handlers must not throw for recoverable failures.
+    if (!auditResult) {
+      throw new InternalServerErrorException("commodity audit handler missing");
+    }
+
+    return auditResult.auditLog;
   }
 
   private setCommodityListCacheDebug(

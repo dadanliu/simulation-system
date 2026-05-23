@@ -120,27 +120,27 @@
 
 ## 模块六：业务事件解耦 EventEmitter / CQRS
 
-- [ ] TODO：先接入 `@nestjs/event-emitter`，发布商品变更事件。
+- [x] TODO：先接入 `@nestjs/event-emitter`，发布商品变更事件。
 
   功能：商品创建、编辑、删除后不再由 `CommodityService` 串行处理所有副作用，而是发布 `CommodityCreatedEvent`、`CommodityUpdatedEvent` 等事件。
 
-- [ ] TODO：拆出审计日志事件 handler。
+- [x] TODO：拆出审计日志事件 handler。
 
   功能：审计写入从主业务 Service 中分离，后续审计字段扩展不需要频繁修改商品主流程。
 
-- [ ] TODO：拆出缓存失效事件 handler。
+- [x] TODO：拆出缓存失效事件 handler。
 
   功能：商品变更后统一清理或刷新商品列表缓存，缓存策略独立演进。
 
-- [ ] TODO：预留搜索索引和通知 handler。
+- [x] TODO：预留搜索索引和通知 handler。
 
   功能：未来接搜索服务、站内信、邮件通知时，只新增订阅者，不把副作用继续塞回主 Service。
 
-- [ ] TODO：明确 handler 失败是否影响主流程。
+- [x] TODO：明确 handler 失败是否影响主流程。
 
   功能：审计失败、缓存清理失败、通知失败的业务语义不同。需要决定失败时回滚、重试、告警还是忽略。
 
-- [ ] TODO：复杂命令/查询边界清晰后再考虑 `@nestjs/cqrs`。
+- [x] TODO：复杂命令/查询边界清晰后再考虑 `@nestjs/cqrs`。
 
   功能：CQRS 适合命令、查询、事件边界已经变复杂的场景；当前先用事件解耦，不急着引入完整 CQRS 结构。
 

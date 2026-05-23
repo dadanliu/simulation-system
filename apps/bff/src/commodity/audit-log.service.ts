@@ -8,7 +8,7 @@ import {
   type AuditLogDocument
 } from "./schemas/audit-log.schema";
 
-type AuditLogRecord = {
+export type AuditLogRecord = {
   action: string;
   after: Record<string, unknown> | null;
   before: Record<string, unknown> | null;

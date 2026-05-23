@@ -1,9 +1,22 @@
-import { NotFoundException } from "@nestjs/common";
+import {
+  InternalServerErrorException,
+  NotFoundException
+} from "@nestjs/common";
+import type { EventEmitter2 } from "@nestjs/event-emitter";
 import { BffBusinessException } from "../bff/errors";
 import type { ApiClientService } from "../bff/api-client.service";
 import type { AuthUser } from "../user/user.types";
 import type { AuditLogService } from "./audit-log.service";
 import type { CommodityCacheService } from "./commodity-cache.service";
+import {
+  COMMODITY_EVENTS,
+  CommodityCreatedEvent,
+  CommodityDeletedEvent,
+  CommodityRestoredEvent,
+  CommodityStatusChangedEvent,
+  CommodityUpdatedEvent,
+  createCommodityAuditEventResult
+} from "./commodity.events";
 import { CommodityService } from "./commodity.service";
 import type { Commodity } from "./commodity.types";
 
@@ -22,6 +35,9 @@ describe("CommodityService", () => {
     invalidateCommodityList: jest.Mock;
     readCommodityList: jest.Mock;
     writeCommodityList: jest.Mock;
+  };
+  let eventEmitter: {
+    emitAsync: jest.Mock;
   };
   let service: CommodityService;
 
@@ -78,10 +94,14 @@ describe("CommodityService", () => {
       }),
       writeCommodityList: jest.fn()
     };
+    eventEmitter = {
+      emitAsync: jest.fn()
+    };
     service = new CommodityService(
       apiClientService as unknown as ApiClientService,
       auditLogService as unknown as AuditLogService,
-      commodityCacheService as unknown as CommodityCacheService
+      commodityCacheService as unknown as CommodityCacheService,
+      eventEmitter as unknown as EventEmitter2
     );
   });
 
@@ -270,9 +290,8 @@ describe("CommodityService", () => {
     });
   });
 
-  it("creates commodity through backend and invalidates list cache", async () => {
-    apiClientService.request.mockResolvedValue(commodity);
-    auditLogService.recordCommodityCreate.mockResolvedValue({
+  it("creates commodity through backend and publishes a created event", async () => {
+    const auditLog = {
       action: "create",
       operator: user.id,
       target: {
@@ -280,7 +299,12 @@ describe("CommodityService", () => {
         type: "commodity"
       },
       traceId: "trace-create"
-    });
+    };
+
+    apiClientService.request.mockResolvedValue(commodity);
+    eventEmitter.emitAsync.mockResolvedValue([
+      createCommodityAuditEventResult(auditLog as never)
+    ]);
 
     await expect(
       service.createCommodity({ traceId: "trace-create" } as never, user, {
@@ -293,15 +317,7 @@ describe("CommodityService", () => {
         stock: 10
       })
     ).resolves.toEqual({
-      auditLog: {
-        action: "create",
-        operator: user.id,
-        target: {
-          id: commodity.id,
-          type: "commodity"
-        },
-        traceId: "trace-create"
-      },
+      auditLog,
       commodity
     });
     expect(apiClientService.request).toHaveBeenCalledWith(
@@ -325,26 +341,24 @@ describe("CommodityService", () => {
         userId: user.id
       }
     );
-    expect(auditLogService.recordCommodityCreate).toHaveBeenCalledWith(
-      user.id,
-      commodity,
-      "trace-create"
-    );
-    expect(commodityCacheService.invalidateCommodityList).toHaveBeenCalledTimes(
-      1
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      COMMODITY_EVENTS.created,
+      new CommodityCreatedEvent({
+        commodity,
+        operatorId: user.id,
+        traceId: "trace-create"
+      })
     );
   });
 
-  it("soft deletes commodity through backend and records audit log", async () => {
+  it("soft deletes commodity through backend and publishes a deleted event", async () => {
     const before = {
       ...commodity,
       deletedAt: null,
       deletedBy: null
     };
     const after = commodity;
-
-    apiClientService.request.mockResolvedValue({ after, before });
-    auditLogService.recordCommodityDelete.mockResolvedValue({
+    const auditLog = {
       action: "delete",
       after: {
         deletedAt: commodity.deletedAt,
@@ -361,7 +375,12 @@ describe("CommodityService", () => {
         type: "commodity"
       },
       traceId: "trace-delete"
-    });
+    };
+
+    apiClientService.request.mockResolvedValue({ after, before });
+    eventEmitter.emitAsync.mockResolvedValue([
+      createCommodityAuditEventResult(auditLog as never)
+    ]);
 
     await expect(
       service.deleteCommodity(
@@ -373,24 +392,7 @@ describe("CommodityService", () => {
         }
       )
     ).resolves.toEqual({
-      auditLog: {
-        action: "delete",
-        after: {
-          deletedAt: commodity.deletedAt,
-          deletedBy: user.id
-        },
-        before: {
-          deletedAt: null,
-          deletedBy: null
-        },
-        operator: user.id,
-        reason: "重复创建",
-        target: {
-          id: commodity.id,
-          type: "commodity"
-        },
-        traceId: "trace-delete"
-      },
+      auditLog,
       commodity: after
     });
     expect(apiClientService.request).toHaveBeenCalledWith(
@@ -407,16 +409,16 @@ describe("CommodityService", () => {
         userId: user.id
       }
     );
-    expect(auditLogService.recordCommodityDelete).toHaveBeenCalledWith(
-      user.id,
-      commodity.id,
-      before,
-      after,
-      "重复创建",
-      "trace-delete"
-    );
-    expect(commodityCacheService.invalidateCommodityList).toHaveBeenCalledTimes(
-      1
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      COMMODITY_EVENTS.deleted,
+      new CommodityDeletedEvent({
+        after,
+        before,
+        commodityId: commodity.id,
+        operatorId: user.id,
+        reason: "重复创建",
+        traceId: "trace-delete"
+      })
     );
   });
 
@@ -436,21 +438,17 @@ describe("CommodityService", () => {
       )
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(auditLogService.recordCommodityDelete).not.toHaveBeenCalled();
-    expect(
-      commodityCacheService.invalidateCommodityList
-    ).not.toHaveBeenCalled();
+    expect(eventEmitter.emitAsync).not.toHaveBeenCalled();
   });
 
-  it("restores soft deleted commodity through backend and records audit log", async () => {
+  it("restores soft deleted commodity through backend and publishes a restored event", async () => {
     const before = commodity;
     const after = {
       ...commodity,
       deletedAt: null,
       deletedBy: null
     };
-
-    apiClientService.request.mockResolvedValue({ after, before });
-    auditLogService.recordCommodityRestore.mockResolvedValue({
+    const auditLog = {
       action: "restore",
       after: {
         deletedAt: null,
@@ -467,7 +465,12 @@ describe("CommodityService", () => {
         type: "commodity"
       },
       traceId: "trace-restore"
-    });
+    };
+
+    apiClientService.request.mockResolvedValue({ after, before });
+    eventEmitter.emitAsync.mockResolvedValue([
+      createCommodityAuditEventResult(auditLog as never)
+    ]);
 
     await expect(
       service.restoreCommodity(
@@ -479,24 +482,7 @@ describe("CommodityService", () => {
         }
       )
     ).resolves.toEqual({
-      auditLog: {
-        action: "restore",
-        after: {
-          deletedAt: null,
-          deletedBy: null
-        },
-        before: {
-          deletedAt: commodity.deletedAt,
-          deletedBy: commodity.deletedBy
-        },
-        operator: user.id,
-        reason: "误删恢复",
-        target: {
-          id: commodity.id,
-          type: "commodity"
-        },
-        traceId: "trace-restore"
-      },
+      auditLog,
       commodity: after
     });
     expect(apiClientService.request).toHaveBeenCalledWith(
@@ -510,20 +496,20 @@ describe("CommodityService", () => {
         userId: user.id
       }
     );
-    expect(auditLogService.recordCommodityRestore).toHaveBeenCalledWith(
-      user.id,
-      commodity.id,
-      before,
-      after,
-      "误删恢复",
-      "trace-restore"
-    );
-    expect(commodityCacheService.invalidateCommodityList).toHaveBeenCalledTimes(
-      1
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      COMMODITY_EVENTS.restored,
+      new CommodityRestoredEvent({
+        after,
+        before,
+        commodityId: commodity.id,
+        operatorId: user.id,
+        reason: "误删恢复",
+        traceId: "trace-restore"
+      })
     );
   });
 
-  it("updates commodity through backend and records before-after audit log", async () => {
+  it("updates commodity through backend and publishes an updated event", async () => {
     const before = {
       ...commodity,
       name: "旧商品",
@@ -538,9 +524,7 @@ describe("CommodityService", () => {
       price: 299,
       stock: 8
     };
-
-    apiClientService.request.mockResolvedValue({ after, before });
-    auditLogService.recordCommodityUpdate.mockResolvedValue({
+    const auditLog = {
       action: "update",
       operator: user.id,
       target: {
@@ -548,7 +532,12 @@ describe("CommodityService", () => {
         type: "commodity"
       },
       traceId: "trace-update"
-    });
+    };
+
+    apiClientService.request.mockResolvedValue({ after, before });
+    eventEmitter.emitAsync.mockResolvedValue([
+      createCommodityAuditEventResult(auditLog as never)
+    ]);
 
     await expect(
       service.updateCommodity(
@@ -565,15 +554,7 @@ describe("CommodityService", () => {
         }
       )
     ).resolves.toEqual({
-      auditLog: {
-        action: "update",
-        operator: user.id,
-        target: {
-          id: commodity.id,
-          type: "commodity"
-        },
-        traceId: "trace-update"
-      },
+      auditLog,
       commodity: after
     });
     expect(apiClientService.request).toHaveBeenCalledWith(
@@ -596,19 +577,19 @@ describe("CommodityService", () => {
         userId: user.id
       }
     );
-    expect(auditLogService.recordCommodityUpdate).toHaveBeenCalledWith(
-      user.id,
-      commodity.id,
-      before,
-      after,
-      "trace-update"
-    );
-    expect(commodityCacheService.invalidateCommodityList).toHaveBeenCalledTimes(
-      1
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      COMMODITY_EVENTS.updated,
+      new CommodityUpdatedEvent({
+        after,
+        before,
+        commodityId: commodity.id,
+        operatorId: user.id,
+        traceId: "trace-update"
+      })
     );
   });
 
-  it("records before-after status audit log with reason", async () => {
+  it("updates commodity status and publishes a status change event", async () => {
     const before = {
       ...commodity,
       deletedAt: null,
@@ -619,9 +600,7 @@ describe("CommodityService", () => {
       ...before,
       status: "on_sale" as const
     };
-
-    apiClientService.request.mockResolvedValue({ after, before });
-    auditLogService.recordCommodityStatusChange.mockResolvedValue({
+    const auditLog = {
       action: "status_change",
       after: {
         status: "on_sale"
@@ -636,7 +615,12 @@ describe("CommodityService", () => {
         type: "commodity"
       },
       traceId: "trace-status"
-    });
+    };
+
+    apiClientService.request.mockResolvedValue({ after, before });
+    eventEmitter.emitAsync.mockResolvedValue([
+      createCommodityAuditEventResult(auditLog as never)
+    ]);
 
     await expect(
       service.updateCommodityStatus(
@@ -676,16 +660,33 @@ describe("CommodityService", () => {
         userId: user.id
       }
     );
-    expect(auditLogService.recordCommodityStatusChange).toHaveBeenCalledWith(
-      user.id,
-      commodity.id,
-      "pending",
-      "on_sale",
-      "审核通过",
-      "trace-status"
+    expect(eventEmitter.emitAsync).toHaveBeenCalledWith(
+      COMMODITY_EVENTS.statusChanged,
+      new CommodityStatusChangedEvent({
+        after,
+        before,
+        commodityId: commodity.id,
+        operatorId: user.id,
+        reason: "审核通过",
+        traceId: "trace-status"
+      })
     );
-    expect(commodityCacheService.invalidateCommodityList).toHaveBeenCalledTimes(
-      1
-    );
+  });
+
+  it("fails mutation response when audit handler does not return an audit log", async () => {
+    apiClientService.request.mockResolvedValue(commodity);
+    eventEmitter.emitAsync.mockResolvedValue([undefined]);
+
+    await expect(
+      service.createCommodity({ traceId: "trace-create" } as never, user, {
+        description: "测试商品",
+        imageFileId: "",
+        imageUrl: "",
+        name: "测试键盘",
+        price: 299,
+        status: "offline" as never,
+        stock: 10
+      })
+    ).rejects.toBeInstanceOf(InternalServerErrorException);
   });
 });
