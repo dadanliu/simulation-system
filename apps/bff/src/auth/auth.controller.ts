@@ -57,6 +57,11 @@ export class AuthController {
     description: "用户名或密码错误",
     type: ErrorResponseDto
   })
+  @ApiResponse({
+    status: 429,
+    description: "登录尝试过于频繁",
+    type: ErrorResponseDto
+  })
   async login(
     @Body() body: LoginDto,
     @Req() request: Request,
@@ -158,6 +163,11 @@ export class AuthController {
     description: "无审计日志查看权限",
     type: ErrorResponseDto
   })
+  @ApiResponse({
+    status: 429,
+    description: "审计查询过于频繁",
+    type: ErrorResponseDto
+  })
   loginLogs(@Query() query: QueryLoginAuditLogDto) {
     return this.authService.listLoginLogs(query);
   }
@@ -172,6 +182,11 @@ export class AuthController {
   @ApiResponse({
     status: 403,
     description: "无登录风控统计查看权限",
+    type: ErrorResponseDto
+  })
+  @ApiResponse({
+    status: 429,
+    description: "审计查询过于频繁",
     type: ErrorResponseDto
   })
   loginRiskDailyStats(@Query() query: QueryLoginRiskDailyStatDto) {

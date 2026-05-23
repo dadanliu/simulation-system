@@ -149,6 +149,11 @@ export class CommodityController {
     description: "无审计日志查看权限",
     type: ErrorResponseDto
   })
+  @ApiResponse({
+    status: 429,
+    description: "审计查询过于频繁",
+    type: ErrorResponseDto
+  })
   listAuditLogs(
     @CurrentUser() user: AuthUser,
     @Query() query: QueryAuditLogDto

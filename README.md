@@ -627,6 +627,7 @@ sequenceDiagram
 - Schedule/Cron 登录风控每日统计。
 - BullMQ 商品批量导入异步任务。
 - SSE 异步任务进度推送。
+- Throttler 全局限流。
 - MongoDB schema、索引和查询计划模拟。
 - 统一成功响应和统一错误响应。
 - traceId、结构化日志、metrics、OpenTelemetry 初始化。
@@ -686,6 +687,7 @@ sequenceDiagram
 | SSE 任务进度新增逻辑 | `docs/49-SSE任务进度新增逻辑图解.md` |
 | Worker 第一性原理 | `docs/50-Worker第一性原理图文解释.md` |
 | SSE 连接分组和断线恢复 | `docs/51-SSE连接分组WebSocket边界断线恢复图解.md` |
+| 统一限流 Throttler 代码逻辑 | `docs/52-统一限流Throttler代码逻辑图解.md` |
 | 请求层与错误治理 | `docs/13-请求层与错误治理.md` |
 | 可观测性与排障 | `docs/21-可观测性与排障体系.md` |
 | 上线潜在问题 | `docs/31-当前系统上线潜在问题清单.md` |

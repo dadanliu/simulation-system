@@ -7,6 +7,8 @@ import {
   Put,
   UseGuards
 } from "@nestjs/common";
+import { ApiResponse } from "@nestjs/swagger";
+import { ErrorResponseDto } from "../common/swagger/error-response.dto";
 import { AuthGuard } from "../auth/auth.guard";
 import { RequirePermissions } from "../permission/permissions.decorator";
 import { PermissionsGuard } from "../permission/permissions.guard";
@@ -26,6 +28,11 @@ export class UserController {
   }
 
   @Post()
+  @ApiResponse({
+    status: 429,
+    description: "创建用户过于频繁",
+    type: ErrorResponseDto
+  })
   createUser(@Body() body: CreateUserInput) {
     return this.userService.createUser(body);
   }

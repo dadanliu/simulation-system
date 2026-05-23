@@ -72,6 +72,11 @@ export class UploadController {
     description: "无上传权限",
     type: ErrorResponseDto
   })
+  @ApiResponse({
+    status: 429,
+    description: "上传过于频繁",
+    type: ErrorResponseDto
+  })
   async uploadFile(
     @Req() request: Request,
     @CurrentUser() user: AuthUser,

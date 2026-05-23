@@ -13,6 +13,11 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+
+    if (request.currentUser) {
+      return true;
+    }
+
     const user = await this.getCurrentUserService.execute(request);
 
     if (!user) {
