@@ -137,8 +137,8 @@ export class QueueController {
   }
 
   private assertTaskAccess(user: AuthUser, task: TaskJobDataBase) {
-    const sameTenant = task.tenantId ? task.tenantId === user.tenantId : true;
-    const isOwner = user.id === task.requestedBy && sameTenant;
+    const sameTenant = task.tenantId === user.tenantId;
+    const isOwner = user.id === task.requestedBy;
     const isTenantAdmin = user.roles.includes("admin") && sameTenant;
 
     if (isOwner || isTenantAdmin) {

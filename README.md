@@ -685,6 +685,7 @@ sequenceDiagram
 | SSE 第一性原理 | `docs/48-SSE第一性原理图解.md` |
 | SSE 任务进度新增逻辑 | `docs/49-SSE任务进度新增逻辑图解.md` |
 | Worker 第一性原理 | `docs/50-Worker第一性原理图文解释.md` |
+| SSE 连接分组和断线恢复 | `docs/51-SSE连接分组WebSocket边界断线恢复图解.md` |
 | 请求层与错误治理 | `docs/13-请求层与错误治理.md` |
 | 可观测性与排障 | `docs/21-可观测性与排障体系.md` |
 | 上线潜在问题 | `docs/31-当前系统上线潜在问题清单.md` |

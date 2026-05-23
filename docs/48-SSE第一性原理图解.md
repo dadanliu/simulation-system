@@ -436,6 +436,106 @@ task.failed
 | `completed`                      | `task.completed` |
 | `failed`                         | `task.failed`    |
 
+## 浏览器或客户端怎么接收 SSE
+
+浏览器接收 SSE 的核心是：
+
+```text
+不是等整个 HTTP 响应结束再处理。
+而是一边读取响应 body，一边按 SSE 文本格式解析事件。
+```
+
+当前项目服务端推出来的原始文本类似：
+
+```text
+event: task.progress
+id: commodity-import:job-001
+retry: 1000
+data: {"taskId":"commodity-import:job-001","state":"running","progress":50}
+
+```
+
+最后的空行很关键：
+
+```text
+浏览器遇到空行
+-> 认为一条 SSE 事件结束
+-> 组装成 MessageEvent
+-> 触发对应事件监听器
+```
+
+客户端代码通常这样写：
+
+```ts
+const source = new EventSource("/api/tasks/commodity-import:job-001/events");
+
+source.addEventListener("task.progress", (event) => {
+  const status = JSON.parse(event.data);
+  console.log("任务进度", status);
+});
+
+source.addEventListener("task.completed", (event) => {
+  const status = JSON.parse(event.data);
+  console.log("任务完成", status);
+  source.close();
+});
+
+source.addEventListener("task.failed", (event) => {
+  const status = JSON.parse(event.data);
+  console.log("任务失败", status);
+  source.close();
+});
+
+source.onerror = () => {
+  console.log("SSE 连接异常或正在重连");
+};
+```
+
+浏览器内部处理链路：
+
+```mermaid
+flowchart TD
+  a["new EventSource(url)"] --> b["浏览器发起 HTTP GET"]
+  b --> c["收到 Content-Type: text/event-stream"]
+  c --> d["持续读取 response body"]
+  d --> e["按行解析 event / id / retry / data"]
+  e --> f{"遇到空行?"}
+  f -->|否| d
+  f -->|是| g["组装 MessageEvent"]
+  g --> h["按 event 名触发监听器"]
+  h --> i["业务代码 JSON.parse(event.data)"]
+```
+
+字段对应关系：
+
+| 服务端 SSE 字段          | 浏览器里怎么体现                                   |
+| ------------------------ | -------------------------------------------------- |
+| `event: task.progress`   | 触发 `addEventListener("task.progress")`           |
+| `data: {...}`            | 变成 `event.data`，类型是字符串                    |
+| `id: commodity-import:1` | 变成 `event.lastEventId`，重连续传时可作为游标     |
+| `retry: 1000`            | 浏览器断线后按这个建议间隔重连                     |
+| 空行                     | 当前事件结束，浏览器可以把缓冲的字段派发给 JS 回调 |
+
+几个容易踩坑的点：
+
+| 点                          | 真实表现                                                | 当前项目怎么处理                                                            |
+| --------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `event.data` 不是对象       | 直接 `event.data.state` 会拿不到值                      | 前端需要 `JSON.parse(event.data)`                                           |
+| 服务端不写 `event:`         | 浏览器默认触发 `message` 事件                           | 当前项目写 `type: task.progress / task.completed / task.failed`             |
+| `EventSource` 会自动重连    | 任务完成后如果不关闭，浏览器可能继续请求                | `task.completed` / `task.failed` 后前端应 `source.close()`                  |
+| 原生 `EventSource` 不能加头 | 不能像 `fetch` 一样随意加 `Authorization` 自定义 header | 当前项目用 cookie 登录态，同源请求会自动携带 `next_bff_session` 这类 cookie |
+
+如果是跨域 SSE，并且需要带 cookie，前端通常要写：
+
+```ts
+const source = new EventSource(url, {
+  withCredentials: true
+});
+```
+
+但后端也必须允许 CORS credentials。  
+当前项目的任务进度 SSE 更适合同源 cookie 模式，因为原生 `EventSource` 对自定义 header 支持很弱。
+
 ## 为什么 curl 要加 -N
 
 测试命令：
@@ -522,6 +622,231 @@ flowchart LR
 
 如果是聊天、多人协作、实时游戏，才更适合 WebSocket。  
 当前项目只是任务进度单向推送，所以不引入 `@WebSocketGateway()`。
+
+## SSE 线上 Top 3 问题
+
+### 问题 1：本地正常，线上事件延迟到一批才到
+
+最常见现象：
+
+```text
+服务端明明已经 next 了。
+浏览器或 curl 很久没显示。
+过一会儿突然刷出一批事件。
+```
+
+根因通常不是 Nest 没写，而是中间层缓冲了响应：
+
+```mermaid
+flowchart LR
+  worker["Worker 更新 BullMQ 状态"] --> bff["BFF 写 SSE event"]
+  bff --> proxy["Nginx / 网关 / 平台代理"]
+  proxy --> buffer{"代理缓冲响应?"}
+  buffer -->|是| delayed["攒够缓冲区后一次性吐给浏览器"]
+  buffer -->|否| browser["浏览器立即收到事件"]
+```
+
+怎么观察：
+
+| 观察点             | 判断方式                                                         |
+| ------------------ | ---------------------------------------------------------------- |
+| BFF 日志           | 服务端已经产生 `task.progress`，但客户端没立刻收到               |
+| `curl -N` 直连 BFF | 直连正常，经过域名或网关变慢，基本就是代理层问题                 |
+| 浏览器 Network     | 请求一直 pending 是正常的；关键看 response stream 是否持续增长   |
+| 代理配置           | 存在 `proxy_buffering`、gzip、平台默认 response buffering 的风险 |
+
+解决方式：
+
+```text
+SSE 路径必须关闭响应缓冲。
+不要让代理压缩、缓存或攒包。
+```
+
+Nest 当前已经通过 `SseStream` 设置了这些头：
+
+```http
+Content-Type: text/event-stream
+Cache-Control: private, no-cache, no-store, must-revalidate, max-age=0, no-transform
+X-Accel-Buffering: no
+```
+
+但这些头不是所有平台都会完全尊重。  
+如果前面有 Nginx，SSE 路径通常还需要显式配置：
+
+```nginx
+location /api/tasks/ {
+  proxy_http_version 1.1;
+  proxy_buffering off;
+  proxy_cache off;
+  gzip off;
+  proxy_read_timeout 1h;
+}
+```
+
+当前项目验证时优先用：
+
+```bash
+curl -N \
+  -b "$COOKIE" \
+  -H "Accept: text/event-stream" \
+  "$BFF/api/tasks/$TASK_ID/events"
+```
+
+判断标准：
+
+```text
+任务状态变化后，curl 应该立即打印下一条 event/data。
+如果直连立即打印，走网关延迟打印，优先查代理缓冲。
+```
+
+### 问题 2：连接频繁断开，然后浏览器一直自动重连
+
+最常见现象：
+
+```text
+Network 面板里 /events 一直 pending、closed、pending、closed。
+后端日志里同一个 taskId 被反复订阅。
+用户看到进度偶尔跳，或者任务完成后还在发请求。
+```
+
+典型根因有三个：
+
+| 根因                           | 为什么会发生                                            |
+| ------------------------------ | ------------------------------------------------------- |
+| 中间层 idle timeout            | 一段时间没有任何字节输出，代理认为连接空闲并关闭        |
+| 前端没有在终态关闭 EventSource | `EventSource` 默认会自动重连，完成后不 close 就可能再连 |
+| 服务端没有处理 close 清理      | 客户端断了，但服务端定时器、订阅、连接登记还留着        |
+
+问题链路：
+
+```mermaid
+sequenceDiagram
+  participant Browser as Browser EventSource
+  participant Proxy as Proxy / LB
+  participant BFF as NestJS BFF
+  participant Stream as streamTaskStatus
+
+  Browser->>Proxy: GET /api/tasks/:taskId/events
+  Proxy->>BFF: 转发 SSE 请求
+  BFF->>Stream: subscribe
+  Stream-->>BFF: 状态没变化，暂时不发新事件
+  Proxy--xBrowser: idle timeout 关闭连接
+  Browser->>Proxy: 自动重连
+  Proxy->>BFF: 新的 SSE 请求
+  BFF->>Stream: 再次 subscribe
+```
+
+解决方式：
+
+| 位置     | 处理方式                                                                     |
+| -------- | ---------------------------------------------------------------------------- |
+| 前端     | 收到 `task.completed` / `task.failed` 后立即 `source.close()`                |
+| BFF      | request `close` 时必须 `unsubscribe`，当前 Nest + Observable teardown 已覆盖 |
+| 业务流   | 终态后 `subscriber.complete()`，当前 `streamTaskStatus` 已覆盖               |
+| 代理层   | 增大 SSE 路径 idle/read timeout                                              |
+| 生产增强 | 长时间没有业务事件时发 heartbeat，例如注释帧或轻量 `task.heartbeat`          |
+
+当前项目已经有两个关键保护：
+
+```text
+1. completed / failed 后 subscriber.complete()
+2. 客户端断开后 Observable teardown 会 clearTimeout + unregisterConnection
+```
+
+还可以补的生产能力：
+
+```text
+如果任务状态长时间不变化，定期发 heartbeat，避免代理以为连接空闲。
+```
+
+心跳不一定要改变业务状态。SSE 协议里可以发注释帧：
+
+```text
+: heartbeat
+
+```
+
+浏览器不会把注释帧派发成业务事件，但它能让连接上持续有字节流动。  
+如果需要前端也观察心跳，可以发显式事件：
+
+```text
+event: task.heartbeat
+data: {"taskId":"commodity-import:job-001","ts":"2026-05-23T12:00:00.000Z"}
+
+```
+
+### 问题 3：连接数变多后，BFF 内存、句柄或 Redis 压力上升
+
+最常见现象：
+
+```text
+用户一多，BFF 的 open connections、timer、memory、Redis read 明显上升。
+任务已经结束，但连接数没有下降。
+多实例部署后，不同实例看到的连接状态不一致。
+```
+
+SSE 的成本模型和普通接口不一样：
+
+```text
+普通 HTTP =
+一次请求 -> 一次响应 -> 连接结束
+
+SSE =
+一次请求 -> 长时间占用一个 HTTP 连接 -> 持续占用服务端资源
+```
+
+当前项目还要注意一个额外点：
+
+```text
+TaskQueueService.streamTaskStatus 当前每条连接会定时读取 BullMQ job 状态。
+客户端不轮询 BFF，但 BFF 内部仍有定时读取 Redis 的成本。
+```
+
+资源压力图：
+
+```mermaid
+flowchart TD
+  users["大量浏览器 EventSource"] --> conns["BFF 长连接数上升"]
+  conns --> timers["每条连接一个状态检查 timer"]
+  timers --> redis["周期读取 BullMQ / Redis"]
+  conns --> memory["连接对象 / subscription / registry 占用内存"]
+  redis --> pressure["Redis QPS 上升"]
+  memory --> pressure
+```
+
+怎么解决：
+
+| 方向            | 做法                                                                  |
+| --------------- | --------------------------------------------------------------------- |
+| 终态关闭        | 任务 `completed` / `failed` 后服务端 complete，前端 close             |
+| 断开清理        | close 时 clear timer、unsubscribe、unregister，当前项目已经实现       |
+| 限制连接        | 对单用户、单租户、单 taskId 的连接数做上限，避免一个页面开多个连接    |
+| 降低 Redis 压力 | 用 BullMQ `QueueEvents` 或 Redis pub/sub 推动事件，减少每连接定时读取 |
+| 可观测性        | 记录当前 SSE 连接数、按用户/租户/taskId 分组的连接数、断开原因        |
+| 多实例部署      | 不把连接注册表当成全局真相；跨实例事件来源应放在 Redis / QueueEvents  |
+
+更适合生产的事件化结构：
+
+```mermaid
+flowchart LR
+  worker["Worker"] --> bull["BullMQ / Redis"]
+  bull --> events["QueueEvents / PubSub"]
+  events --> bff1["BFF instance A"]
+  events --> bff2["BFF instance B"]
+  bff1 --> c1["Browser A SSE"]
+  bff2 --> c2["Browser B SSE"]
+```
+
+这样 BFF 不需要为每条 SSE 连接每秒主动查 Redis，而是订阅共享事件源。  
+当前 MVP 为了简单可解释，仍采用“每条连接定时读取当前 job 状态”的方式。
+
+### Top 3 快速排障表
+
+| 现象                  | 优先怀疑                | 第一验证动作                      | 典型修复                                        |
+| --------------------- | ----------------------- | --------------------------------- | ----------------------------------------------- |
+| 事件一批一批到        | 代理缓冲 / gzip / 缓存  | `curl -N` 直连 BFF 和走网关对比   | 关闭 SSE 路径 buffering、cache、gzip            |
+| `/events` 反复重连    | idle timeout / 未 close | 看 Network 是否 closed 后自动重连 | 加 heartbeat、终态 close、调大代理 read timeout |
+| 连接数和 Redis QPS 高 | 长连接成本 / 轮询式实现 | 看连接数、timer、Redis QPS        | 终态关闭、连接限流、改 QueueEvents / pubsub     |
 
 ## 真实系统要注意什么
 

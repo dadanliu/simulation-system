@@ -84,6 +84,24 @@ describe("QueueController", () => {
     ).rejects.toThrow(ForbiddenException);
   });
 
+  it("does not let admins read legacy tasks without tenant scope", async () => {
+    const { controller } = createController({
+      ...taskData,
+      tenantId: undefined
+    });
+
+    await expect(
+      controller.getTask(
+        createUser({
+          id: "u_admin",
+          roles: ["admin"],
+          tenantId: "tenant_a"
+        }),
+        "commodity-import:job-001"
+      )
+    ).rejects.toThrow(ForbiddenException);
+  });
+
   it("registers SSE streams with user, tenant, and task scope", async () => {
     const { controller, taskQueueService } = createController();
 
