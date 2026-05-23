@@ -6,7 +6,7 @@
   "prettier.prettierPath": "./node_modules/prettier/index.cjs",
   "prettier.requireConfig": true,
   "workbench.editorAssociations": {
-    "*.md": "vscode.markdown.preview.editor"
+    "*.md": "default"
   },
   "[css]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"

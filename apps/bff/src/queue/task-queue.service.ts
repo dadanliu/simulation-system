@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import type { Job, Queue } from "bullmq";
 import { randomUUID } from "node:crypto";
+import { Observable } from "rxjs";
 import {
   COMMODITY_IMPORT_JOB,
   COMMODITY_IMPORT_QUEUE,
@@ -11,14 +12,21 @@ import type {
   CommodityImportJobData,
   TaskJobData,
   TaskStatus,
+  TaskStatusStreamConnection,
+  TaskStatusStreamEvent,
   TaskStatusState
 } from "./queue.types";
+import { TaskStreamConnectionRegistry } from "./task-stream-connection-registry.service";
+
+const TASK_STATUS_STREAM_INTERVAL_MS = 1000;
+const TERMINAL_TASK_STATES = new Set<TaskStatusState>(["completed", "failed"]);
 
 @Injectable()
 export class TaskQueueService {
   constructor(
     @InjectQueue(COMMODITY_IMPORT_QUEUE)
-    private readonly commodityImportQueue: Queue<CommodityImportJobData>
+    private readonly commodityImportQueue: Queue<CommodityImportJobData>,
+    private readonly streamConnectionRegistry: TaskStreamConnectionRegistry
   ) {}
 
   async enqueueCommodityImport(data: CommodityImportJobData) {
@@ -54,6 +62,82 @@ export class TaskQueueService {
       data: job.data,
       status: await this.toTaskStatus(queueName, job)
     };
+  }
+
+  streamTaskStatus(
+    taskId: string,
+    options: {
+      connection?: TaskStatusStreamConnection;
+      initialStatus?: TaskStatus;
+      intervalMs?: number;
+    } = {}
+  ) {
+    const intervalMs = options.intervalMs ?? TASK_STATUS_STREAM_INTERVAL_MS;
+
+    return new Observable<TaskStatusStreamEvent>((subscriber) => {
+      let closed = false;
+      let lastFingerprint = "";
+      let timer: NodeJS.Timeout | undefined;
+      let unregisterConnection = options.connection
+        ? this.streamConnectionRegistry.register(options.connection)
+        : undefined;
+
+      const cleanup = () => {
+        closed = true;
+
+        if (timer) {
+          clearTimeout(timer);
+          timer = undefined;
+        }
+
+        if (unregisterConnection) {
+          unregisterConnection();
+          unregisterConnection = undefined;
+        }
+      };
+
+      const emitStatus = async (status?: TaskStatus) => {
+        if (closed) {
+          return;
+        }
+
+        try {
+          const currentStatus = status ?? (await this.getTask(taskId));
+          const fingerprint = JSON.stringify(currentStatus);
+
+          if (fingerprint !== lastFingerprint) {
+            lastFingerprint = fingerprint;
+            subscriber.next({
+              status: currentStatus,
+              type: this.toStreamEventType(currentStatus.state)
+            });
+          }
+
+          if (TERMINAL_TASK_STATES.has(currentStatus.state)) {
+            cleanup();
+            subscriber.complete();
+          }
+        } catch (error) {
+          cleanup();
+          subscriber.error(error);
+        }
+      };
+
+      const scheduleNext = () => {
+        if (closed) {
+          return;
+        }
+
+        timer = setTimeout(async () => {
+          await emitStatus();
+          scheduleNext();
+        }, intervalMs);
+      };
+
+      void emitStatus(options.initialStatus).then(scheduleNext);
+
+      return cleanup;
+    });
   }
 
   buildTaskId(queueName: TaskQueueName, jobId: string) {
@@ -116,6 +200,20 @@ export class TaskQueueService {
     }
 
     return "unknown";
+  }
+
+  private toStreamEventType(
+    state: TaskStatusState
+  ): TaskStatusStreamEvent["type"] {
+    if (state === "completed") {
+      return "task.completed";
+    }
+
+    if (state === "failed") {
+      return "task.failed";
+    }
+
+    return "task.progress";
   }
 
   private toDateString(timestamp?: number) {

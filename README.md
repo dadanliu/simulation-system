@@ -626,6 +626,7 @@ sequenceDiagram
 - Redis session、风控、商品列表缓存。
 - Schedule/Cron 登录风控每日统计。
 - BullMQ 商品批量导入异步任务。
+- SSE 异步任务进度推送。
 - MongoDB schema、索引和查询计划模拟。
 - 统一成功响应和统一错误响应。
 - traceId、结构化日志、metrics、OpenTelemetry 初始化。
@@ -651,10 +652,10 @@ sequenceDiagram
 
 | 真实诉求 | 建议能力 |
 |---|---|
-| 商品批量导入进度、失败重试和状态查询 | Queue / BullMQ |
+| 商品批量导入进度、失败重试和状态查询 | Queue / BullMQ + SSE |
 | 图片扫描、缩略图、审计导出 | 后续按需再接 Queue / BullMQ |
 | 临时文件清理、缓存预热 | Schedule / Cron |
-| 导出进度、扫描进度、审核提醒 | SSE / WebSocket |
+| 更复杂的导出进度、扫描进度、审核提醒 | WebSocket / 事件总线 |
 | 上传、登录、导出等高风险接口统一限流 | Throttler |
 | 新增接口默认需要登录，公开接口显式声明 | Global Guard + `@Public()` |
 | 商品变更后审计、清缓存、通知、搜索同步解耦 | EventEmitter / CQRS |
@@ -680,6 +681,10 @@ sequenceDiagram
 | DTO、Schema、业务规则边界 | `docs/39-DTO-Schema-业务规则为什么不能混在一起.md` |
 | 商品状态流转 | `docs/37-商品状态流转为什么放Service.md` |
 | 登录风控每日统计 Cron | `docs/46-登录风控每日统计Cron图解.md` |
+| SSE 任务进度 curl 测试 | `docs/47-SSE任务进度curl测试操作.md` |
+| SSE 第一性原理 | `docs/48-SSE第一性原理图解.md` |
+| SSE 任务进度新增逻辑 | `docs/49-SSE任务进度新增逻辑图解.md` |
+| Worker 第一性原理 | `docs/50-Worker第一性原理图文解释.md` |
 | 请求层与错误治理 | `docs/13-请求层与错误治理.md` |
 | 可观测性与排障 | `docs/21-可观测性与排障体系.md` |
 | 上线潜在问题 | `docs/31-当前系统上线潜在问题清单.md` |

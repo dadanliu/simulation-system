@@ -8,6 +8,7 @@ import { PermissionModule } from "../permission/permission.module";
 import { COMMODITY_IMPORT_QUEUE } from "./queue.constants";
 import { createBullRedisConnection } from "./redis-connection";
 import { QueueController } from "./queue.controller";
+import { TaskStreamConnectionRegistry } from "./task-stream-connection-registry.service";
 import { TaskQueueService } from "./task-queue.service";
 import { CommodityImportProcessor } from "./processors/commodity-import.processor";
 
@@ -41,6 +42,11 @@ import { CommodityImportProcessor } from "./processors/commodity-import.processo
   ],
   controllers: [QueueController],
   exports: [TaskQueueService],
-  providers: [CommodityCacheService, CommodityImportProcessor, TaskQueueService]
+  providers: [
+    CommodityCacheService,
+    CommodityImportProcessor,
+    TaskQueueService,
+    TaskStreamConnectionRegistry
+  ]
 })
 export class QueueModule {}

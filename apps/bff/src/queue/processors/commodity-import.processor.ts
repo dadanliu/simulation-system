@@ -15,6 +15,8 @@ type CommodityCreateResult = {
   name: string;
 };
 
+const COMMODITY_IMPORT_ITEM_DELAY_MS = 500;
+
 @Injectable()
 // @Processor 把这个类注册成 BullMQ Worker，专门消费 commodity-import 队列里的 job。
 // concurrency: 1 表示同一个 Worker 实例一次只允许 1 个导入 job 进入 process，避免批量写入同时压垮 Backend/Mongo。
@@ -43,6 +45,7 @@ export class CommodityImportProcessor extends WorkerHost {
         percent: Math.round(((index + 1) / total) * 100),
         total
       });
+      await this.delayForLocalSimulation();
 
       // dryRun 用来验证请求结构和队列链路，不真正创建商品，也不会刷新商品列表缓存。
       if (job.data.dryRun) {
@@ -112,5 +115,11 @@ export class CommodityImportProcessor extends WorkerHost {
   private backendUrl(path: string) {
     const normalizedPath = path.startsWith("/") ? path : `/${path}`;
     return `${this.configService.getOrThrow<string>("BACKEND_BASE_URL")}${normalizedPath}`;
+  }
+
+  private delayForLocalSimulation() {
+    return new Promise<void>((resolve) => {
+      setTimeout(resolve, COMMODITY_IMPORT_ITEM_DELAY_MS);
+    });
   }
 }

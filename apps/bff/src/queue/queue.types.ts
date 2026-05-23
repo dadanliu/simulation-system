@@ -50,3 +50,19 @@ export type TaskStatus = {
   state: TaskStatusState;
   taskId: string;
 };
+
+export type TaskStatusStreamEventType =
+  | "task.completed"
+  | "task.failed"
+  | "task.progress";
+
+export type TaskStatusStreamEvent = {
+  status: TaskStatus;
+  type: TaskStatusStreamEventType;
+};
+
+export type TaskStatusStreamConnection = {
+  taskId: string;
+  tenantId: string;
+  userId: string;
+};
