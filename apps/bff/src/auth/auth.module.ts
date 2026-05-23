@@ -1,5 +1,6 @@
 import { Module, forwardRef } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { APP_GUARD } from "@nestjs/core";
 import { MongooseModule } from "@nestjs/mongoose";
 import {
   PermissionEntity,
@@ -56,6 +57,14 @@ import { SessionStoreService } from "./session-store.service";
     AuthGuard,
     PermissionService,
     PermissionsGuard,
+    {
+      provide: APP_GUARD,
+      useExisting: AuthGuard
+    },
+    {
+      provide: APP_GUARD,
+      useExisting: PermissionsGuard
+    },
     RbacSeedService
   ],
   exports: [GetCurrentUserService, AuthGuard, RbacSeedService]

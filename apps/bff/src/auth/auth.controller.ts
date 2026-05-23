@@ -6,8 +6,7 @@ import {
   Post,
   Query,
   Req,
-  Res,
-  UseGuards
+  Res
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import {
@@ -21,7 +20,6 @@ import type { Request, Response } from "express";
 import { createCsrfCookie, generateCsrfToken } from "../common/http/csrf-token";
 import { ErrorResponseDto } from "../common/swagger/error-response.dto";
 import { AuthService } from "./auth.service";
-import { AuthGuard } from "./auth.guard";
 import { CurrentUser } from "./current-user.decorator";
 import { LoginDto } from "./dto/login.dto";
 import type { AuthUser } from "../user/user.types";
@@ -29,8 +27,8 @@ import { SuccessResponseMessage } from "../common/interceptors/response-envelope
 import { clearSessionCookie, createSessionCookie } from "./session-cookie";
 import { QueryLoginAuditLogDto } from "./dto/query-login-audit-log.dto";
 import { QueryLoginRiskDailyStatDto } from "./dto/query-login-risk-daily-stat.dto";
-import { PermissionsGuard } from "../permission/permissions.guard";
 import { RequirePermissions } from "../permission/permissions.decorator";
+import { Public } from "./public.decorator";
 
 @ApiTags("Auth")
 @Controller("api/auth")
@@ -41,6 +39,7 @@ export class AuthController {
   ) {}
 
   @Post("login")
+  @Public()
   @ApiOperation({ summary: "用户登录" })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
@@ -92,6 +91,7 @@ export class AuthController {
   }
 
   @Post("logout")
+  @Public()
   @HttpCode(200)
   @SuccessResponseMessage("logout success")
   @ApiOperation({ summary: "退出登录" })
@@ -114,6 +114,7 @@ export class AuthController {
   }
 
   @Get("csrf")
+  @Public()
   @ApiOperation({ summary: "获取 CSRF token" })
   @ApiResponse({ status: 200, description: "获取 CSRF token 成功" })
   csrf(@Res({ passthrough: true }) response: Response) {
@@ -130,7 +131,6 @@ export class AuthController {
   }
 
   @Get("me")
-  @UseGuards(AuthGuard)
   @ApiOperation({ summary: "获取当前登录用户" })
   @ApiCookieAuth("next_bff_session")
   @ApiResponse({ status: 200, description: "获取当前用户成功" })
@@ -142,7 +142,6 @@ export class AuthController {
   }
 
   @Get("sessions")
-  @UseGuards(AuthGuard)
   @ApiOperation({ summary: "获取当前用户会话列表" })
   @ApiCookieAuth("next_bff_session")
   @ApiResponse({ status: 200, description: "获取当前用户会话成功" })
@@ -152,7 +151,6 @@ export class AuthController {
   }
 
   @Get("login-logs")
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions("audit:read")
   @ApiOperation({ summary: "查询登录日志" })
   @ApiCookieAuth("next_bff_session")
@@ -173,7 +171,6 @@ export class AuthController {
   }
 
   @Get("login-risk-daily-stats")
-  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions("audit:read")
   @ApiOperation({ summary: "查询每日登录风控统计" })
   @ApiCookieAuth("next_bff_session")

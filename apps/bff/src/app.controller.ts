@@ -1,5 +1,6 @@
 import { Controller, Get } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { Public } from "./auth/public.decorator";
 import { SuccessResponseMessage } from "./common/interceptors/response-envelope.decorator";
 
 @Controller()
@@ -7,6 +8,7 @@ export class AppController {
   constructor(private readonly configService: ConfigService) {}
 
   @Get()
+  @Public()
   @SuccessResponseMessage("NestJS BFF service is running")
   getRoot() {
     return {

@@ -1,5 +1,6 @@
 import { Controller, NotFoundException, Post } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { Public } from "../auth/public.decorator";
 import { TestResetService } from "./test-reset.service";
 
 @Controller("api/test")
@@ -10,6 +11,7 @@ export class TestResetController {
   ) {}
 
   @Post("reset")
+  @Public()
   async reset() {
     if (!this.isEnabled()) {
       throw new NotFoundException("not found");

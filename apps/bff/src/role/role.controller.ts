@@ -1,21 +1,10 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Put,
-  UseGuards
-} from "@nestjs/common";
-import { AuthGuard } from "../auth/auth.guard";
+import { Body, Controller, Get, Param, Post, Put } from "@nestjs/common";
 import { RequirePermissions } from "../permission/permissions.decorator";
-import { PermissionsGuard } from "../permission/permissions.guard";
 import { BindRolePermissionsDto } from "./dto/bind-role-permissions.dto";
 import { RoleService } from "./role.service";
 import type { Role } from "./role.types";
 
 @Controller("api/roles")
-@UseGuards(AuthGuard, PermissionsGuard)
 export class RoleController {
   constructor(private readonly roleService: RoleService) {}
 

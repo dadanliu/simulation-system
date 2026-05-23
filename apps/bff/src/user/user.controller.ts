@@ -1,23 +1,12 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Put,
-  UseGuards
-} from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put } from "@nestjs/common";
 import { ApiResponse } from "@nestjs/swagger";
 import { ErrorResponseDto } from "../common/swagger/error-response.dto";
-import { AuthGuard } from "../auth/auth.guard";
 import { RequirePermissions } from "../permission/permissions.decorator";
-import { PermissionsGuard } from "../permission/permissions.guard";
 import { BindUserRolesDto } from "./dto/bind-user-roles.dto";
 import { UserService } from "./user.service";
 import type { CreateUserInput, UpdateUserInput } from "./user.types";
 
 @Controller("api/users")
-@UseGuards(AuthGuard, PermissionsGuard)
 @RequirePermissions("user:manage")
 export class UserController {
   constructor(private readonly userService: UserService) {}

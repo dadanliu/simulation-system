@@ -1,7 +1,9 @@
 import { UnauthorizedException, type ExecutionContext } from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
 import { AuthGuard } from "./auth.guard";
 import type { GetCurrentUserService } from "./get-current-user";
 import type { AuthenticatedRequest } from "./auth-request";
+import { Public } from "./public.decorator";
 import type { AuthUser } from "../user/user.types";
 
 const adminUser: AuthUser = {
@@ -12,8 +14,24 @@ const adminUser: AuthUser = {
   username: "admin"
 };
 
-function createContext(request: Partial<AuthenticatedRequest>) {
+class TestController {
+  testHandler() {
+    return undefined;
+  }
+
+  @Public()
+  publicHandler() {
+    return undefined;
+  }
+}
+
+function createContext(
+  request: Partial<AuthenticatedRequest>,
+  handler: () => undefined = TestController.prototype.testHandler
+) {
   return {
+    getClass: () => TestController,
+    getHandler: () => handler,
     switchToHttp: () => ({
       getRequest: () => request
     })
@@ -21,12 +39,24 @@ function createContext(request: Partial<AuthenticatedRequest>) {
 }
 
 function createGuard(execute = jest.fn()) {
-  return new AuthGuard({
+  return new AuthGuard(new Reflector(), {
     execute
   } as unknown as GetCurrentUserService);
 }
 
 describe("AuthGuard", () => {
+  it("allows public routes without resolving current user", async () => {
+    const execute = jest.fn();
+    const guard = createGuard(execute);
+
+    await expect(
+      guard.canActivate(
+        createContext({}, TestController.prototype.publicHandler)
+      )
+    ).resolves.toBe(true);
+    expect(execute).not.toHaveBeenCalled();
+  });
+
   it("reuses currentUser already attached to the request", async () => {
     const execute = jest.fn();
     const guard = createGuard(execute);

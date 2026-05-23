@@ -10,8 +10,7 @@ import {
   Post,
   Query,
   Req,
-  Res,
-  UseGuards
+  Res
 } from "@nestjs/common";
 import {
   ApiBody,
@@ -22,11 +21,9 @@ import {
   ApiTags
 } from "@nestjs/swagger";
 import type { Request, Response } from "express";
-import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { ErrorResponseDto } from "../common/swagger/error-response.dto";
 import { RequirePermissions } from "../permission/permissions.decorator";
-import { PermissionsGuard } from "../permission/permissions.guard";
 import type { AuthUser } from "../user/user.types";
 import type { CommodityListData } from "./commodity.types";
 import {
@@ -96,7 +93,6 @@ function setCommodityListCacheHeaders(
 
 @ApiTags("Commodity")
 @Controller("api/commodity")
-@UseGuards(AuthGuard, PermissionsGuard)
 export class CommodityController {
   constructor(private readonly commodityService: CommodityService) {}
 

@@ -1,20 +1,9 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Put,
-  UseGuards
-} from "@nestjs/common";
-import { AuthGuard } from "../auth/auth.guard";
+import { Body, Controller, Get, Param, Post, Put } from "@nestjs/common";
 import { PermissionService } from "./permission.service";
 import { RequirePermissions } from "./permissions.decorator";
-import { PermissionsGuard } from "./permissions.guard";
 import type { Permission } from "./permission.types";
 
 @Controller("api/permissions")
-@UseGuards(AuthGuard, PermissionsGuard)
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}
 

@@ -6,6 +6,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import type { AuthenticatedRequest } from "../auth/auth-request";
+import { isPublicRoute } from "../auth/public.decorator";
 import { PermissionService } from "./permission.service";
 import { REQUIRED_PERMISSIONS_KEY } from "./permissions.decorator";
 import type { PermissionCode } from "./permission.types";
@@ -20,6 +21,10 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext) {
+    if (isPublicRoute(this.reflector, context)) {
+      return true;
+    }
+
     // 读取当前接口声明的权限要求。
     // 例如 @RequirePermissions("commodity:create") 会写入 REQUIRED_PERMISSIONS_KEY。
     // getHandler() 代表具体方法，getClass() 代表整个 Controller；
@@ -35,8 +40,8 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    // 从当前 HTTP 请求里取出 AuthGuard 提前写进去的 currentUser。
-    // 所以使用 PermissionsGuard 的接口，通常要先执行 AuthGuard。
+    // 从当前 HTTP 请求里取出全局 AuthGuard 提前写进去的 currentUser。
+    // AuthGuard 负责认证，PermissionsGuard 只负责权限点检查。
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const user = request.currentUser;
 

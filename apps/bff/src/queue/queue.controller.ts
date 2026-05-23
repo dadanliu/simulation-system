@@ -6,8 +6,7 @@ import {
   Param,
   Post,
   Req,
-  Sse,
-  UseGuards
+  Sse
 } from "@nestjs/common";
 import type { MessageEvent } from "@nestjs/common";
 import {
@@ -19,11 +18,9 @@ import {
 } from "@nestjs/swagger";
 import type { Request } from "express";
 import { from, map, switchMap, tap, type Observable } from "rxjs";
-import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { ErrorResponseDto } from "../common/swagger/error-response.dto";
 import { RequirePermissions } from "../permission/permissions.decorator";
-import { PermissionsGuard } from "../permission/permissions.guard";
 import type { AuthUser } from "../user/user.types";
 import { CreateCommodityImportTaskDto } from "./dto/create-commodity-import-task.dto";
 import { TaskQueueService } from "./task-queue.service";
@@ -31,7 +28,6 @@ import type { TaskJobDataBase } from "./queue.types";
 
 @ApiTags("Tasks")
 @Controller("api/tasks")
-@UseGuards(AuthGuard, PermissionsGuard)
 export class QueueController {
   constructor(private readonly taskQueueService: TaskQueueService) {}
 

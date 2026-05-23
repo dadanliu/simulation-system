@@ -4,7 +4,6 @@ import {
   Post,
   Req,
   UploadedFile,
-  UseGuards,
   UseInterceptors
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -17,11 +16,9 @@ import {
   ApiTags
 } from "@nestjs/swagger";
 import type { Request } from "express";
-import { AuthGuard } from "../auth/auth.guard";
 import { CurrentUser } from "../auth/current-user.decorator";
 import { ErrorResponseDto } from "../common/swagger/error-response.dto";
 import { RequirePermissions } from "../permission/permissions.decorator";
-import { PermissionsGuard } from "../permission/permissions.guard";
 import type { AuthUser } from "../user/user.types";
 import { ParseProductImageFilePipe } from "./pipes/parse-product-image-file.pipe";
 import { UploadService, type UploadedMemoryFile } from "./upload.service";
@@ -32,7 +29,6 @@ type UploadFileBody = {
 
 @ApiTags("Upload")
 @Controller("api/upload")
-@UseGuards(AuthGuard, PermissionsGuard)
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 

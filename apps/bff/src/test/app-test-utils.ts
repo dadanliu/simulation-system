@@ -1,6 +1,10 @@
-import { ValidationPipe, type INestApplication } from "@nestjs/common";
+import {
+  ValidationPipe,
+  type INestApplication,
+  type Type
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Reflector } from "@nestjs/core";
+import { APP_GUARD, Reflector } from "@nestjs/core";
 import { Test } from "@nestjs/testing";
 import { AuthController } from "../auth/auth.controller";
 import { AuthGuard } from "../auth/auth.guard";
@@ -75,6 +79,7 @@ export function createTestAppMocks(): TestAppMocks {
 
 type CreateBffTestAppOptions = {
   config?: Record<string, string | undefined>;
+  controllers?: Type[];
 };
 
 export async function createBffTestApp(
@@ -83,11 +88,23 @@ export async function createBffTestApp(
 ): Promise<INestApplication> {
   const config = options.config ?? {};
   const moduleRef = await Test.createTestingModule({
-    controllers: [AuthController, CommodityController],
+    controllers: [
+      AuthController,
+      CommodityController,
+      ...(options.controllers ?? [])
+    ],
     providers: [
       Reflector,
       AuthGuard,
       PermissionsGuard,
+      {
+        provide: APP_GUARD,
+        useExisting: AuthGuard
+      },
+      {
+        provide: APP_GUARD,
+        useExisting: PermissionsGuard
+      },
       RequestLoggingInterceptor,
       SuccessResponseInterceptor,
       {

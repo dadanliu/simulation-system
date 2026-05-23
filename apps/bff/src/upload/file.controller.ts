@@ -10,6 +10,7 @@ import { ApiCookieAuth, ApiExcludeEndpoint } from "@nestjs/swagger";
 import type { Request, Response } from "express";
 import { createHash } from "node:crypto";
 import { GetCurrentUserService } from "../auth/get-current-user";
+import { Public } from "../auth/public.decorator";
 import { FileUrlService } from "./file-url.service";
 import { UploadService } from "./upload.service";
 
@@ -22,6 +23,7 @@ export class FileController {
   ) {}
 
   @Get(":fileId")
+  @Public()
   @ApiExcludeEndpoint()
   @ApiCookieAuth("next_bff_session")
   async getFile(
